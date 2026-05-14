@@ -10,9 +10,24 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jsrsasign/10.9.0/jsrsasign-all-min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script>
+        // منع فتح أدوات المطور (DevTools) والنسخ
+        document.addEventListener('contextmenu', event => event.preventDefault());
+        document.onkeydown = function(e) {
+            if(e.keyCode == 123) return false; // F12
+            if(e.ctrlKey && e.shiftKey && e.keyCode == 'I'.charCodeAt(0)) return false; // Ctrl+Shift+I
+            if(e.ctrlKey && e.shiftKey && e.keyCode == 'J'.charCodeAt(0)) return false; // Ctrl+Shift+J
+            if(e.ctrlKey && e.keyCode == 'U'.charCodeAt(0)) return false; // Ctrl+U
+            if(e.ctrlKey && e.keyCode == 'C'.charCodeAt(0)) return false; // Ctrl+C
+        };
+        // حماية من تشغيل الكود في Iframe خارجي
+        if (window.top !== window.self) window.top.location = window.self.location;
+    </script>
+
     <style>
         :root { --bg: #000000; --card: #121212; --input-bg: #1c1c1c; --primary: #3b82f6; --text: #ffffff; --accent: #4ade80; --muted: #a1a1aa; --border: #3f3f46; }
-        body { background-color: var(--bg); color: var(--text); font-family: 'Cairo', Tahoma, sans-serif; padding: 15px; margin: 0; }
+        body { background-color: var(--bg); color: var(--text); font-family: 'Cairo', Tahoma, sans-serif; padding: 15px; margin: 0; user-select: none; /* منع تحديد النصوص */ }
         .admin-container { width: 100%; max-width: 600px; margin: 0 auto; padding-bottom: 50px; }
         .tab-nav { display: flex; gap: 8px; margin-bottom: 20px; overflow-x: auto; background: var(--card); padding: 10px; border-radius: 12px; border: 1px solid var(--border); box-shadow: 0 4px 10px rgba(0,0,0,0.5);}
         .tab-nav::-webkit-scrollbar { display: none; }
@@ -562,7 +577,7 @@
                     const today = new Date().toISOString().split('T')[0];
                     
                     // استدعاء البصمة المخزنة في متصفح المستخدم
-                    const localDeviceToken = localStorage.getItem('secure_device_token');
+                    const localDeviceToken = localStorage.getItem('tourney_device_id');
                     
                     if (!data || data.status !== "active" || today > data.end_date) {
                         alert("اشتراكك منتهي أو حسابك موقوف.");
@@ -581,23 +596,46 @@
                     }
                 });
             } else {
-                window.location.href = "login.html";
+                window.location.replace("login.html");
             }
         });
-        function logout() {
-    // نحتفظ ببصمة الجهاز واسم البطولة
-    let currentDeviceId = localStorage.getItem('tourney_device_id');
-    let audienceDb = localStorage.getItem('audienceDbPath');
-    
-    // نمسح كلشي
-    localStorage.clear();
-    
-    // نرجع البصمة والمسار حتى لا يضيعون
-    if(currentDeviceId) localStorage.setItem('tourney_device_id', currentDeviceId);
-    if(audienceDb) localStorage.setItem('audienceDbPath', audienceDb);
 
-    window.location.href = "login.html";
-}
+        // 3. الخروج الذكي (Smart Logout) يحافظ على بصمة الجهاز
+        function logoutAdmin() {
+            let deviceToken = localStorage.getItem('tourney_device_id');
+            let audienceDb = localStorage.getItem('audienceDbPath');
+
+            auth.signOut().then(() => {
+                localStorage.clear();
+                
+                if(deviceToken) localStorage.setItem('tourney_device_id', deviceToken);
+                if(audienceDb) localStorage.setItem('audienceDbPath', audienceDb);
+
+                window.location.replace("login.html");
+            }).catch((error) => {
+                alert("حدث خطأ أثناء تسجيل الخروج.");
+            });
+        }
+
+        // ==========================================
+        // منطقة كود الإشعارات الجديد (سيتم وضع الكود الجديد هنا لاحقاً)
+        // ==========================================
+        async function sendManualPush(title, message) {
+            console.log("تم إلغاء الإشعارات القديمة. النظام جاهز لاستقبال الكود الجديد:", title, message);
+            let msgBox = document.getElementById('autoSaveMsg1');
+            if(msgBox) { msgBox.innerText = "تم تجهيز النظام للإشعارات الجديدة!"; msgBox.classList.add('show'); setTimeout(()=>msgBox.classList.remove('show'), 2000); }
+            // TODO: سيتم إضافة كود OneSignal هنا
+        }
+
+        window.sendCustomPreMatchPush = function(id) {
+            let m = allData.schedule[id];
+            if(!m) return;
+            let timeText = document.getElementById('remTime_' + id).value || 'قريباً';
+            let title = "مباراة قادمة ⏳";
+            let msg = `لا تفوتوا مباراة ${m.team1} ضد ${m.team2} - تبدأ ${timeText}`;
+            sendManualPush(title, msg);
+        }
+        // ==========================================
 
         function openTab(tabId, btn) { document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active')); document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active')); document.getElementById(tabId).classList.add('active'); btn.classList.add('active'); }
         
@@ -705,21 +743,6 @@
             db.ref(`tournaments/${dbPath}/settings/activeComparison`).set({ t1, p1, t2, p2, active: true }).then(()=>alert("تم عرض المقارنة للجمهور في قسم الإحصائيات!"));
         }
         function hideComparison() { db.ref(`tournaments/${dbPath}/settings/activeComparison`).remove().then(()=>alert("تم إخفاء المقارنة عن الجمهور!")); }
-
-        async function sendManualPush(title, message) {
-            console.log("الإشعارات مفرغة وجاهزة للربط مع kdcsaas. العنوان:", title, "الرسالة:", message);
-            let msgBox = document.getElementById('autoSaveMsg1');
-            if(msgBox) { msgBox.innerText = "تم تجهيز الإشعار!"; msgBox.classList.add('show'); setTimeout(()=>msgBox.classList.remove('show'), 2000); }
-        }
-
-        window.sendCustomPreMatchPush = function(id) {
-            let m = allData.schedule[id];
-            if(!m) return;
-            let timeText = document.getElementById('remTime_' + id).value || 'قريباً';
-            let title = "مباراة قادمة ⏳";
-            let msg = `لا تفوتوا مباراة ${m.team1} ضد ${m.team2} - تبدأ ${timeText}`;
-            sendManualPush(title, msg);
-        }
 
         async function saveRoundStars() { let pFile = document.getElementById('potwImg').files[0]; let tFile = document.getElementById('totwImg').files[0]; let updates = {}; if(pFile) updates.player_of_week = await compressImage(pFile); if(tFile) updates.team_of_week = await compressImage(tFile); if(Object.keys(updates).length > 0) { db.ref(`tournaments/${dbPath}/round_stars`).update(updates).then(()=>{ document.getElementById('potwImg').value = ''; document.getElementById('totwImg').value = ''; alert("تم الحفظ!"); }); } else { alert("اختر صورة!"); } }
         function editReferee(rName) { document.getElementById('newRefName').value = rName; document.getElementById('newRefName').focus(); alert(`تم تحديد الحكم "${rName}".`); }
