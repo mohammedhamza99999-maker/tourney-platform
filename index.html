@@ -34,23 +34,12 @@
         .lang-btn { background: rgba(255,255,255,0.08); border: 1px solid var(--border); color: #fff; padding: 0 10px; height: 34px; border-radius: 17px; font-size: 12px; font-weight: 800; cursor: pointer; font-family: 'Cairo'; display: flex; align-items: center; justify-content: center; transition: 0.3s; flex-shrink: 0; min-width:40px; }
         .lang-btn:hover { background: var(--primary); border-color: var(--primary); }
 
-        /* تعديلات شريط العاجل لدعم النصوص الطويلة والحركة المستمرة */
         .news-ticker-wrapper { background: rgba(26, 34, 43, 0.95); border-bottom: 2px solid #ef4444; display: flex; align-items: center; color: var(--text); overflow: hidden; position: sticky; top: 65px; z-index: 40; backdrop-filter: blur(5px);}
         .news-ticker-label { background: #ef4444; color: #fff; padding: 8px 15px; font-size: 14px; font-weight: 900; z-index: 2; position: relative; box-shadow: -2px 0 5px rgba(0,0,0,0.5); font-family: 'Cairo'; display:flex; align-items:center; gap:5px; border-radius: 12px 0 0 0;}
         .news-ticker-content { flex: 1; overflow: hidden; position: relative; padding: 8px 0; direction: rtl; }
-        .news-ticker-text {
-            display: inline-block;
-            white-space: nowrap;
-            font-weight: 900;
-            font-size: 15px;
-            color: #fff;
-            animation: ticker 25s linear infinite;
-        }
+        .news-ticker-text { display: inline-block; white-space: nowrap; font-weight: 900; font-size: 15px; color: #fff; animation: ticker 25s linear infinite; }
         .news-ticker-text a { color: #fff; text-decoration: none; display: flex; align-items: center; gap: 5px; text-shadow: 0 1px 2px rgba(0,0,0,0.5); }
-        @keyframes ticker {
-            0% { transform: translateX(100vw); }
-            100% { transform: translateX(-100%); }
-        }
+        @keyframes ticker { 0% { transform: translateX(100vw); } 100% { transform: translateX(-100%); } }
 
         .page { display: none; padding: 10px 15px; animation: fadeUp 0.3s ease; } .page.active { display: block; }
         @keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
@@ -410,22 +399,22 @@
 </head>
 <body onload="updateStaticTexts()">
     <script>
+        // دالة سحب الرابط والتحويل الصحيح (تم تطويرها لمنع أخطاء التحميل)
         const urlParamsSec = new URLSearchParams(window.location.search);
         let idCheck = urlParamsSec.get('id');
 
         window.goToTournament = function() {
             let val = document.getElementById('tourneyIdInput').value.trim();
             if(val) {
-                try {
-                    let parsedUrl = new URL(val);
-                    let extractedId = parsedUrl.searchParams.get('id');
-                    if (extractedId) {
-                        val = extractedId;
-                    }
-                } catch (e) {}
-
-                // توجيه الدخول بصيغة الرابط الصحيحة حصراً (مثل الصورة)
-                window.location.href = window.location.origin + '/index.html?id=' + encodeURIComponent(val);
+                let finalId = val;
+                // إذا وضع المستخدم رابط يحتوي على id= نستخرج الـ ID مباشرة
+                let match = val.match(/[?&]id=([^&]+)/);
+                if(match && match[1]) {
+                    finalId = match[1];
+                }
+                // تحويل لصفحة index.html بنفس المعرف المكتشف
+                let baseUrl = window.location.href.split('?')[0]; 
+                window.location.href = baseUrl + '?id=' + encodeURIComponent(finalId);
             } else {
                 alert('الرجاء إدخال معرف البطولة أو الرابط أولاً');
             }
@@ -633,7 +622,8 @@
             <div class="footer-social"><a href="https://www.facebook.com/share/1AnD5a4oY1/" target="_blank"><i class="fab fa-facebook"></i></a><a href="https://www.instagram.com/moe_hz9" target="_blank"><i class="fab fa-instagram"></i></a><a href="https://wa.me/9647717007839" target="_blank"><i class="fab fa-whatsapp"></i></a></div>
         </div>
 
-        <div class="nav"></div>
+        <div class="nav">
+            </div>
     </div>
 
     <div id="authModal" class="modal" style="z-index: 2000; background:rgba(0,0,0,0.9); backdrop-filter:blur(10px);">
@@ -655,9 +645,7 @@
             <div style="background: linear-gradient(180deg, var(--card) 0%, var(--bg) 100%); padding: 30px 20px 20px; text-align:center; border-bottom: 1px solid rgba(255,255,255,0.05); position:relative; overflow:hidden;">
                 <div style="position:absolute; top:-50px; left:50%; transform:translateX(-50%); width:200px; height:200px; background:var(--primary); opacity:0.1; filter:blur(50px); border-radius:50%;"></div>
                 <div class="logo-ph" id="modalLogo" style="width:100px; height:100px; margin:0 auto 15px; border:2px solid rgba(255,255,255,0.1); box-shadow:0 10px 25px rgba(0,0,0,0.5); z-index:2; position:relative; background:#111;"></div>
-                <h2 id="modalTeamName" style="margin:0 0 5px; font-size:26px; font-weight:900; text-shadow:0 2px 4px rgba(0,0,0,0.8); z-index:2; position:relative;">الفريق</h2>
-                
-                <div id="modalTeamExtras"></div>
+                <h2 id="modalTeamName" style="margin:0 0 15px; font-size:26px; font-weight:900; text-shadow:0 2px 4px rgba(0,0,0,0.8); z-index:2; position:relative;">الفريق</h2>
                 
                 <div style="display:flex; gap:15px; justify-content:center; margin-bottom:20px; z-index:2; position:relative;">
                     <div style="background:rgba(59,130,246,0.1); border:1px solid rgba(59,130,246,0.3); padding:10px 25px; border-radius:12px; backdrop-filter:blur(5px);">
@@ -672,22 +660,7 @@
                 <div id="modalStaffArea" style="display:flex; gap:10px; justify-content:center; flex-direction:column; z-index:2; position:relative;"></div>
             </div>
             
-            <div style="padding:20px;">
-                <div style="display:flex; gap:10px; margin-bottom: 15px; background: rgba(0,0,0,0.3); padding: 5px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05);">
-                    <button id="btnTeamSquad" onclick="switchTeamTab('squad')" style="flex:1; background:var(--primary); color:#fff; border:none; padding:10px; border-radius:8px; font-family:'Cairo'; font-weight:bold; cursor:pointer; transition:0.3s; box-shadow:0 2px 5px rgba(0,0,0,0.3);">التشكيلة</button>
-                    <button id="btnTeamMatches" onclick="switchTeamTab('matches')" style="flex:1; background:transparent; color:var(--muted); border:none; padding:10px; border-radius:8px; font-family:'Cairo'; font-weight:bold; cursor:pointer; transition:0.3s;">المباريات</button>
-                </div>
-
-                <div id="teamSquadTab" style="display:block;">
-                    <h3 style="font-size:16px; color:var(--muted); margin:0 0 15px; font-weight:900;" data-trn="التشكيلة">تشكيلة اللاعبين</h3>
-                    <div id="modalPlayersList"></div>
-                </div>
-
-                <div id="teamMatchesTab" style="display:none;">
-                    <h3 style="font-size:16px; color:var(--muted); margin:0 0 15px; font-weight:900;">سجل المباريات</h3>
-                    <div id="modalTeamMatchesList"></div>
-                </div>
-            </div>
+            <div style="padding:20px;"><h3 style="font-size:16px; color:var(--muted); margin:0 0 15px; font-weight:900;" data-trn="التشكيلة">تشكيلة اللاعبين</h3><div id="modalPlayersList"></div></div>
         </div>
     </div>
 
@@ -836,13 +809,11 @@
         function switchTournament() {
             let val = document.getElementById('footerTourneyIdInput').value.trim();
             if(val) {
-                try {
-                    let parsedUrl = new URL(val);
-                    let extractedId = parsedUrl.searchParams.get('id');
-                    if (extractedId) val = extractedId;
-                } catch(e) {}
-                // توجيه صحيح بنفس الصيغة
-                window.location.href = window.location.origin + '/index.html?id=' + encodeURIComponent(val);
+                let finalId = val;
+                let match = val.match(/[?&]id=([^&]+)/);
+                if(match && match[1]) finalId = match[1];
+                let baseUrl = window.location.href.split('?')[0]; 
+                window.location.href = baseUrl + '?id=' + encodeURIComponent(finalId);
             }
         }
 
@@ -896,6 +867,7 @@
             
             renderAdminComparison(globalSettings);
             
+            // التأكد من وضع اسم التطبيق حتى لو لم يكن مخزناً
             if(s.tournamentName) {
                 let tName = t(s.tournamentName);
                 document.getElementById('displayTourneyName').innerText = tName;
@@ -903,6 +875,8 @@
                 localStorage.setItem('visualName', s.tournamentName);
                 let footerEl = document.getElementById('footerTourneyName');
                 if(footerEl) footerEl.innerText = tName + ' • ' + new Date().getFullYear();
+            } else {
+                document.getElementById('displayTourneyName').innerText = t('نظام البطولات');
             }
         });
 
@@ -1212,20 +1186,6 @@
 
         window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); });
 
-        window.switchTeamTab = function(tab) {
-            document.getElementById('teamSquadTab').style.display = tab === 'squad' ? 'block' : 'none';
-            document.getElementById('teamMatchesTab').style.display = tab === 'matches' ? 'block' : 'none';
-            let btnSq = document.getElementById('btnTeamSquad');
-            let btnMa = document.getElementById('btnTeamMatches');
-            if(tab === 'squad') {
-                btnSq.style.background = 'var(--primary)'; btnSq.style.color = '#fff'; btnSq.style.boxShadow = '0 2px 5px rgba(0,0,0,0.3)';
-                btnMa.style.background = 'transparent'; btnMa.style.color = 'var(--muted)'; btnMa.style.boxShadow = 'none';
-            } else {
-                btnMa.style.background = 'var(--primary)'; btnMa.style.color = '#fff'; btnMa.style.boxShadow = '0 2px 5px rgba(0,0,0,0.3)';
-                btnSq.style.background = 'transparent'; btnSq.style.color = 'var(--muted)'; btnSq.style.boxShadow = 'none';
-            }
-        };
-
         window.openTeam = function(tName) { 
             try { history.pushState({ modal: 'teamModal' }, "", "#team"); } catch(e){} 
             const d = teamsDataGlobal[tName]; if(!d) return; 
@@ -1233,12 +1193,6 @@
             document.getElementById('modalLogo').innerHTML = d.logo ? `<img src="${d.logo}" style="width:100%; height:100%; object-fit:contain; border-radius:50%;">` : `<i class="fa-solid fa-shield-halved" style="font-size:40px; margin-top:25px; color:var(--muted);"></i>`; 
             document.getElementById('modalGf').innerText = d.gf || 0; 
             document.getElementById('modalGa').innerText = d.ga || 0; 
-            
-            // إضافة الملعب واللقب
-            let extrasHtml = '';
-            if(d.nickname && d.nickname.trim() !== '') extrasHtml += `<div style="font-size:14px; color:var(--accent); font-weight:bold; margin-bottom:5px; z-index:2; position:relative;">${d.nickname}</div>`;
-            if(d.stadium && d.stadium.trim() !== '') extrasHtml += `<div style="font-size:12px; color:var(--muted); margin-bottom:15px; z-index:2; position:relative;"><i class="fa-solid fa-location-dot"></i> الملعب: ${d.stadium}</div>`;
-            document.getElementById('modalTeamExtras').innerHTML = extrasHtml;
             
             let staff = ''; if(d.coach) staff += `<div style="background:rgba(255,255,255,0.05); padding:8px 15px; border-radius:12px; border:1px solid rgba(255,255,255,0.1); font-size:13px; color:var(--text); font-weight:bold;"><i class="fa-solid fa-user-tie" style="color:var(--primary);"></i> ${t('مدرب')}: ${d.coach}</div>`; if(d.assistant) staff += `<div style="background:rgba(255,255,255,0.05); padding:8px 15px; border-radius:12px; border:1px solid rgba(255,255,255,0.1); font-size:13px; color:var(--text); font-weight:bold;"><i class="fa-solid fa-user-tie" style="color:var(--muted);"></i> ${t('مساعد')}: ${d.assistant}</div>`; 
             let jerseyHtml = ''; if (d.jerseyColor || d.jerseyImage || d.jerseyImage2) { let colorBox = d.jerseyColor ? `<div style="width:18px; height:18px; border-radius:6px; background-color:${d.jerseyColor}; border:1px solid rgba(255,255,255,0.2); display:inline-block; box-shadow:0 2px 5px rgba(0,0,0,0.5);"></div>` : ''; let imgBox1 = d.jerseyImage ? `<img src="${d.jerseyImage}" onclick="openImageViewer('${d.jerseyImage}')" style="width:40px; height:40px; object-fit:contain; border-radius:8px; cursor:pointer; background:rgba(0,0,0,0.5); padding:4px; border:1px solid rgba(255,255,255,0.1);">` : ''; let imgBox2 = d.jerseyImage2 ? `<img src="${d.jerseyImage2}" onclick="openImageViewer('${d.jerseyImage2}')" style="width:40px; height:40px; object-fit:contain; border-radius:8px; cursor:pointer; background:rgba(0,0,0,0.5); padding:4px; border:1px solid rgba(255,255,255,0.1);">` : ''; jerseyHtml = `<div style="background:rgba(255,255,255,0.05); padding:8px 15px; border-radius:12px; border:1px solid rgba(255,255,255,0.1); font-size:13px; color:var(--text); display:flex; align-items:center; gap:10px; font-weight:bold;">${colorBox} ${imgBox1} ${imgBox2}</div>`; }
@@ -1252,9 +1206,6 @@
 
             document.getElementById('modalStaffArea').innerHTML = bestPlayerHtml + staff + jerseyHtml; 
             
-            window.switchTeamTab('squad');
-
-            // 1. عرض التشكيلة
             const tbody = document.getElementById('modalPlayersList'); tbody.innerHTML = ''; 
             if(d.players) { 
                 for(let p in d.players) { 
@@ -1280,58 +1231,6 @@
             } else {
                 tbody.innerHTML = `<div style="text-align:center; padding:20px; color:var(--muted); font-weight:bold;">لا يوجد لاعبين</div>`;
             }
-
-            // 2. عرض سجل المباريات الخاص بالفريق
-            let teamMatchesHtml = '';
-            // مباريات منتهية
-            Object.keys(savedMatchesGlobal).forEach(k => {
-                let m = savedMatchesGlobal[k];
-                if(m.team1 === tName || m.team2 === tName) {
-                    let info = []; if(m.groupInfo && m.groupInfo !== "أدوار إقصائية") info.push(t('مجموعة') + ' ' + m.groupInfo); if(m.round) info.push(t(m.round));
-                    teamMatchesHtml += `<div class="card" onclick="window.openMatchDetails('${k}')" style="margin-bottom:10px; cursor:pointer; padding:12px; border-right:3px solid var(--muted); background:rgba(255,255,255,0.03);">
-                        <div style="font-size:10px; color:var(--muted); margin-bottom:8px; display:flex; justify-content:space-between;"><span>${formatMatchDate(m.date)}</span><span>${info.join(' - ') || t('منتهية')}</span></div>
-                        <div style="display:flex; justify-content:space-between; align-items:center; font-weight:bold; font-size:14px;">
-                            <span style="flex:1; text-align:right; color:${m.team1===tName?'var(--primary)':'#fff'};">${m.team1}</span>
-                            <span style="padding:0 10px; color:var(--accent); font-family:Arial,sans-serif">${m.score1} - ${m.score2}</span>
-                            <span style="flex:1; text-align:left; color:${m.team2===tName?'var(--primary)':'#fff'};">${m.team2}</span>
-                        </div>
-                    </div>`;
-                }
-            });
-            // مباريات مجدولة
-            Object.keys(scheduleGlobal).forEach(k => {
-                let m = scheduleGlobal[k];
-                if(m.team1 === tName || m.team2 === tName) {
-                    let info = []; if(m.group) info.push(t('مجموعة') + ' ' + m.group); if(m.round) info.push(t(m.round));
-                    teamMatchesHtml += `<div class="card" onclick="window.openScheduledMatch('${k}')" style="margin-bottom:10px; cursor:pointer; padding:12px; border-right:3px solid var(--primary); background:rgba(255,255,255,0.03);">
-                        <div style="font-size:10px; color:var(--primary); margin-bottom:8px; display:flex; justify-content:space-between;"><span>${formatMatchDate(m.date)} | <span style="font-family:Arial,sans-serif">${m.time}</span></span><span>${info.join(' - ') || t('مجدولة')}</span></div>
-                        <div style="display:flex; justify-content:space-between; align-items:center; font-weight:bold; font-size:14px;">
-                            <span style="flex:1; text-align:right; color:${m.team1===tName?'var(--primary)':'#fff'};">${m.team1}</span>
-                            <span style="padding:0 10px; font-size:10px; background:var(--primary); color:#fff; border-radius:8px;">VS</span>
-                            <span style="flex:1; text-align:left; color:${m.team2===tName?'var(--primary)':'#fff'};">${m.team2}</span>
-                        </div>
-                    </div>`;
-                }
-            });
-            // مواجهات غير مجدولة
-            Object.keys(groupMatchupsGlobal).forEach(k => {
-                let m = groupMatchupsGlobal[k];
-                if(m.team1 === tName || m.team2 === tName) {
-                    let info = []; if(m.group) info.push(t('مجموعة') + ' ' + m.group); if(m.round) info.push(t(m.round));
-                    teamMatchesHtml += `<div class="card" onclick="window.openGroupMatchup('${k}')" style="margin-bottom:10px; cursor:pointer; padding:12px; border-right:3px solid #f59e0b; background:rgba(255,255,255,0.03);">
-                        <div style="font-size:10px; color:#f59e0b; margin-bottom:8px; display:flex; justify-content:space-between;"><span>غير مجدولة</span><span>${info.join(' - ')}</span></div>
-                        <div style="display:flex; justify-content:space-between; align-items:center; font-weight:bold; font-size:14px;">
-                            <span style="flex:1; text-align:right; color:${m.team1===tName?'var(--primary)':'#fff'};">${m.team1}</span>
-                            <span style="padding:0 10px; font-size:10px; background:#f59e0b; color:#fff; border-radius:8px;">VS</span>
-                            <span style="flex:1; text-align:left; color:${m.team2===tName?'var(--primary)':'#fff'};">${m.team2}</span>
-                        </div>
-                    </div>`;
-                }
-            });
-            
-            if(teamMatchesHtml === '') teamMatchesHtml = '<div style="text-align:center; color:var(--muted); padding:20px; font-size:12px; font-weight:bold;">لا توجد مباريات مسجلة</div>';
-            document.getElementById('modalTeamMatchesList').innerHTML = teamMatchesHtml;
-
             document.getElementById('teamModal').style.display = 'block'; 
         };
         
@@ -1376,9 +1275,73 @@
             else { document.getElementById('pitchWrapperBoth').style.display = 'block'; document.getElementById('tabSqBoth').style.background = 'var(--primary)'; document.getElementById('tabSqBoth').style.color = '#fff'; }
         };
 
+        const pL = {gk:'GK',cb:'CB',lb:'LB',rb:'RB',cdm:'CDM',cm:'CM',cam:'CAM',lm:'LM',rm:'RM',lw:'LW',rw:'RW',st:'ST'};
+        const sL = {gk:{top:'90%',left:'50%'},cb:{top:'78%',left:'50%'},lb:{top:'75%',left:'20%'},rb:{top:'75%',left:'80%'},cdm:{top:'65%',left:'50%'},cm:{top:'50%',left:'50%'},lm:{top:'50%',left:'20%'},rm:{top:'50%',left:'80%'},cam:{top:'35%',left:'50%'},lw:{top:'22%',left:'25%'},rw:{top:'22%',left:'75%'},st:{top:'15%',left:'50%'}};
+        const vtL = {gk:{top:'6%',left:'50%'},cb:{top:'15%',left:'50%'},lb:{top:'18%',left:'82%'},rb:{top:'18%',left:'18%'},cdm:{top:'25%',left:'50%'},cm:{top:'32%',left:'50%'},lm:{top:'32%',left:'82%'},rm:{top:'32%',left:'18%'},cam:{top:'39%',left:'50%'},lw:{top:'43%',left:'75%'},rw:{top:'43%',left:'25%'},st:{top:'46%',left:'50%'}};
+        const vbL = {gk:{top:'94%',left:'50%'},cb:{top:'85%',left:'50%'},lb:{top:'82%',left:'18%'},rb:{top:'82%',left:'82%'},cdm:{top:'75%',left:'50%'},cm:{top:'68%',left:'50%'},lm:{top:'68%',left:'18%'},rm:{top:'68%',left:'82%'},cam:{top:'61%',left:'50%'},lw:{top:'57%',left:'25%'},rw:{top:'57%',left:'75%'},st:{top:'54%',left:'50%'}};
+
         window.openSquads = function(t1, t2, sq1, sq2) {
             try { history.pushState({ modal: 'squadsModal' }, "", "#squads"); } catch(e){}
             document.getElementById('tabName1').innerText = t1 || 'فريق 1'; document.getElementById('tabName2').innerText = t2 || 'فريق 2';
-            let d1 = teamsDataGlobal[t1]; let d2 = teamsDataGlobal[t2];
-            const singleLayout = { gk: {top:'90%', left:'50%'}, cb: {top:'78%', left:'50%'}, lb: {top:'75%', left:'20%'}, rb: {top:'75%', left:'80%'}, cdm: {top:'65%', left:'50%'}, cm: {top:'50%', left:'50%'}, lm: {top:'50%', left:'20%'}, rm: {top:'50%', left:'80%'}, cam: {top:'35%', left:'50%'}, lw: {top:'22%', left:'25%'}, rw: {top:'22%', left:'75%'}, st: {top:'15%', left:'50%'} };
-            const vsTopLayout = { gk: {top:'6%', left:'50%'}, cb: {top:'15%', left:'50%'}, lb: {top:'18%', left:'82%'}, rb: {top:'18%', left:'18%'}, cdm: {top:'25%', left:'50%'}, cm: {top:'32%', left:'50%'}, lm: {top:'32%', left:'82%'}, rm: {top:'32%', left:'18%'}, cam: {top:'39%', left:'50%'}, lw: {top:'43
+            const renderPitch = (sq, containerId, layout, teamName) => {
+                const cont = document.getElementById(containerId); if(!cont) return; cont.innerHTML = '<div class="p-center-line"></div><div class="p-center-circle"></div><div class="p-pen-top"></div><div class="p-pen-bottom"></div>';
+                for(let pos in sq) {
+                    let pData = sq[pos]; if(!pData) continue; let name = typeof pData === 'object' ? pData.name : pData; let rating = typeof pData === 'object' ? pData.rating : ''; if(!name || name.trim() === '') continue;
+                    let posCoords = layout[pos]; if(!posCoords) continue; let posLabel = pL[pos] || pos.toUpperCase(); let pPhoto = teamsDataGlobal[teamName]?.players?.[name]?.photo || ''; let imgHtml = pPhoto ? `<img src="${pPhoto}">` : `<i class="fa-solid fa-user"></i>`;
+                    let ratingHtml = ''; if(rating && rating !== "") { let rNum = parseFloat(rating); let bg = '#3f3f46'; let color = '#fff'; if(rNum >= 8.0) { bg = '#10b981'; color = '#000'; } else if(rNum < 6.0) { bg = '#ef4444'; color = '#fff'; } ratingHtml = `<div class="pitch-player-rating" style="background:${bg}; color:${color};">${rating}</div>`; }
+                    cont.innerHTML += `<div class="pitch-player" style="top:${posCoords.top}; left:${posCoords.left};" onclick="window.openPlayerProfile('${name}', '${teamName}')"><div class="pitch-player-img-wrapper">${imgHtml}<div class="pitch-player-pos">${t(posLabel)}</div>${ratingHtml}</div><div class="pitch-player-info"><div class="pitch-player-name">${name}</div><div class="pitch-player-team">${teamName}</div></div></div>`;
+                }
+            };
+            const renderPitchBoth = (sq1, sq2, containerId, topLayout, bottomLayout, t1, t2) => {
+                const cont = document.getElementById(containerId); if(!cont) return; cont.innerHTML = '<div class="p-center-line"></div><div class="p-center-circle"></div><div class="p-pen-top"></div><div class="p-pen-bottom"></div>';
+                const drawHalf = (sq, layout, teamName) => {
+                    for(let pos in sq) {
+                        let pData = sq[pos]; if(!pData) continue; let name = typeof pData === 'object' ? pData.name : pData; let rating = typeof pData === 'object' ? pData.rating : ''; if(!name || name.trim() === '') continue;
+                        let posCoords = layout[pos]; if(!posCoords) continue; let posLabel = pL[pos] || pos.toUpperCase(); let pPhoto = teamsDataGlobal[teamName]?.players?.[name]?.photo || ''; let imgHtml = pPhoto ? `<img src="${pPhoto}">` : `<i class="fa-solid fa-user"></i>`;
+                        let ratingHtml = ''; if(rating && rating !== "") { let rNum = parseFloat(rating); let bg = '#3f3f46'; let color = '#fff'; if(rNum >= 8.0) { bg = '#10b981'; color = '#000'; } else if(rNum < 6.0) { bg = '#ef4444'; color = '#fff'; } ratingHtml = `<div class="pitch-player-rating" style="background:${bg}; color:${color};">${rating}</div>`; }
+                        cont.innerHTML += `<div class="pitch-player" style="top:${posCoords.top}; left:${posCoords.left};" onclick="window.openPlayerProfile('${name}', '${teamName}')"><div class="pitch-player-img-wrapper">${imgHtml}<div class="pitch-player-pos">${t(posLabel)}</div>${ratingHtml}</div><div class="pitch-player-info"><div class="pitch-player-name">${name}</div><div class="pitch-player-team">${teamName}</div></div></div>`;
+                    }
+                };
+                drawHalf(sq1, topLayout, t1); drawHalf(sq2, bottomLayout, t2);
+            };
+            renderPitch(sq1, 'pitchTeam1', sL, t1); renderPitch(sq2, 'pitchTeam2', sL, t2); renderPitchBoth(sq1, sq2, 'pitchBothTeams', vtL, vbL, t1, t2); switchSquadTab(3); 
+            const modal = document.getElementById('squadsModal'); if(modal) { modal.style.display = 'flex'; modal.onclick = function(e) { if(e.target === modal) modal.style.display = 'none'; }; } 
+        };
+
+        window.nav = function(id, el) { try { if(!history.state || history.state.page !== id) history.pushState({ page: id }, "", "#" + id); } catch(e) {} document.querySelectorAll('.page').forEach(p => p.classList.remove('active')); document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active')); document.getElementById('page-' + id).classList.add('active'); if(el) el.classList.add('active'); window.scrollTo(0,0); };
+
+        window.addEventListener('popstate', function(event) {
+            let isModalOpen = false; const imageViewer = document.getElementById('imageViewerModal'); if(imageViewer && imageViewer.style.display === 'flex') { imageViewer.style.display = 'none'; isModalOpen = true; }
+            document.querySelectorAll('.modal').forEach(m => { if(m.style.display === 'block' || m.style.display === 'flex') { m.style.display = 'none'; isModalOpen = true; } }); if(isModalOpen) return;
+            if(event.state && event.state.page) {
+                let id = event.state.page; let navItems = document.querySelectorAll('.nav-item'); let el = navItems[0];
+                if(id === 'matches') el = navItems[1]; if(id === 'groups') el = navItems[2]; if(id === 'teams') el = navItems[3]; if(id === 'stats') el = navItems[4]; if(id === 'gallery') el = navItems[5];
+                document.querySelectorAll('.page').forEach(p => p.classList.remove('active')); document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active')); document.getElementById('page-' + id).classList.add('active'); if(el) el.classList.add('active'); window.scrollTo
+window.scrollTo(0,0);
+        } else {
+            try { history.pushState({ page: 'live' }, "", "#live"); } catch(e) {} 
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active')); 
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active')); 
+            document.getElementById('page-live').classList.add('active'); 
+            let navItems = document.querySelectorAll('.nav-item');
+            if(navItems.length > 0) navItems[0].classList.add('active'); 
+            window.scrollTo(0,0);
+        }
+    });
+
+    // Initial Route
+    window.addEventListener('DOMContentLoaded', (event) => {
+        if(window.location.hash) {
+            let h = window.location.hash.substring(1);
+            if(['live', 'matches', 'groups', 'teams', 'stats', 'gallery'].includes(h)) {
+                let navItems = document.querySelectorAll('.nav-item');
+                let idx = ['live', 'matches', 'groups', 'teams', 'stats', 'gallery'].indexOf(h);
+                if(idx !== -1 && navItems[idx]) nav(h, navItems[idx]);
+            }
+        } else {
+            try { history.replaceState({ page: 'live' }, "", "#live"); } catch(e) {}
+        }
+    });
+    </script>
+</body>
+</html>
