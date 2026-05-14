@@ -412,6 +412,20 @@
         </div>
 
         <div id="tab-settings" class="tab-content">
+            <div class="panel">
+                <h2 style="color:var(--text);"><i class="fa-solid fa-trophy"></i> اسم البطولة الأساسي</h2>
+                <input type="text" id="tourneyName" value="بطولة دوائر خانقين" onchange="updateVisualName()" style="font-weight:bold; font-size:16px; color:var(--accent); text-align: center;">
+            </div>
+
+            <div class="panel" style="border-color: #3b82f6; background:rgba(59, 130, 246, 0.05);">
+                <h2 style="color: #3b82f6;"><i class="fa-solid fa-share-nodes"></i> مشاركة رابط الجمهور</h2>
+                <div class="flex-row">
+                    <input type="text" id="audienceLinkInput" readonly style="color: var(--accent); font-weight: bold; text-align: left; margin: 0; background: #000;" dir="ltr">
+                    <button onclick="copyAudienceLink()" style="background: #3b82f6; color: #fff; margin: 0; width: auto; padding: 0 20px;"><i class="fa-solid fa-copy"></i> نسخ</button>
+                </div>
+                <div style="font-size: 11px; color: var(--muted); text-align: center; margin-top: 10px;">شارك هذا الرابط مع الجمهور لمتابعة بطولتك مباشرة.</div>
+            </div>
+
             <div class="panel" style="border-color:#8b5cf6; background:rgba(139, 92, 246, 0.05);">
                 <h2 style="color:#8b5cf6;"><i class="fa-solid fa-bolt"></i> إدارة شريط الأخبار العاجلة</h2>
                 <div style="background:rgba(0,0,0,0.2); padding:10px; border-radius:8px; border:1px solid var(--border);">
@@ -485,8 +499,6 @@
                 <div id="mediaGallery" style="margin-top:15px; border-top:1px solid var(--border); padding-top:10px; display:flex; flex-direction:column; gap:10px; max-height: 250px; overflow-y:auto;"></div>
             </div>
 
-            <div class="panel"><label>اسم عرض البطولة:</label><input type="text" id="tourneyName" value="بطولة دوائر خانقين" onchange="updateVisualName()" style="font-weight:bold; font-size:16px; color:var(--accent);"></div>
-            
             <div class="panel" style="border-color:#ef4444; background:rgba(239, 68, 68, 0.05);">
                 <h2 style="color:#ef4444; margin-bottom:10px; border:none;"><i class="fa-solid fa-wrench"></i> إصلاح ومزامنة بيانات اللاعبين</h2>
                 <div style="font-size:12px; color:var(--text); margin-bottom:15px; text-align:center;">إعادة حساب المباريات، الأهداف، الصناعة، والبطاقات بالكامل بناءً على الأرشيف.</div>
@@ -592,6 +604,7 @@
                         dbPath = data.tournament_id;
                         document.getElementById('currentAdminEmail').innerText = data.email || "مدير البطولة";
                         document.getElementById('currentTourneyId').innerText = dbPath;
+                        generateAudienceLink();
                         initAdminData();
                     }
                 });
@@ -618,7 +631,7 @@
         }
 
         // ==========================================
-        // منطقة كود الإشعارات الجديد (سيتم وضع الكود الجديد هنا لاحقاً)
+        // منطقة كود الإشعارات
         // ==========================================
         async function sendManualPush(title, message) {
             console.log("تم إلغاء الإشعارات القديمة. النظام جاهز لاستقبال الكود الجديد:", title, message);
@@ -669,8 +682,42 @@
             </div>`; 
         }
         
-        function updateVisualName() { try { localStorage.setItem('visualName', document.getElementById('tourneyName').value); } catch(e){} alert("تم التغيير!"); }
+        function updateVisualName() {
+            const newName = document.getElementById('tourneyName').value;
+            try { localStorage.setItem('visualName', newName); } catch(e){}
+            if(dbPath) {
+                db.ref(`tournaments/${dbPath}/settings`).update({ tournamentName: newName }).then(() => {
+                    alert("تم حفظ اسم البطولة وسيظهر للجمهور مباشرة!");
+                });
+            } else {
+                alert("تم التغيير محلياً!");
+            }
+        }
         try { if(localStorage.getItem('visualName')) document.getElementById('tourneyName').value = localStorage.getItem('visualName'); } catch(e){}
+
+        function generateAudienceLink() {
+            let path = window.location.pathname;
+            let baseUrl = window.location.origin + path.substring(0, path.lastIndexOf('/')) + '/index.html';
+            let linkInput = document.getElementById('audienceLinkInput');
+            if(linkInput) linkInput.value = baseUrl + '?id=' + dbPath;
+        }
+
+        function copyAudienceLink() {
+            let linkInput = document.getElementById('audienceLinkInput');
+            linkInput.select();
+            linkInput.setSelectionRange(0, 99999);
+            try {
+                navigator.clipboard.writeText(linkInput.value).then(() => {
+                    alert("تم نسخ رابط الجمهور بنجاح! يمكنك مشاركته الآن.");
+                }).catch(() => {
+                    document.execCommand("copy");
+                    alert("تم نسخ رابط الجمهور بنجاح!");
+                });
+            } catch(e) {
+                document.execCommand("copy");
+                alert("تم نسخ رابط الجمهور بنجاح!");
+            }
+        }
 
         function updateAppSettings() { const tm = document.getElementById('testModeSelect').value === 'true'; db.ref(`tournaments/${dbPath}/settings`).update({ testMode: tm }); }
         function saveTourneySystem() { const sys = document.getElementById('tourneySystemType').value; db.ref(`tournaments/${dbPath}/settings`).update({ systemType: sys }).then(() => alert("تم حفظ النظام!")); }
@@ -1358,6 +1405,7 @@
                 if(document.getElementById('newsText')) document.getElementById('newsText').value = s.newsText || '';
                 if(document.getElementById('newsLink')) document.getElementById('newsLink').value = s.newsLink || '';
                 if(document.getElementById('newsSpeed')) document.getElementById('newsSpeed').value = s.newsSpeed || 25;
+                if(s.tournamentName && document.getElementById('tourneyName')) { document.getElementById('tourneyName').value = s.tournamentName; localStorage.setItem('visualName', s.tournamentName); }
                 
                 if(s.groupCriteria) {
                     let crit = s.groupCriteria;
