@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
@@ -35,6 +34,7 @@
         .lang-btn { background: rgba(255,255,255,0.08); border: 1px solid var(--border); color: #fff; padding: 0 10px; height: 34px; border-radius: 17px; font-size: 12px; font-weight: 800; cursor: pointer; font-family: 'Cairo'; display: flex; align-items: center; justify-content: center; transition: 0.3s; flex-shrink: 0; min-width:40px; }
         .lang-btn:hover { background: var(--primary); border-color: var(--primary); }
 
+        /* شريط الأخبار العاجلة (متحرك ومستمر) */
         .news-ticker-wrapper { background: rgba(26, 34, 43, 0.95); border-bottom: 2px solid #ef4444; display: flex; align-items: center; color: var(--text); overflow: hidden; position: sticky; top: 65px; z-index: 40; backdrop-filter: blur(5px);}
         .news-ticker-label { background: #ef4444; color: #fff; padding: 8px 15px; font-size: 14px; font-weight: 900; z-index: 2; position: relative; box-shadow: -2px 0 5px rgba(0,0,0,0.5); font-family: 'Cairo'; display:flex; align-items:center; gap:5px; border-radius: 12px 0 0 0;}
         .news-ticker-content { flex: 1; overflow: hidden; white-space: nowrap; position: relative; padding: 8px 0; direction: ltr; }
@@ -349,6 +349,20 @@
         }
         function closeModal(id) { document.getElementById(id).style.display = 'none'; }
         
+        window.switchTeamTab = function(tab) {
+            if(tab === 'squad') {
+                document.getElementById('btnTeamSquad').classList.add('active');
+                document.getElementById('btnTeamMatches').classList.remove('active');
+                document.getElementById('team-content-squad').style.display = 'block';
+                document.getElementById('team-content-matches').style.display = 'none';
+            } else {
+                document.getElementById('btnTeamMatches').classList.add('active');
+                document.getElementById('btnTeamSquad').classList.remove('active');
+                document.getElementById('team-content-matches').style.display = 'block';
+                document.getElementById('team-content-squad').style.display = 'none';
+            }
+        };
+
         function switchMatchTab(context, tab) {
             if(context === 'live') {
                 ['events', 'stats', 'chat'].forEach(id => {
@@ -402,31 +416,21 @@
 </head>
 <body onload="updateStaticTexts()">
     <script>
-        // نظام الجدار الناري وحماية الدخول وبحث البطولة
         const urlParamsSec = new URLSearchParams(window.location.search);
         let idCheck = urlParamsSec.get('id');
 
-        // تحديد دالة الدخول ليتم استدعاؤها من خلال الزر
         window.goToTournament = function() {
             let val = document.getElementById('tourneyIdInput').value.trim();
             if(val) {
                 try {
-                    // محاولة استخراج الـ ID في حال قام المستخدم بلصق الرابط بالكامل
                     let parsedUrl = new URL(val);
                     let extractedId = parsedUrl.searchParams.get('id');
-                    if (extractedId) {
-                        val = extractedId;
-                    }
-                } catch (e) {
-                    // القيمة ليست رابطاً كاملاً، وهذا طبيعي لأنه قد يكون أدخل الـ ID مباشرة
-                }
-
+                    if (extractedId) { val = extractedId; }
+                } catch (e) {}
                 const url = new URL(window.location.href);
                 url.searchParams.set('id', val);
                 window.location.href = url.toString();
-            } else {
-                alert('الرجاء إدخال معرف البطولة أو الرابط أولاً');
-            }
+            } else { alert('الرجاء إدخال معرف البطولة أو الرابط أولاً'); }
         };
 
         if (!idCheck) {
@@ -631,8 +635,7 @@
             <div class="footer-social"><a href="https://www.facebook.com/share/1AnD5a4oY1/" target="_blank"><i class="fab fa-facebook"></i></a><a href="https://www.instagram.com/moe_hz9" target="_blank"><i class="fab fa-instagram"></i></a><a href="https://wa.me/9647717007839" target="_blank"><i class="fab fa-whatsapp"></i></a></div>
         </div>
 
-        <div class="nav">
-            </div>
+        <div class="nav"></div>
     </div>
 
     <div id="authModal" class="modal" style="z-index: 2000; background:rgba(0,0,0,0.9); backdrop-filter:blur(10px);">
@@ -654,7 +657,9 @@
             <div style="background: linear-gradient(180deg, var(--card) 0%, var(--bg) 100%); padding: 30px 20px 20px; text-align:center; border-bottom: 1px solid rgba(255,255,255,0.05); position:relative; overflow:hidden;">
                 <div style="position:absolute; top:-50px; left:50%; transform:translateX(-50%); width:200px; height:200px; background:var(--primary); opacity:0.1; filter:blur(50px); border-radius:50%;"></div>
                 <div class="logo-ph" id="modalLogo" style="width:100px; height:100px; margin:0 auto 15px; border:2px solid rgba(255,255,255,0.1); box-shadow:0 10px 25px rgba(0,0,0,0.5); z-index:2; position:relative; background:#111;"></div>
-                <h2 id="modalTeamName" style="margin:0 0 15px; font-size:26px; font-weight:900; text-shadow:0 2px 4px rgba(0,0,0,0.8); z-index:2; position:relative;">الفريق</h2>
+                <h2 id="modalTeamName" style="margin:0 0 5px; font-size:26px; font-weight:900; text-shadow:0 2px 4px rgba(0,0,0,0.8); z-index:2; position:relative;">الفريق</h2>
+                
+                <div id="modalTeamExtras" style="color:var(--accent); font-size:13px; margin-bottom:15px; z-index:2; position:relative; font-weight:bold;"></div>
                 
                 <div style="display:flex; gap:15px; justify-content:center; margin-bottom:20px; z-index:2; position:relative;">
                     <div style="background:rgba(59,130,246,0.1); border:1px solid rgba(59,130,246,0.3); padding:10px 25px; border-radius:12px; backdrop-filter:blur(5px);">
@@ -669,7 +674,18 @@
                 <div id="modalStaffArea" style="display:flex; gap:10px; justify-content:center; flex-direction:column; z-index:2; position:relative;"></div>
             </div>
             
-            <div style="padding:20px;"><h3 style="font-size:16px; color:var(--muted); margin:0 0 15px; font-weight:900;" data-trn="التشكيلة">تشكيلة اللاعبين</h3><div id="modalPlayersList"></div></div>
+            <div class="match-tabs" style="margin: 15px;">
+                <button class="match-tab-btn active" id="btnTeamSquad" onclick="switchTeamTab('squad')"><i class="fa-solid fa-users"></i> <span data-trn="التشكيلة">التشكيلة</span></button>
+                <button class="match-tab-btn" id="btnTeamMatches" onclick="switchTeamTab('matches')"><i class="fa-solid fa-calendar-days"></i> <span data-trn="المباريات">المباريات</span></button>
+            </div>
+
+            <div id="team-content-squad" style="padding:0 20px 20px;">
+                <div id="modalPlayersList"></div>
+            </div>
+            
+            <div id="team-content-matches" style="display:none; padding:0 20px 20px;">
+                <div id="modalTeamMatchesList"></div>
+            </div>
         </div>
     </div>
 
@@ -767,572 +783,653 @@
     </div>
 
     <script>
-        // 1. إعدادات قاعدة البيانات
-        const firebaseConfig = {
-            apiKey: "AIzaSyCfaXlGarmxWH8HkxDqdvOAtTqJaF0LXvg",
-            authDomain: "kdcsaas.firebaseapp.com",
-            projectId: "kdcsaas",
-            storageBucket: "kdcsaas.firebasestorage.app",
-            messagingSenderId: "453734628369",
-            appId: "1:453734628369:web:7445ad89cdc541255905b0",
-            databaseURL: "https://kdcsaas-default-rtdb.firebaseio.com"
-        };
-        if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
-        const db = firebase.database();
+        // 1. إعدادات قاعدة البيانات (لا تغيرها)
+const firebaseConfig = {
+    apiKey: "AIzaSyCfaXlGarmxWH8HkxDqdvOAtTqJaF0LXvg",
+    authDomain: "kdcsaas.firebaseapp.com",
+    projectId: "kdcsaas",
+    storageBucket: "kdcsaas.firebasestorage.app",
+    messagingSenderId: "453734628369",
+    appId: "1:453734628369:web:7445ad89cdc541255905b0",
+    databaseURL: "https://kdcsaas-default-rtdb.firebaseio.com"
+};
+if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
+const db = firebase.database();
 
-        let visualName = localStorage.getItem('visualName') || "نظام البطولات"; document.getElementById('displayTourneyName').innerText = visualName;
-        window.openImageViewer = function(src) { if(!src) return; document.getElementById('fullSizeImg').src = src; document.getElementById('imageViewerModal').style.display = 'flex'; try{ history.pushState({ modal: 'imageViewerModal' }, "", "#image"); }catch(e){} }; window.closeImageViewer = function() { document.getElementById('imageViewerModal').style.display = 'none'; };
-        
-        function shareAsImage(elementId) { 
-            const card = document.getElementById(elementId); 
-            if(elementId === 'scheduleExportWrapper') document.getElementById('scheduleExportHeader').style.display = 'block'; else if(elementId !== 'compareResults') card.classList.add('premium-poster'); 
-            const actions = card.querySelectorAll('.export-btn, .share-actions, .btn-enter-match, .close-btn, .squad-btn, select, .prediction-box, .chat-input-area, .match-tabs'); actions.forEach(a => { if(a) a.style.display = 'none'; }); 
-            triggerNotification('معالجة', 'جاري التصوير'); 
-            html2canvas(card, { backgroundColor: '#0a0e12', useCORS: true, scale: 2 }).then(canvas => { 
-                const link = document.createElement('a'); link.download = `Poster.png`; link.href = canvas.toDataURL('image/png'); link.click(); 
-                if(elementId === 'scheduleExportWrapper') document.getElementById('scheduleExportHeader').style.display = 'none'; else if(elementId !== 'compareResults') card.classList.remove('premium-poster'); 
-                actions.forEach(a => { if(a) a.style.display = ''; }); 
-            }).catch(e => { 
-                if(elementId === 'scheduleExportWrapper') document.getElementById('scheduleExportHeader').style.display = 'none'; else if(elementId !== 'compareResults') card.classList.remove('premium-poster'); 
-                actions.forEach(a => { if(a) a.style.display = ''; }); 
+let visualName = localStorage.getItem('visualName') || "نظام البطولات"; document.getElementById('displayTourneyName').innerText = visualName;
+window.openImageViewer = function(src) { if(!src) return; document.getElementById('fullSizeImg').src = src; document.getElementById('imageViewerModal').style.display = 'flex'; try{ history.pushState({ modal: 'imageViewerModal' }, "", "#image"); }catch(e){} }; 
+window.closeImageViewer = function() { document.getElementById('imageViewerModal').style.display = 'none'; };
+
+function shareAsImage(elementId) { 
+    const card = document.getElementById(elementId); 
+    if(elementId === 'scheduleExportWrapper') document.getElementById('scheduleExportHeader').style.display = 'block'; 
+    else if(elementId !== 'compareResults' && elementId !== 'teamModalContent') card.classList.add('premium-poster'); 
+    const actions = card.querySelectorAll('.export-btn, .share-actions, .btn-enter-match, .close-btn, .squad-btn, select, .prediction-box, .chat-input-area, .match-tabs'); 
+    actions.forEach(a => { if(a) a.style.display = 'none'; }); 
+    triggerNotification('معالجة', 'جاري التصوير'); 
+    html2canvas(card, { backgroundColor: '#0a0e12', useCORS: true, scale: 2 }).then(canvas => { 
+        const link = document.createElement('a'); link.download = `Poster.png`; link.href = canvas.toDataURL('image/png'); link.click(); 
+        if(elementId === 'scheduleExportWrapper') document.getElementById('scheduleExportHeader').style.display = 'none'; 
+        else if(elementId !== 'compareResults' && elementId !== 'teamModalContent') card.classList.remove('premium-poster'); 
+        actions.forEach(a => { if(a) a.style.display = ''; }); 
+    }).catch(e => { 
+        if(elementId === 'scheduleExportWrapper') document.getElementById('scheduleExportHeader').style.display = 'none'; 
+        else if(elementId !== 'compareResults' && elementId !== 'teamModalContent') card.classList.remove('premium-poster'); 
+        actions.forEach(a => { if(a) a.style.display = ''; }); 
+    }); 
+}
+
+window.shareAsStatsImage = function(elementId) { const card = document.getElementById(elementId); card.classList.add('premium-poster'); card.classList.add('stats-export-mode'); const actions = card.querySelectorAll('.export-btn, .share-actions, .btn-enter-match, .close-btn, button'); actions.forEach(a => { if(a) a.style.display = 'none'; }); triggerNotification('معالجة', 'جاري التصوير'); html2canvas(card, { backgroundColor: '#0a0e12', useCORS: true, scale: 2 }).then(canvas => { const link = document.createElement('a'); link.download = `Stats.png`; link.href = canvas.toDataURL('image/png'); link.click(); card.classList.remove('premium-poster'); card.classList.remove('stats-export-mode'); actions.forEach(a => { if(a) a.style.display = ''; }); }).catch(e => { card.classList.remove('premium-poster'); card.classList.remove('stats-export-mode'); actions.forEach(a => { if(a) a.style.display = ''; }); }); }
+window.exportAllGroupsHorizontal = function() { const container = document.getElementById('groupsContainer'); container.classList.add('export-horizontal-mode'); triggerNotification('معالجة', 'جاري التصوير'); html2canvas(container, { backgroundColor: '#0a0e12', useCORS: true, scale: 2 }).then(canvas => { const link = document.createElement('a'); link.download = `All_Groups.png`; link.href = canvas.toDataURL('image/png'); link.click(); container.classList.remove('export-horizontal-mode'); }).catch(() => container.classList.remove('export-horizontal-mode')); }
+function triggerNotification(title, msg) { const notif = document.getElementById('osNotification'); document.getElementById('notifTitle').innerText = title; document.getElementById('notifText').innerText = msg; notif.classList.add('show'); setTimeout(() => { notif.classList.remove('show'); }, 4000); }
+
+window.testModeActive = false; window.currentMatchActive = false;
+window.triggerLiveVisibilityUpdate = function() {
+    const liveCard = document.getElementById('liveMatchCard'); const testModePlaceholder = document.getElementById('testModePlaceholder'); const adLinkAnchor = document.getElementById('adLinkAnchor'); const noLiveBanner = document.getElementById('noLiveMatchBanner'); const navDot = document.getElementById('navLiveDot');
+    if (window.testModeActive) { 
+        if(liveCard) liveCard.style.display = 'none'; if(adLinkAnchor) adLinkAnchor.style.display = 'none'; if(noLiveBanner) noLiveBanner.style.display = 'none'; if(testModePlaceholder) testModePlaceholder.style.display = 'block'; if(navDot) navDot.style.display = 'none'; 
+    } else { 
+        if(testModePlaceholder) testModePlaceholder.style.display = 'none'; 
+        if (window.currentMatchActive) { if(liveCard) liveCard.style.display = 'block'; if(adLinkAnchor) adLinkAnchor.style.display = 'none'; if(noLiveBanner) noLiveBanner.style.display = 'none'; if(navDot) navDot.style.display = 'inline-block'; } 
+        else { if(liveCard) liveCard.style.display = 'none'; if(adLinkAnchor) adLinkAnchor.style.display = 'block'; if(noLiveBanner) noLiveBanner.style.display = 'block'; if(navDot) navDot.style.display = 'none'; } 
+    }
+};
+
+db.ref('analytics/visits').push({ time: Date.now() });
+
+function switchTournament() {
+    let val = document.getElementById('footerTourneyIdInput').value.trim();
+    if(val) {
+        try { let parsedUrl = new URL(val); let extractedId = parsedUrl.searchParams.get('id'); if (extractedId) val = extractedId; } catch(e) {}
+        window.location.href = '?id=' + encodeURIComponent(val);
+    }
+}
+
+function renderAdminComparison(settingsData) {
+    let data = settingsData?.activeComparison; let container = document.getElementById('adminPushedComparisonDisplay'); if(!container) return;
+    if(data && data.active && teamsDataGlobal && teamsDataGlobal[data.t1] && teamsDataGlobal[data.t2]) {
+        let d1 = teamsDataGlobal[data.t1].players[data.p1]; let d2 = teamsDataGlobal[data.t2].players[data.p2];
+        if(d1 && d2) {
+            let p1Img = d1.photo ? `<img src="${d1.photo}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">` : teamsDataGlobal[data.t1].logo ? `<img src="${teamsDataGlobal[data.t1].logo}" style="width:100%;height:100%;object-fit:contain;padding:5px;">` : `<i class="fa-solid fa-user" style="color:var(--primary);"></i>`;
+            let p2Img = d2.photo ? `<img src="${d2.photo}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">` : teamsDataGlobal[data.t2].logo ? `<img src="${teamsDataGlobal[data.t2].logo}" style="width:100%;height:100%;object-fit:contain;padding:5px;">` : `<i class="fa-solid fa-user" style="color:var(--accent);"></i>`;
+            let stats = [ { label: 'الأهداف', key: 'goals' }, { label: 'الصناعة', key: 'assists' }, { label: 'المباريات', key: 'matches' }, { label: 'النجومية', key: 'motm' } ];
+            let barsHtml = '';
+            stats.forEach(s => {
+                let val1 = d1[s.key] || 0; let val2 = d2[s.key] || 0; let max = Math.max(val1, val2, 1); let w1 = (val1 / max) * 100; let w2 = (val2 / max) * 100;
+                let c1 = val1 >= val2 && val1 > 0 ? 'var(--primary)' : 'rgba(255,255,255,0.2)'; let c2 = val2 >= val1 && val2 > 0 ? 'var(--accent)' : 'rgba(255,255,255,0.2)';
+                barsHtml += `<div style="margin-bottom:12px; background:rgba(0,0,0,0.3); padding:8px; border-radius:12px; border:1px solid rgba(255,255,255,0.05);"><div style="text-align:center; font-size:11px; color:#fff; font-weight:900; margin-bottom:5px;">${t(s.label.split(' ')[0])} ${s.label.split(' ')[1]||''}</div><div style="display:flex; justify-content:space-between; align-items:center; gap:10px;"><div style="width:25px; text-align:center; font-weight:900; font-size:14px; color:${c1}; text-shadow:0 1px 2px rgba(0,0,0,0.8); font-family: Arial, sans-serif;">${val1}</div><div style="flex:1; display:flex; gap:3px;"><div style="flex:1; background:rgba(255,255,255,0.05); height:8px; border-radius:4px 0 0 4px; display:flex; justify-content:flex-end; overflow:hidden;"><div style="width:${w1}%; background:${c1}; border-radius:4px 0 0 4px; transition:0.5s;"></div></div><div style="flex:1; background:rgba(255,255,255,0.05); height:8px; border-radius:0 4px 4px 0; overflow:hidden;"><div style="width:${w2}%; background:${c2}; border-radius:0 4px 4px 0; transition:0.5s;"></div></div></div><div style="width:25px; text-align:center; font-weight:900; font-size:14px; color:${c2}; text-shadow:0 1px 2px rgba(0,0,0,0.8); font-family: Arial, sans-serif;">${val2}</div></div></div>`;
+            });
+            document.getElementById('adminCompContent').innerHTML = `<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:15px;"><div style="text-align:center; width:40%;"><div class="logo-ph" style="width:60px; height:60px; margin:0 auto 8px; border:2px solid var(--primary); box-shadow:0 5px 10px rgba(59,130,246,0.3); background:#111;">${p1Img}</div><div style="font-weight:900; font-size:12px; color:#fff;">${data.p1}</div><div style="font-size:10px; color:var(--muted); font-weight:bold;">${data.t1}</div></div><div style="font-size:20px; color:rgba(255,255,255,0.2); font-weight:900; font-style:italic;">VS</div><div style="text-align:center; width:40%;"><div class="logo-ph" style="width:60px; height:60px; margin:0 auto 8px; border:2px solid var(--accent); box-shadow:0 5px 10px rgba(255,255,255,0.3); background:#111;">${p2Img}</div><div style="font-weight:900; font-size:12px; color:#fff;">${data.p2}</div><div style="font-size:10px; color:var(--muted); font-weight:bold;">${data.t2}</div></div></div>${barsHtml}`;
+            container.style.display = 'block';
+        } else { container.style.display = 'none'; }
+    } else { container.style.display = 'none'; }
+}
+
+let dbPath = urlParamsSec.get('id'); 
+let globalSettings = {};
+db.ref(`tournaments/${dbPath}/settings`).on('value', snap => {
+    let s = snap.val() || {}; globalSettings = s; window.testModeActive = s.testMode === true; window.triggerLiveVisibilityUpdate();
+    let root = document.documentElement; let tTheme = s.theme || 'blue';
+    if(tTheme === 'blue') { root.style.setProperty('--primary', '#3b82f6'); root.style.setProperty('--accent', '#4ade80'); } else if(tTheme === 'gold') { root.style.setProperty('--primary', '#d4af37'); root.style.setProperty('--accent', '#facc15'); } else if(tTheme === 'green') { root.style.setProperty('--primary', '#10b981'); root.style.setProperty('--accent', '#34d399'); } else if(tTheme === 'crimson') { root.style.setProperty('--primary', '#e11d48'); root.style.setProperty('--accent', '#fb7185'); } else if(tTheme === 'purple') { root.style.setProperty('--primary', '#8b5cf6'); root.style.setProperty('--accent', '#c084fc'); } else if(tTheme === 'orange') { root.style.setProperty('--primary', '#f97316'); root.style.setProperty('--accent', '#fbbf24'); } else if(tTheme === 'neon') { root.style.setProperty('--primary', '#39ff14'); root.style.setProperty('--accent', '#0ff'); root.style.setProperty('--bg', '#050505'); root.style.setProperty('--card', '#111'); } if(tTheme !== 'neon') { root.style.setProperty('--bg', '#0e1318'); root.style.setProperty('--card', '#1a222b'); }
+    
+    let noLiveBanner = document.getElementById('noLiveMatchBanner'); let adLinkAnchor = document.getElementById('adLinkAnchor'); let adTextDisplay = document.getElementById('adTextDisplay'); let adOverlay = document.getElementById('adOverlay');
+    if(noLiveBanner) {
+        if(s.active_adBg) { noLiveBanner.style.backgroundImage = `url('${s.active_adBg}')`; if(adOverlay) adOverlay.style.background = 'rgba(0,0,0,0.3)'; } else { noLiveBanner.style.backgroundImage = 'none'; if(adOverlay) adOverlay.style.background = 'rgba(0,0,0,0.6)'; }
+        if(s.adText) { adTextDisplay.innerText = t(s.adText); } else { adTextDisplay.innerText = t("لا توجد مباريات مباشرة الآن"); }
+        if(s.adLink) { adLinkAnchor.href = s.adLink; adLinkAnchor.style.pointerEvents = 'auto'; } else { adLinkAnchor.href = "#"; adLinkAnchor.style.pointerEvents = 'none'; }
+    }
+    let liveCard = document.getElementById('liveMatchCard');
+    if(liveCard) { if(s.active_liveBg) { liveCard.style.backgroundImage = `linear-gradient(to bottom, rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.7)), url('${s.active_liveBg}')`; } else { liveCard.style.backgroundImage = `linear-gradient(to bottom, rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.7)), url('https://images.unsplash.com/photo-1521731978332-9e9e714b7a3a?q=80&w=1000')`; } }
+    
+    let newsWrapper = document.getElementById('newsTickerWrapper'); let newsDisplay = document.getElementById('newsTextDisplay');
+    if(s.newsText && s.newsText.trim() !== '') { 
+        if(s.newsLink) { newsDisplay.innerHTML = `<a href="${s.newsLink}" target="_blank">${s.newsText} <i class="fa-solid fa-link" style="font-size:10px;"></i></a>`; } 
+        else { newsDisplay.innerText = s.newsText; }
+        newsWrapper.style.display = 'flex'; 
+        let speed = s.newsSpeed || 25;
+        newsDisplay.style.animationDuration = speed + 's';
+    } else { newsWrapper.style.display = 'none'; }
+    
+    renderAdminComparison(globalSettings);
+    
+    if(s.tournamentName) {
+        let tName = t(s.tournamentName);
+        document.getElementById('displayTourneyName').innerText = tName;
+        document.title = tName;
+        localStorage.setItem('visualName', s.tournamentName);
+        let footerEl = document.getElementById('footerTourneyName');
+        if(footerEl) footerEl.innerText = tName + ' • ' + new Date().getFullYear();
+    }
+});
+
+db.ref(`tournaments/${dbPath}/round_stars`).on('value', snap => { let data = snap.val(); let hasAny = false; if(data?.player_of_week) { document.getElementById('potwImgDisplay').src = data.player_of_week; document.getElementById('potwContainer').style.display = 'block'; hasAny = true; } else { document.getElementById('potwContainer').style.display = 'none'; } if(data?.team_of_week) { document.getElementById('totwImgDisplay').src = data.team_of_week; document.getElementById('totwContainer').style.display = 'block'; hasAny = true; } else { document.getElementById('totwContainer').style.display = 'none'; } document.getElementById('roundStarsContainer').style.display = hasAny ? 'flex' : 'none'; });
+
+let refereesDataGlobal = {}; 
+db.ref(`tournaments/${dbPath}/referees_data`).on('value', snap => { refereesDataGlobal = snap.val() || {}; });
+
+function getRefHtml(name) { if(!name || name === '--') return '--'; let photo = refereesDataGlobal[name]?.photo; let imgHtml = photo ? `<img src="${photo}" style="width:24px;height:24px;border-radius:50%;object-fit:cover;border:1px solid var(--primary);">` : `<i class="fa-solid fa-user" style="color:var(--primary); font-size:14px;"></i>`; return `${imgHtml} <span>${name}</span>`; }
+function getPlayerImageHtml(pName, tName, fallbackColorClass) { let pPhoto = teamsDataGlobal[tName]?.players?.[pName]?.photo || ''; if(pPhoto) return `<img src="${pPhoto}" style="width:30px;height:30px;border-radius:50%;object-fit:cover;border:1px solid var(--primary); margin-left:8px;">`; return `<div style="width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,0.05);display:inline-flex;align-items:center;justify-content:center;margin-left:8px;border:1px solid var(--primary);font-size:12px;color:${fallbackColorClass};"><i class="fa-solid fa-user"></i></div>`; }
+
+function formatEventsToTimeline(eventsStr) {
+    if(!eventsStr || eventsStr.trim() === '') return `<div style="text-align:center; color:var(--muted); padding:10px;">${t('لا توجد أحداث مسجلة')}</div>`;
+    let lines = eventsStr.split('\n'); let html = '<div class="modern-timeline">'; const eventLabels = { '⚽': 'هدف', '🅰️': 'أسيست', '🟨': 'بطاقة صفراء', '🟥': 'بطاقة حمراء', '🔃': 'تبديل' };
+    lines.forEach((line) => {
+        if(!line.trim()) return; let iconMatch = line.match(/^(⚽|🅰️|🟨|🟥|🔃)\s*(.*)/); let emojiIcon = iconMatch ? iconMatch[1] : ''; let fullText = iconMatch ? iconMatch[2] : line; let minuteMatch = fullText.match(/\(د\s*(\d+)\)/); let minute = minuteMatch ? minuteMatch[1] : ''; let cleanText = fullText.replace(/\(د\s*\d+\)/, '').trim(); let playerMatch = cleanText.match(/^(.*?)\s*(\(.*?\))?$/); let playerName = playerMatch ? playerMatch[1].trim() : cleanText; let eventDetail = playerMatch && playerMatch[2] ? playerMatch[2].trim() : '';
+        let playerPhotoHtml = ''; let playerFound = false; for (const team in teamsDataGlobal) { if (teamsDataGlobal[team].players && teamsDataGlobal[team].players[playerName]) { let pData = teamsDataGlobal[team].players[playerName]; if (pData.photo) { playerPhotoHtml = `<img src="${pData.photo}" style="width:100%; height:100%; object-fit:cover; border-radius:50%;">`; playerFound = true; break; } } }
+        if (!playerFound) { let iconClass = 'fa-user'; if (emojiIcon === '⚽') iconClass = 'fa-futbol'; if (emojiIcon === '🟨' || emojiIcon === '🟥') iconClass = 'fa-square'; if (emojiIcon === '🔃') iconClass = 'fa-exchange-alt'; playerPhotoHtml = `<i class="fa-solid ${iconClass}" style="opacity:0.6; font-size:18px;"></i>`; }
+        let bodyClass = ''; let detailClass = ''; if (eventDetail.includes('عكسي') || eventDetail.toUpperCase().includes('OG')) { bodyClass = 'OG-goal'; detailClass = 'OG-text'; } else if (eventDetail.includes('جزاء') || eventDetail.toUpperCase().includes('(P)')) { bodyClass = 'P-goal'; detailClass = 'P-text'; }
+        let labelHtml = emojiIcon ? `<span class="event-type-label label-${emojiIcon}">${t(eventLabels[emojiIcon])}</span>` : '';
+        html += `<div class="timeline-event"><div class="timeline-badge-wrapper"><div class="timeline-badge badge-${emojiIcon}">${playerPhotoHtml}</div>${minute ? `<div class="timeline-minute">${minute}</div>` : ''}</div><div class="timeline-event-body ${bodyClass}"><div class="event-main-line">${labelHtml}<span class="event-player-name">${playerName}</span></div>${eventDetail ? `<div class="event-detail-text ${detailClass}">${t(eventDetail)}</div>` : ''}</div></div>`;
+    }); html += '</div>'; return html;
+}
+
+function getMatchPlayerStats(eventsStr, pName) {
+    let stats = { goals: 0, yellow: 0, red: 0, assists: 0 };
+    if(!eventsStr) return stats;
+    let lines = eventsStr.split('\n');
+    lines.forEach(line => {
+        if(line.includes(pName)) {
+            if(line.includes('⚽') && !line.includes('عكسي') && !line.includes('OG')) stats.goals++;
+            if(line.includes('🟨')) stats.yellow++;
+            if(line.includes('🟥')) stats.red++;
+            if(line.includes('🅰️')) stats.assists++;
+        }
+    });
+    return stats;
+}
+
+let teamsDataGlobal = {};
+db.ref(`tournaments/${dbPath}/teams`).on('value', snap => {
+    teamsDataGlobal = snap.val() || {}; const cont = document.getElementById('teamsContainer'); cont.innerHTML = ''; let allPlayers = []; let allTeamsArr = [];
+    for(const tName in teamsDataGlobal) { let tData = teamsDataGlobal[tName]; const logo = tData.logo ? `<img src="${tData.logo}">` : `<i class="fa-solid fa-shield-halved"></i>`; cont.innerHTML += `<div class="team-btn" onclick="window.openTeam('${tName}')"><div class="logo-ph" style="margin: 0 auto 10px; width:70px; height:70px; border-width:2px; box-shadow:0 5px 15px rgba(0,0,0,0.5);">${logo}</div><div style="font-size:16px; font-weight:900; color:var(--text); text-shadow:0 2px 4px rgba(0,0,0,0.5);">${tName}</div></div>`; allTeamsArr.push({name: tName, gf: tData.gf || 0, ga: tData.ga || 0}); if(tData.players) for(let p in tData.players) allPlayers.push({ name: p, team: tName, ...tData.players[p] }); }
+    const tStatsList = document.getElementById('teamStatsList'); tStatsList.innerHTML = ''; allTeamsArr.sort((a,b) => b.gf - a.gf).forEach(t => { let gd = t.gf - t.ga; let tLogo = teamsDataGlobal[t.name]?.logo ? `<img src="${teamsDataGlobal[t.name].logo}" style="width:20px;height:20px;object-fit:contain;margin-left:5px;">` : `<i class="fa-solid fa-shield-halved" style="margin-left:5px; color:var(--muted);"></i>`; tStatsList.innerHTML += `<tr class="team-clickable" onclick="window.openTeam('${t.name}')"><td style="text-align:right; font-weight:bold; padding-right:15px; display:flex; align-items:center;">${tLogo}${t.name}</td><td>${t.gf}</td><td>${t.ga}</td><td dir="ltr">${gd>0?'+'+gd:gd}</td></tr>`; }); if(allTeamsArr.length === 0) tStatsList.innerHTML = `<tr><td colspan="4" style="color:var(--muted); padding:15px;">لا توجد فرق</td></tr>`;
+    const tScorers = document.getElementById('topScorersList'); tScorers.innerHTML = ''; allPlayers.sort((a,b) => (b.goals||0) - (a.goals||0)).forEach((p, i) => { if((p.goals||0)>0) tScorers.innerHTML += `<tr class="clickable-player" onclick="window.openPlayerProfile('${p.name}','${p.team}')"><td>${i+1}</td><td style="text-align:right; padding-right:15px; display:flex; align-items:center; font-weight:bold;">${getPlayerImageHtml(p.name, p.team, 'var(--primary)')} <div>${p.name}<br><span style="font-size:10px; color:var(--muted); font-weight:normal;">${p.team}</span></div></td><td style="font-size:16px; color:var(--primary); font-family: Arial, sans-serif;">${p.goals}</td></tr>`; });
+    const tAssists = document.getElementById('topAssistsList'); tAssists.innerHTML = ''; allPlayers.sort((a,b) => (b.assists||0) - (a.assists||0)).forEach((p, i) => { if((p.assists||0)>0) tAssists.innerHTML += `<tr class="clickable-player" onclick="window.openPlayerProfile('${p.name}','${p.team}')"><td>${i+1}</td><td style="text-align:right; padding-right:15px; display:flex; align-items:center; font-weight:bold;">${getPlayerImageHtml(p.name, p.team, 'var(--primary)')} <div>${p.name}<br><span style="font-size:10px; color:var(--muted); font-weight:normal;">${p.team}</span></div></td><td style="font-size:16px; color:var(--primary); font-family: Arial, sans-serif;">${p.assists}</td></tr>`; });
+    const tMotms = document.getElementById('topMotmList'); tMotms.innerHTML = ''; allPlayers.sort((a,b) => (b.motm||0) - (a.motm||0)).forEach((p, i) => { if((p.motm||0)>0) tMotms.innerHTML += `<tr class="clickable-player" onclick="window.openPlayerProfile('${p.name}','${p.team}')"><td>${i+1}</td><td style="text-align:right; padding-right:15px; display:flex; align-items:center; font-weight:bold;">${getPlayerImageHtml(p.name, p.team, '#facc15')} <div>${p.name}<br><span style="font-size:10px; color:var(--muted); font-weight:normal;">${p.team}</span></div></td><td style="font-size:16px; color:#facc15; font-family: Arial, sans-serif;">${p.motm}</td></tr>`; });
+    const tCards = document.getElementById('cardsList'); tCards.innerHTML = ''; allPlayers.filter(p => p.yellow > 0 || p.red > 0).sort((a,b) => (b.red||0) - (a.red||0) || (b.yellow||0) - (a.yellow||0)).forEach(p => { tCards.innerHTML += `<tr class="clickable-player" onclick="window.openPlayerProfile('${p.name}','${p.team}')"><td style="text-align:right; padding-right:15px; display:flex; align-items:center; font-weight:bold;">${getPlayerImageHtml(p.name, p.team, '#ef4444')} <div>${p.name}<br><span style="font-size:10px; color:var(--muted); font-weight:normal;">${p.team}</span></div></td><td style="font-size:14px; color:#facc15; font-family: Arial, sans-serif;">${p.yellow||0}</td><td style="font-size:14px; color:#ef4444; font-family: Arial, sans-serif;">${p.red||0}</td></tr>`; });
+});
+
+function formatMatchDate(d) { if(!d) return ""; const matchDate = new Date(d); const today = new Date(); const tomorrow = new Date(today); tomorrow.setDate(tomorrow.getDate() + 1); if(matchDate.toDateString() === today.toDateString()) return t("اليوم"); if(matchDate.toDateString() === tomorrow.toDateString()) return t("غداً"); return d; }
+
+function getStarPlayer(teamName) {
+    if(!teamsDataGlobal[teamName] || !teamsDataGlobal[teamName].players) return null;
+    let players = teamsDataGlobal[teamName].players;
+    let bestPlayer = null; let maxScore = -1;
+    for(let pName in players) {
+        let p = players[pName];
+        let score = (parseInt(p.goals)||0)*2 + (parseInt(p.assists)||0) + (parseInt(p.motm)||0)*3 + (parseInt(p.cs)||0);
+        if(score > maxScore && score > 0) { maxScore = score; bestPlayer = { name: pName, photo: p.photo }; }
+    }
+    return bestPlayer;
+}
+
+let timerInterval; let initialLoad = true; let lastS1 = -1, lastS2 = -1; let liveSquad1 = {}, liveSquad2 = {};
+db.ref(`tournaments/${dbPath}/live_match`).on('value', snap => {
+    const d = snap.val(); if(!d) return; window.currentMatchActive = !!(d.team1 && d.team2 && d.team1.trim() !== '' && d.team2.trim() !== ''); window.triggerLiveVisibilityUpdate();
+    if (!initialLoad) { if (lastS1 !== -1 && (parseInt(d.score1) > lastS1 || parseInt(d.score2) > lastS2)) { document.getElementById('crowdSound').play().catch(e=>{}); if (navigator.vibrate) navigator.vibrate([300, 100, 300]); } }
+    lastS1 = parseInt(d.score1); lastS2 = parseInt(d.score2); initialLoad = false; liveSquad1 = d.squad1 || {}; liveSquad2 = d.squad2 || {};
+    let liveInfo = []; if(d.groupInfo && d.groupInfo !== 'أدوار إقصائية') liveInfo.push(t('مجموعة') + ' ' + d.groupInfo); if(d.round) liveInfo.push(t(d.round)); if(d.leg) liveInfo.push(t(d.leg)); document.getElementById('lContext').innerHTML = `<i class="fa-regular fa-futbol"></i> ${liveInfo.length > 0 ? liveInfo.join(' - ') : t('مباراة ودية')}`;
+    let customLabelText = d.customLabel || ''; let customLabelWrapper = document.getElementById('lCustomBadgeWrapper'); let customLabelEl = document.getElementById('lCustomBadgeText');
+    if(customLabelText.trim() !== '') { customLabelWrapper.style.display = 'block'; customLabelEl.innerText = t(customLabelText); } else { customLabelWrapper.style.display = 'none'; }
+    document.getElementById('lTeam1').innerText = d.team1 || '--'; document.getElementById('lTeam2').innerText = d.team2 || '--'; document.getElementById('lScore').innerText = `${parseInt(d.score1)||0} - ${parseInt(d.score2)||0}`; document.getElementById('lStatus').innerText = t(d.status) || t('انتظار'); 
+    document.getElementById('lTimelineList').innerHTML = formatEventsToTimeline(d.events);
+    document.getElementById('lLogo1').innerHTML = teamsDataGlobal[d.team1]?.logo ? `<img src="${teamsDataGlobal[d.team1].logo}">` : `<i class="fa-solid fa-shield-halved"></i>`; document.getElementById('lLogo2').innerHTML = teamsDataGlobal[d.team2]?.logo ? `<img src="${teamsDataGlobal[d.team2].logo}">` : `<i class="fa-solid fa-shield-halved"></i>`;
+    if(d.referee1 || d.referee2 || d.referee3 || d.referee4) { document.getElementById('lReferees').style.display = 'flex'; document.getElementById('lRef1Txt').innerHTML = getRefHtml(d.referee1); document.getElementById('lRef2Txt').innerHTML = getRefHtml(d.referee2); if(d.referee3) { document.getElementById('lRef3Wrap').style.display = 'flex'; document.getElementById('lRef3Txt').innerHTML = getRefHtml(d.referee3); } else { document.getElementById('lRef3Wrap').style.display = 'none'; } if(d.referee4) { document.getElementById('lRef4Wrap').style.display = 'flex'; document.getElementById('lRef4Txt').innerHTML = getRefHtml(d.referee4); } else { document.getElementById('lRef4Wrap').style.display = 'none'; } } else { document.getElementById('lReferees').style.display = 'none'; }
+    if(d.stats && (d.stats.possession1 !== undefined || d.stats.shots1 !== undefined)) { document.getElementById('lTabs').style.display = 'flex'; document.getElementById('pos1Txt').innerText = (d.stats.possession1 || 50) + '%'; document.getElementById('pos2Txt').innerText = (d.stats.possession2 || 50) + '%'; document.getElementById('pos1Bar').style.width = (d.stats.possession1 || 50) + '%'; document.getElementById('pos2Bar').style.width = (d.stats.possession2 || 50) + '%'; document.getElementById('shots1Txt').innerText = d.stats.shots1 || 0; document.getElementById('shots2Txt').innerText = d.stats.shots2 || 0; document.getElementById('corn1Txt').innerText = d.stats.corners1 || 0; document.getElementById('corn2Txt').innerText = d.stats.corners2 || 0; document.getElementById('fouls1Txt').innerText = d.stats.fouls1 || 0; document.getElementById('fouls2Txt').innerText = d.stats.fouls2 || 0; } else { document.getElementById('lTabs').style.display = 'none'; switchMatchTab('live', 'events'); }
+    document.getElementById('lTeam1Container').onclick = function() { window.openTeam(d.team1); }; document.getElementById('lTeam2Container').onclick = function() { window.openTeam(d.team2); };
+    let btnSq = document.getElementById('liveSquadBtn'); if(btnSq) { if((liveSquad1 && Object.keys(liveSquad1).length > 0) || (liveSquad2 && Object.keys(liveSquad2).length > 0)) { btnSq.style.display = 'block'; btnSq.onclick = function() { window.openSquads(d.team1, d.team2, liveSquad1, liveSquad2); }; } else { btnSq.style.display = 'none'; } }
+    clearInterval(timerInterval); if(d.timer && d.timer.isRunning) { timerInterval = setInterval(() => { let elapsedSecs = Math.floor((Date.now() - (d.timer.startTime || Date.now())) / 1000); let totalSecs = (d.timer.savedSeconds || 0) + elapsedSecs; let m = Math.floor(totalSecs / 60); let s = totalSecs % 60; document.getElementById('lTimer').innerText = `${m}:${s < 10 ? '0'+s : s}`; }, 1000); } else if (d.timer && !d.timer.isRunning) { let totalSecs = d.timer.savedSeconds || 0; let m = Math.floor(totalSecs / 60); let s = totalSecs % 60; document.getElementById('lTimer').innerText = `${m}:${s < 10 ? '0'+s : s}`; } else { document.getElementById('lTimer').innerText = `00:00`; }
+});
+
+window.sendLiveChatMessage = function() {
+    requireAuth(() => {
+        let name = localStorage.getItem('chatUserName'); let msg = document.getElementById('chatMsgInput').value.trim(); if(!msg) return;
+        db.ref(`tournaments/${dbPath}/live_match/chat`).push({ name: name, msg: msg, time: Date.now() }); document.getElementById('chatMsgInput').value = '';
+    });
+};
+db.ref(`tournaments/${dbPath}/live_match/chat`).limitToLast(50).on('value', snap => { let cont = document.getElementById('liveChatMessages'); if(!cont) return; cont.innerHTML = ''; let myName = localStorage.getItem('chatUserName') || ''; let hasMsgs = false; snap.forEach(child => { hasMsgs = true; let d = child.val(); let isSelf = d.name === myName; cont.innerHTML += `<div class="chat-msg ${isSelf ? 'self' : ''}"><div class="chat-sender">${d.name}</div><div>${d.msg}</div></div>`; }); if(!hasMsgs) { cont.innerHTML = `<div style="text-align:center; color:var(--muted); font-size:12px; margin-top:20px;">${t('لا توجد تعليقات حتى الآن. كن أول من يعلق!')}</div>`; } else { cont.scrollTop = cont.scrollHeight; } });
+
+db.ref(`tournaments/${dbPath}/groups`).on('value', snap => {
+    const groups = snap.val() || {}; const cont = document.getElementById('groupsContainer'); cont.innerHTML = '';
+    ['A', 'B', 'C', 'D'].forEach(grp => {
+        let html = `<div style="display:flex; justify-content:space-between; align-items:center; margin: 20px 5px 10px;"><div class="title-section" style="margin:0; flex:1;">${t('مجموعة')} ${grp}</div><button onclick="shareAsImage('group-card-${grp}')" style="background:transparent; color:var(--primary); border:none; font-size:16px; cursor:pointer;"><i class="fa-solid fa-camera"></i></button></div><div class="card" id="group-card-${grp}" style="padding:0;"><table><tr><th>#</th><th style="text-align:right; padding-right:15px;">${t('الفريق')}</th><th>${t('لعب')}</th><th>${t('له')}</th><th>${t('عليه')}</th><th>${t('الفرق')}</th><th>${t('نقاط')}</th></tr>`;
+        if(groups[grp]) { 
+            let ts = Object.keys(groups[grp]).map(k => ({name:k, ...groups[grp][k]})); 
+            ts.sort((a,b) => {
+                if(a.status === 'متأهل' && b.status !== 'متأهل') return -1;
+                if(b.status === 'متأهل' && a.status !== 'متأهل') return 1;
+                if(a.status === 'مغادر' && b.status !== 'مغادر') return 1;
+                if(b.status === 'مغادر' && a.status !== 'مغادر') return -1;
+                return b.points-a.points || b.gd-a.gd || (b.gf||0)-(a.gf||0);
+            });
+            ts.forEach((tData, idx) => { 
+                let tLogo = teamsDataGlobal[tData.name]?.logo ? `<img src="${teamsDataGlobal[tData.name].logo}" style="width:20px;height:20px;object-fit:contain;margin-left:5px;">` : `<i class="fa-solid fa-shield-halved" style="margin-left:5px; color:var(--muted);"></i>`; 
+                let sHtml = ''; if(tData.status === 'متأهل') sHtml = '<span style="color:#10b981; font-size:9px; background:rgba(16,185,129,0.15); padding:2px 6px; border-radius:4px; border:1px solid rgba(16,185,129,0.3); margin-right:5px; white-space:nowrap; font-weight:800;"><i class="fa-solid fa-circle-check"></i> '+t('تأهل')+'</span>'; else if(tData.status === 'مغادر') sHtml = '<span style="color:#ef4444; font-size:9px; background:rgba(239,68,68,0.15); padding:2px 6px; border-radius:4px; border:1px solid rgba(239,68,68,0.3); margin-right:5px; white-space:nowrap; font-weight:800;"><i class="fa-solid fa-circle-xmark"></i> '+t('مغادر')+'</span>'; 
+                html += `<tr class="team-clickable" onclick="window.openTeam('${tData.name}')"><td>${idx+1}</td><td style="text-align:right; padding-right:15px; display:flex; align-items:center; font-weight:bold;">${tLogo}${tData.name} ${sHtml}</td><td style="font-family: Arial, sans-serif;">${tData.played}</td><td style="font-family: Arial, sans-serif;">${tData.gf||0}</td><td style="font-family: Arial, sans-serif;">${tData.ga||0}</td><td dir="ltr" style="font-family: Arial, sans-serif;">${tData.gd>0?'+'+tData.gd:tData.gd}</td><td style="font-weight:900; color:var(--primary); font-size:14px; font-family: Arial, sans-serif;">${tData.points}</td></tr>`; 
             }); 
-        }
+        } else html += `<tr><td colspan="7" style="color:var(--muted); padding:15px;">لا توجد فرق</td></tr>`; 
+        cont.innerHTML += html + `</table></div>`;
+    });
+});
+
+function renderSchedule() {
+    const list = document.getElementById('scheduleList'); list.innerHTML = ''; let groupedMatches = {};
+    for(let id in scheduleGlobal) { let m = scheduleGlobal[id]; let dString = formatMatchDate(m.date); if(!groupedMatches[dString]) groupedMatches[dString] = []; groupedMatches[dString].push({id:id, ...m}); }
+    let sortedDates = Object.keys(groupedMatches).sort((a, b) => { if(a === t("اليوم")) return -1; if(b === t("اليوم")) return 1; if(a === t("غداً")) return -1; if(b === t("غداً")) return 1; return new Date(a) - new Date(b); });
+    sortedDates.forEach(dateLabel => {
+        let matches = groupedMatches[dateLabel]; let titleIcon = dateLabel === t("اليوم") ? "fa-bolt" : "fa-calendar-day";
+        list.innerHTML += `<div class="schedule-date-group"><div class="schedule-date-header"><span><i class="fa-solid ${titleIcon}" style="color:var(--primary); margin-left:5px;"></i> ${dateLabel}</span><span class="schedule-match-count">${t('عدد المباريات')}: ${matches.length}</span></div>`;
+        matches.sort((a,b) => (a.time || "00:00").localeCompare(b.time || "00:00"));
+        matches.forEach(m => {
+            let p1 = m.predictions ? (m.predictions.team1 || 0) : 0; let p0 = m.predictions ? (m.predictions.draw || 0) : 0; let p2 = m.predictions ? (m.predictions.team2 || 0) : 0; let total = p1 + p0 + p2 || 1;
+            let voted = localStorage.getItem('voted_' + m.id); let predSection = '';
+            if(!voted) predSection = `<div class="prediction-box"><div style="font-size:11px; margin-bottom:8px;">${t('توقع النتيجة')}</div><div style="display:flex; gap:5px;"><button class="pred-btn" onclick="voteMatch('${m.id}', 'team1')">${m.team1}</button><button class="pred-btn" onclick="voteMatch('${m.id}', 'draw')">${t('تعادل')}</button><button class="pred-btn" onclick="voteMatch('${m.id}', 'team2')">${m.team2}</button></div></div>`;
+            else predSection = `<div class="prediction-box"><div style="display:flex; justify-content:space-between; font-size:10px; margin-bottom:2px;"><span style="font-family:Arial,sans-serif">${m.team1} (${Math.round(p1/total*100)}%)</span><span style="font-family:Arial,sans-serif">${t('تعادل')} (${Math.round(p0/total*100)}%)</span><span style="font-family:Arial,sans-serif">${m.team2} (${Math.round(p2/total*100)}%)</span></div><div class="pred-bar"><div style="width:${p1/total*100}%; background:var(--primary);"></div><div style="width:${p0/total*100}%; background:#a1a1aa;"></div><div style="width:${p2/total*100}%; background:var(--accent);"></div></div></div>`;
+            let info = []; if(m.group) info.push(t('مجموعة') + ' ' + m.group); if(m.round) info.push(t(m.round)); if(m.leg) info.push(t(m.leg)); let badgeInfo = info.length > 0 ? `<div style="font-size:11px; color:var(--primary); margin-bottom:12px; text-align:center; font-weight:bold; background: rgba(59,130,246,0.1); padding: 6px; border-radius: 8px; border:1px solid rgba(59,130,246,0.3);">${info.join(' - ')}</div>` : '';
+            
+            let sp1 = getStarPlayer(m.team1); let sp2 = getStarPlayer(m.team2);
+            let p1Img = sp1 && sp1.photo ? `<img src="${sp1.photo}" style="width:22px;height:22px;border-radius:50%;object-fit:cover;border:1px solid var(--primary);">` : `<i class="fa-solid fa-star" style="color:var(--primary); font-size:10px;"></i>`;
+            let p2Img = sp2 && sp2.photo ? `<img src="${sp2.photo}" style="width:22px;height:22px;border-radius:50%;object-fit:cover;border:1px solid var(--accent);">` : `<i class="fa-solid fa-star" style="color:var(--accent); font-size:10px;"></i>`;
+            let sp1Html = sp1 ? `<div style="display:flex; align-items:center; gap:5px; font-size:10px; color:var(--muted); font-weight:bold;">${p1Img} <span>${t('نجم الفريق:')} ${sp1.name}</span></div>` : `<div></div>`;
+            let sp2Html = sp2 ? `<div style="display:flex; align-items:center; flex-direction:row-reverse; gap:5px; font-size:10px; color:var(--muted); font-weight:bold;">${p2Img} <span>${t('نجم الفريق:')} ${sp2.name}</span></div>` : `<div></div>`;
+
+            list.innerHTML += `<div class="card" style="padding:15px; margin-bottom:12px; border-right: 4px solid var(--primary); background:rgba(255,255,255,0.02);">${badgeInfo}<div style="display:flex; justify-content:center; font-size:11px; color:var(--accent); margin-bottom:15px; background: rgba(0,0,0,0.3); padding: 8px 12px; border-radius: 8px;"><span><i class="fa-regular fa-clock"></i> <span style="font-family:Arial,sans-serif">${m.time || ''}</span></span></div><div style="display:flex; justify-content:space-between; align-items:center; font-weight:900; font-size:16px;"><span class="team-clickable" onclick="window.openTeam('${m.team1}')" style="flex:1; text-align:right;">${m.team1}</span><span style="font-size:12px; background:var(--primary); padding:4px 15px; border-radius:12px; color:#fff;">VS</span><span class="team-clickable" onclick="window.openTeam('${m.team2}')" style="flex:1; text-align:left;">${m.team2}</span></div><div style="display:flex; justify-content:space-between; margin-top:10px; padding-top:10px; border-top:1px solid rgba(255,255,255,0.05);">${sp1Html}${sp2Html}</div><div style="font-size:12px; color:var(--muted); margin-top:15px; text-align:center; font-weight:bold;"><i class="fa-solid fa-location-dot" style="color:var(--primary);"></i> ${t(m.stadium || 'لم يحدد')}</div>${predSection}<div style="display:flex; gap:10px; margin-top:15px;"><button class="btn-enter-match" onclick="window.openScheduledMatch('${m.id}')" style="flex:1; margin:0;"><i class="fa-solid fa-square-poll-horizontal"></i> ${t('التفاصيل')}</button></div></div>`;
+        }); list.innerHTML += `</div>`;
+    }); if(Object.keys(groupedMatches).length === 0) list.innerHTML = `<div style="text-align:center; color:var(--muted); font-size:13px; padding:30px 0; font-weight:bold;">لا توجد مباريات</div>`;
+}
+
+window.voteMatch = function(matchId, choice) { requireAuth(() => { db.ref(`tournaments/${dbPath}/schedule/${matchId}/predictions/${choice}`).transaction(c => (c||0)+1); localStorage.setItem('voted_' + matchId, 'true'); }); };
+let scheduleGlobal = {};
+db.ref(`tournaments/${dbPath}/schedule`).on('value', snap => { scheduleGlobal = snap.val() || {}; renderSchedule(); renderBracket(); });
+
+let groupMatchupsGlobal = {};
+db.ref(`tournaments/${dbPath}/group_matchups`).on('value', snap => {
+    groupMatchupsGlobal = snap.val() || {}; const list = document.getElementById('groupMatchupsList'); if(!list) return; list.innerHTML = '';
+    if(Object.keys(groupMatchupsGlobal).length > 0) { for(let id in groupMatchupsGlobal) { let m = groupMatchupsGlobal[id]; let info = []; if(m.group) info.push(t('مجموعة') + ' ' + m.group); if(m.round) info.push(t(m.round)); if(m.leg) info.push(t(m.leg)); list.innerHTML += `<div class="card" style="padding:15px; margin-bottom:12px; border-right: 3px solid #f59e0b; background:rgba(255,255,255,0.02);"><div style="font-size:11px; color:#f59e0b; margin-bottom:12px; text-align:center; font-weight:bold; background: rgba(245,158,11,0.05); padding: 6px; border-radius: 6px; border:1px solid #f59e0b;">${info.length > 0 ? info.join(' - ') : t('مواجهة بدون موعد')}</div><div style="display:flex; justify-content:space-between; align-items:center; font-weight:bold; font-size:15px;"><span class="team-clickable" onclick="window.openTeam('${m.team1}')" style="flex:1; text-align:right;">${m.team1}</span><span style="font-size:11px; background:#f59e0b; padding:4px 12px; border-radius:12px; color:#fff;">VS</span><span class="team-clickable" onclick="window.openTeam('${m.team2}')" style="flex:1; text-align:left;">${m.team2}</span></div><div style="display:flex; gap:10px; margin-top:15px;"><button class="btn-enter-match" onclick="window.openGroupMatchup('${id}')" style="flex:1; margin:0; color:#f59e0b; border-color:#f59e0b;"><i class="fa-solid fa-square-poll-horizontal"></i> ${t('التفاصيل')}</button></div></div>`; } } else { list.innerHTML = `<div style="text-align:center; font-size:12px; color:var(--muted); margin-bottom:20px;"></div>`; }
+});
+
+let savedMatchesGlobal = {};
+db.ref(`tournaments/${dbPath}/saved_matches`).on('value', snap => {
+    savedMatchesGlobal = snap.val() || {}; const aList = document.getElementById('archiveList'); const kList = document.getElementById('knockoutList'); if(!aList || !kList) return; aList.innerHTML = ''; kList.innerHTML = ''; let hasKnockouts = false;
+    if(savedMatchesGlobal) { Object.keys(savedMatchesGlobal).reverse().forEach(key => { let m = savedMatchesGlobal[key]; let s1 = parseInt(m.score1) || 0; let s2 = parseInt(m.score2) || 0; let info = []; if(m.groupInfo && m.groupInfo !== "أدوار إقصائية") info.push(t('مجموعة') + ' ' + m.groupInfo); if(m.round) info.push(t(m.round)); if(m.leg) info.push(t(m.leg)); let displayDate = formatMatchDate(m.date); let sqBtnArc = ''; if((m.squad1 && Object.keys(m.squad1).length > 0) || (m.squad2 && Object.keys(m.squad2).length > 0)) { sqBtnArc = `<button class="btn-enter-match" onclick="event.stopPropagation(); window.openArchiveSquads('${key}')" style="flex:0.4; background:rgba(255,255,255,0.05); color:#fff; border:1px solid rgba(255,255,255,0.1); margin-top:0;"><i class="fa-solid fa-users"></i> ${t('التشكيلة')}</button>`; } 
+    
+    let matchMotmHtml = '';
+    if(m.motmTeam && m.motm) {
+        let pData = teamsDataGlobal[m.motmTeam]?.players?.[m.motm] || {};
+        let pImg = pData.photo ? `<img src="${pData.photo}" style="width:45px;height:45px;border-radius:50%;object-fit:cover;border:2px solid #facc15;">` : `<div style="width:45px;height:45px;border-radius:50%;background:rgba(255,255,255,0.1);display:flex;align-items:center;justify-content:center;color:#facc15;border:2px solid #facc15;font-size:18px;"><i class="fa-solid fa-user"></i></div>`;
+        let pStats = getMatchPlayerStats(m.events, m.motm); let statBadges = '';
+        if(pStats.goals > 0) statBadges += `<span style="color:#4ade80; margin:0 3px; font-family:Arial,sans-serif;">${pStats.goals}⚽</span>`;
+        if(pStats.assists > 0) statBadges += `<span style="color:#8b5cf6; margin:0 3px; font-family:Arial,sans-serif;">${pStats.assists}🅰️</span>`;
         
-        window.shareAsStatsImage = function(elementId) { const card = document.getElementById(elementId); card.classList.add('premium-poster'); card.classList.add('stats-export-mode'); const actions = card.querySelectorAll('.export-btn, .share-actions, .btn-enter-match, .close-btn, button'); actions.forEach(a => { if(a) a.style.display = 'none'; }); triggerNotification('معالجة', 'جاري التصوير'); html2canvas(card, { backgroundColor: '#0a0e12', useCORS: true, scale: 2 }).then(canvas => { const link = document.createElement('a'); link.download = `Stats.png`; link.href = canvas.toDataURL('image/png'); link.click(); card.classList.remove('premium-poster'); card.classList.remove('stats-export-mode'); actions.forEach(a => { if(a) a.style.display = ''; }); }).catch(e => { card.classList.remove('premium-poster'); card.classList.remove('stats-export-mode'); actions.forEach(a => { if(a) a.style.display = ''; }); }); }
-        window.exportAllGroupsHorizontal = function() { const container = document.getElementById('groupsContainer'); container.classList.add('export-horizontal-mode'); triggerNotification('معالجة', 'جاري التصوير'); html2canvas(container, { backgroundColor: '#0a0e12', useCORS: true, scale: 2 }).then(canvas => { const link = document.createElement('a'); link.download = `All_Groups.png`; link.href = canvas.toDataURL('image/png'); link.click(); container.classList.remove('export-horizontal-mode'); }).catch(() => container.classList.remove('export-horizontal-mode')); }
-        function triggerNotification(title, msg) { const notif = document.getElementById('osNotification'); document.getElementById('notifTitle').innerText = title; document.getElementById('notifText').innerText = msg; notif.classList.add('show'); setTimeout(() => { notif.classList.remove('show'); }, 4000); }
-
-        window.testModeActive = false; window.currentMatchActive = false;
-        window.triggerLiveVisibilityUpdate = function() {
-            const liveCard = document.getElementById('liveMatchCard'); const testModePlaceholder = document.getElementById('testModePlaceholder'); const adLinkAnchor = document.getElementById('adLinkAnchor'); const noLiveBanner = document.getElementById('noLiveMatchBanner'); const navDot = document.getElementById('navLiveDot');
-            if (window.testModeActive) { 
-                if(liveCard) liveCard.style.display = 'none'; if(adLinkAnchor) adLinkAnchor.style.display = 'none'; if(noLiveBanner) noLiveBanner.style.display = 'none'; if(testModePlaceholder) testModePlaceholder.style.display = 'block'; if(navDot) navDot.style.display = 'none'; 
-            } else { 
-                if(testModePlaceholder) testModePlaceholder.style.display = 'none'; 
-                if (window.currentMatchActive) { if(liveCard) liveCard.style.display = 'block'; if(adLinkAnchor) adLinkAnchor.style.display = 'none'; if(noLiveBanner) noLiveBanner.style.display = 'none'; if(navDot) navDot.style.display = 'inline-block'; } 
-                else { if(liveCard) liveCard.style.display = 'none'; if(adLinkAnchor) adLinkAnchor.style.display = 'block'; if(noLiveBanner) noLiveBanner.style.display = 'block'; if(navDot) navDot.style.display = 'none'; } 
-            }
-        };
-
-        db.ref('analytics/visits').push({ time: Date.now() });
-
-        function switchTournament() {
-            let val = document.getElementById('footerTourneyIdInput').value.trim();
-            if(val) {
-                try {
-                    let parsedUrl = new URL(val);
-                    let extractedId = parsedUrl.searchParams.get('id');
-                    if (extractedId) val = extractedId;
-                } catch(e) {}
-                window.location.href = '?id=' + encodeURIComponent(val);
-            }
-        }
-
-        function renderAdminComparison(settingsData) {
-            let data = settingsData?.activeComparison; let container = document.getElementById('adminPushedComparisonDisplay'); if(!container) return;
-            if(data && data.active && teamsDataGlobal && teamsDataGlobal[data.t1] && teamsDataGlobal[data.t2]) {
-                let d1 = teamsDataGlobal[data.t1].players[data.p1]; let d2 = teamsDataGlobal[data.t2].players[data.p2];
-                if(d1 && d2) {
-                    let p1Img = d1.photo ? `<img src="${d1.photo}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">` : teamsDataGlobal[data.t1].logo ? `<img src="${teamsDataGlobal[data.t1].logo}" style="width:100%;height:100%;object-fit:contain;padding:5px;">` : `<i class="fa-solid fa-user" style="color:var(--primary);"></i>`;
-                    let p2Img = d2.photo ? `<img src="${d2.photo}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">` : teamsDataGlobal[data.t2].logo ? `<img src="${teamsDataGlobal[data.t2].logo}" style="width:100%;height:100%;object-fit:contain;padding:5px;">` : `<i class="fa-solid fa-user" style="color:var(--accent);"></i>`;
-                    let stats = [ { label: 'الأهداف', key: 'goals' }, { label: 'الصناعة', key: 'assists' }, { label: 'المباريات', key: 'matches' }, { label: 'النجومية', key: 'motm' } ];
-                    let barsHtml = '';
-                    stats.forEach(s => {
-                        let val1 = d1[s.key] || 0; let val2 = d2[s.key] || 0; let max = Math.max(val1, val2, 1); let w1 = (val1 / max) * 100; let w2 = (val2 / max) * 100;
-                        let c1 = val1 >= val2 && val1 > 0 ? 'var(--primary)' : 'rgba(255,255,255,0.2)'; let c2 = val2 >= val1 && val2 > 0 ? 'var(--accent)' : 'rgba(255,255,255,0.2)';
-                        barsHtml += `<div style="margin-bottom:12px; background:rgba(0,0,0,0.3); padding:8px; border-radius:12px; border:1px solid rgba(255,255,255,0.05);"><div style="text-align:center; font-size:11px; color:#fff; font-weight:900; margin-bottom:5px;">${t(s.label.split(' ')[0])} ${s.label.split(' ')[1]||''}</div><div style="display:flex; justify-content:space-between; align-items:center; gap:10px;"><div style="width:25px; text-align:center; font-weight:900; font-size:14px; color:${c1}; text-shadow:0 1px 2px rgba(0,0,0,0.8); font-family: Arial, sans-serif;">${val1}</div><div style="flex:1; display:flex; gap:3px;"><div style="flex:1; background:rgba(255,255,255,0.05); height:8px; border-radius:4px 0 0 4px; display:flex; justify-content:flex-end; overflow:hidden;"><div style="width:${w1}%; background:${c1}; border-radius:4px 0 0 4px; transition:0.5s;"></div></div><div style="flex:1; background:rgba(255,255,255,0.05); height:8px; border-radius:0 4px 4px 0; overflow:hidden;"><div style="width:${w2}%; background:${c2}; border-radius:0 4px 4px 0; transition:0.5s;"></div></div></div><div style="width:25px; text-align:center; font-weight:900; font-size:14px; color:${c2}; text-shadow:0 1px 2px rgba(0,0,0,0.8); font-family: Arial, sans-serif;">${val2}</div></div></div>`;
-                    });
-                    document.getElementById('adminCompContent').innerHTML = `<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:15px;"><div style="text-align:center; width:40%;"><div class="logo-ph" style="width:60px; height:60px; margin:0 auto 8px; border:2px solid var(--primary); box-shadow:0 5px 10px rgba(59,130,246,0.3); background:#111;">${p1Img}</div><div style="font-weight:900; font-size:12px; color:#fff;">${data.p1}</div><div style="font-size:10px; color:var(--muted); font-weight:bold;">${data.t1}</div></div><div style="font-size:20px; color:rgba(255,255,255,0.2); font-weight:900; font-style:italic;">VS</div><div style="text-align:center; width:40%;"><div class="logo-ph" style="width:60px; height:60px; margin:0 auto 8px; border:2px solid var(--accent); box-shadow:0 5px 10px rgba(255,255,255,0.3); background:#111;">${p2Img}</div><div style="font-weight:900; font-size:12px; color:#fff;">${data.p2}</div><div style="font-size:10px; color:var(--muted); font-weight:bold;">${data.t2}</div></div></div>${barsHtml}`;
-                    container.style.display = 'block';
-                } else { container.style.display = 'none'; }
-            } else { container.style.display = 'none'; }
-        }
-
-        let dbPath = urlParamsSec.get('id'); 
-        let globalSettings = {};
-        db.ref(`tournaments/${dbPath}/settings`).on('value', snap => {
-            let s = snap.val() || {}; globalSettings = s; window.testModeActive = s.testMode === true; window.triggerLiveVisibilityUpdate();
-            let root = document.documentElement; let tTheme = s.theme || 'blue';
-            if(tTheme === 'blue') { root.style.setProperty('--primary', '#3b82f6'); root.style.setProperty('--accent', '#4ade80'); } else if(tTheme === 'gold') { root.style.setProperty('--primary', '#d4af37'); root.style.setProperty('--accent', '#facc15'); } else if(tTheme === 'green') { root.style.setProperty('--primary', '#10b981'); root.style.setProperty('--accent', '#34d399'); } else if(tTheme === 'crimson') { root.style.setProperty('--primary', '#e11d48'); root.style.setProperty('--accent', '#fb7185'); } else if(tTheme === 'purple') { root.style.setProperty('--primary', '#8b5cf6'); root.style.setProperty('--accent', '#c084fc'); } else if(tTheme === 'orange') { root.style.setProperty('--primary', '#f97316'); root.style.setProperty('--accent', '#fbbf24'); } else if(tTheme === 'neon') { root.style.setProperty('--primary', '#39ff14'); root.style.setProperty('--accent', '#0ff'); root.style.setProperty('--bg', '#050505'); root.style.setProperty('--card', '#111'); } if(tTheme !== 'neon') { root.style.setProperty('--bg', '#0e1318'); root.style.setProperty('--card', '#1a222b'); }
-            
-            let noLiveBanner = document.getElementById('noLiveMatchBanner'); let adLinkAnchor = document.getElementById('adLinkAnchor'); let adTextDisplay = document.getElementById('adTextDisplay'); let adOverlay = document.getElementById('adOverlay');
-            if(noLiveBanner) {
-                if(s.active_adBg) { noLiveBanner.style.backgroundImage = `url('${s.active_adBg}')`; if(adOverlay) adOverlay.style.background = 'rgba(0,0,0,0.3)'; } else { noLiveBanner.style.backgroundImage = 'none'; if(adOverlay) adOverlay.style.background = 'rgba(0,0,0,0.6)'; }
-                if(s.adText) { adTextDisplay.innerText = t(s.adText); } else { adTextDisplay.innerText = t("لا توجد مباريات مباشرة الآن"); }
-                if(s.adLink) { adLinkAnchor.href = s.adLink; adLinkAnchor.style.pointerEvents = 'auto'; } else { adLinkAnchor.href = "#"; adLinkAnchor.style.pointerEvents = 'none'; }
-            }
-            let liveCard = document.getElementById('liveMatchCard');
-            if(liveCard) { if(s.active_liveBg) { liveCard.style.backgroundImage = `linear-gradient(to bottom, rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.7)), url('${s.active_liveBg}')`; } else { liveCard.style.backgroundImage = `linear-gradient(to bottom, rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.7)), url('https://images.unsplash.com/photo-1521731978332-9e9e714b7a3a?q=80&w=1000')`; } }
-            
-            let newsWrapper = document.getElementById('newsTickerWrapper'); let newsDisplay = document.getElementById('newsTextDisplay');
-            if(s.newsText && s.newsText.trim() !== '') { 
-                if(s.newsLink) {
-                    newsDisplay.innerHTML = `<a href="${s.newsLink}" target="_blank">${s.newsText} <i class="fa-solid fa-link" style="font-size:10px;"></i></a>`;
-                } else {
-                    newsDisplay.innerText = s.newsText;
-                }
-                newsWrapper.style.display = 'flex'; 
-                let speed = s.newsSpeed || 25;
-                newsDisplay.style.animationDuration = speed + 's';
-            } else { newsWrapper.style.display = 'none'; }
-            
-            renderAdminComparison(globalSettings);
-            
-            if(s.tournamentName) {
-                let tName = t(s.tournamentName);
-                document.getElementById('displayTourneyName').innerText = tName;
-                document.title = tName;
-                localStorage.setItem('visualName', s.tournamentName);
-                let footerEl = document.getElementById('footerTourneyName');
-                if(footerEl) footerEl.innerText = tName + ' • ' + new Date().getFullYear();
-            }
-        });
-
-        db.ref(`tournaments/${dbPath}/round_stars`).on('value', snap => { let data = snap.val(); let hasAny = false; if(data?.player_of_week) { document.getElementById('potwImgDisplay').src = data.player_of_week; document.getElementById('potwContainer').style.display = 'block'; hasAny = true; } else { document.getElementById('potwContainer').style.display = 'none'; } if(data?.team_of_week) { document.getElementById('totwImgDisplay').src = data.team_of_week; document.getElementById('totwContainer').style.display = 'block'; hasAny = true; } else { document.getElementById('totwContainer').style.display = 'none'; } document.getElementById('roundStarsContainer').style.display = hasAny ? 'flex' : 'none'; });
-        let refereesDataGlobal = {}; db.ref(`tournaments/${dbPath}/referees_data`).on('value', snap => { refereesDataGlobal = snap.val() || {}; });
-        function getRefHtml(name) { if(!name || name === '--') return '--'; let photo = refereesDataGlobal[name]?.photo; let imgHtml = photo ? `<img src="${photo}" style="width:24px;height:24px;border-radius:50%;object-fit:cover;border:1px solid var(--primary);">` : `<i class="fa-solid fa-user" style="color:var(--primary); font-size:14px;"></i>`; return `${imgHtml} <span>${name}</span>`; }
-        function getPlayerImageHtml(pName, tName, fallbackColorClass) { let pPhoto = teamsDataGlobal[tName]?.players?.[pName]?.photo || ''; if(pPhoto) return `<img src="${pPhoto}" style="width:30px;height:30px;border-radius:50%;object-fit:cover;border:1px solid var(--primary); margin-left:8px;">`; return `<div style="width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,0.05);display:inline-flex;align-items:center;justify-content:center;margin-left:8px;border:1px solid var(--primary);font-size:12px;color:${fallbackColorClass};"><i class="fa-solid fa-user"></i></div>`; }
-
-        function formatEventsToTimeline(eventsStr) {
-            if(!eventsStr || eventsStr.trim() === '') return `<div style="text-align:center; color:var(--muted); padding:10px;">${t('لا توجد أحداث مسجلة')}</div>`;
-            let lines = eventsStr.split('\n'); let html = '<div class="modern-timeline">'; const eventLabels = { '⚽': 'هدف', '🅰️': 'أسيست', '🟨': 'بطاقة صفراء', '🟥': 'بطاقة حمراء', '🔃': 'تبديل' };
-            lines.forEach((line) => {
-                if(!line.trim()) return; let iconMatch = line.match(/^(⚽|🅰️|🟨|🟥|🔃)\s*(.*)/); let emojiIcon = iconMatch ? iconMatch[1] : ''; let fullText = iconMatch ? iconMatch[2] : line; let minuteMatch = fullText.match(/\(د\s*(\d+)\)/); let minute = minuteMatch ? minuteMatch[1] : ''; let cleanText = fullText.replace(/\(د\s*\d+\)/, '').trim(); let playerMatch = cleanText.match(/^(.*?)\s*(\(.*?\))?$/); let playerName = playerMatch ? playerMatch[1].trim() : cleanText; let eventDetail = playerMatch && playerMatch[2] ? playerMatch[2].trim() : '';
-                let playerPhotoHtml = ''; let playerFound = false; for (const team in teamsDataGlobal) { if (teamsDataGlobal[team].players && teamsDataGlobal[team].players[playerName]) { let pData = teamsDataGlobal[team].players[playerName]; if (pData.photo) { playerPhotoHtml = `<img src="${pData.photo}" style="width:100%; height:100%; object-fit:cover; border-radius:50%;">`; playerFound = true; break; } } }
-                if (!playerFound) { let iconClass = 'fa-user'; if (emojiIcon === '⚽') iconClass = 'fa-futbol'; if (emojiIcon === '🟨' || emojiIcon === '🟥') iconClass = 'fa-square'; if (emojiIcon === '🔃') iconClass = 'fa-exchange-alt'; playerPhotoHtml = `<i class="fa-solid ${iconClass}" style="opacity:0.6; font-size:18px;"></i>`; }
-                let bodyClass = ''; let detailClass = ''; if (eventDetail.includes('عكسي') || eventDetail.toUpperCase().includes('OG')) { bodyClass = 'OG-goal'; detailClass = 'OG-text'; } else if (eventDetail.includes('جزاء') || eventDetail.toUpperCase().includes('(P)')) { bodyClass = 'P-goal'; detailClass = 'P-text'; }
-                let labelHtml = emojiIcon ? `<span class="event-type-label label-${emojiIcon}">${t(eventLabels[emojiIcon])}</span>` : '';
-                html += `<div class="timeline-event"><div class="timeline-badge-wrapper"><div class="timeline-badge badge-${emojiIcon}">${playerPhotoHtml}</div>${minute ? `<div class="timeline-minute">${minute}</div>` : ''}</div><div class="timeline-event-body ${bodyClass}"><div class="event-main-line">${labelHtml}<span class="event-player-name">${playerName}</span></div>${eventDetail ? `<div class="event-detail-text ${detailClass}">${t(eventDetail)}</div>` : ''}</div></div>`;
-            }); html += '</div>'; return html;
-        }
-
-        function getMatchPlayerStats(eventsStr, pName) {
-            let stats = { goals: 0, yellow: 0, red: 0, assists: 0 };
-            if(!eventsStr) return stats;
-            let lines = eventsStr.split('\n');
-            lines.forEach(line => {
-                if(line.includes(pName)) {
-                    if(line.includes('⚽') && !line.includes('عكسي') && !line.includes('OG')) stats.goals++;
-                    if(line.includes('🟨')) stats.yellow++;
-                    if(line.includes('🟥')) stats.red++;
-                    if(line.includes('🅰️')) stats.assists++;
-                }
-            });
-            return stats;
-        }
-
-        let teamsDataGlobal = {};
-        db.ref(`tournaments/${dbPath}/teams`).on('value', snap => {
-            teamsDataGlobal = snap.val() || {}; const cont = document.getElementById('teamsContainer'); cont.innerHTML = ''; let allPlayers = []; let allTeamsArr = [];
-            for(const tName in teamsDataGlobal) { let tData = teamsDataGlobal[tName]; const logo = tData.logo ? `<img src="${tData.logo}">` : `<i class="fa-solid fa-shield-halved"></i>`; cont.innerHTML += `<div class="team-btn" onclick="window.openTeam('${tName}')"><div class="logo-ph" style="margin: 0 auto 10px; width:70px; height:70px; border-width:2px; box-shadow:0 5px 15px rgba(0,0,0,0.5);">${logo}</div><div style="font-size:16px; font-weight:900; color:var(--text); text-shadow:0 2px 4px rgba(0,0,0,0.5);">${tName}</div></div>`; allTeamsArr.push({name: tName, gf: tData.gf || 0, ga: tData.ga || 0}); if(tData.players) for(let p in tData.players) allPlayers.push({ name: p, team: tName, ...tData.players[p] }); }
-            const tStatsList = document.getElementById('teamStatsList'); tStatsList.innerHTML = ''; allTeamsArr.sort((a,b) => b.gf - a.gf).forEach(t => { let gd = t.gf - t.ga; let tLogo = teamsDataGlobal[t.name]?.logo ? `<img src="${teamsDataGlobal[t.name].logo}" style="width:20px;height:20px;object-fit:contain;margin-left:5px;">` : `<i class="fa-solid fa-shield-halved" style="margin-left:5px; color:var(--muted);"></i>`; tStatsList.innerHTML += `<tr class="team-clickable" onclick="window.openTeam('${t.name}')"><td style="text-align:right; font-weight:bold; padding-right:15px; display:flex; align-items:center;">${tLogo}${t.name}</td><td>${t.gf}</td><td>${t.ga}</td><td dir="ltr">${gd>0?'+'+gd:gd}</td></tr>`; }); if(allTeamsArr.length === 0) tStatsList.innerHTML = `<tr><td colspan="4" style="color:var(--muted); padding:15px;">لا توجد فرق</td></tr>`;
-            const tScorers = document.getElementById('topScorersList'); tScorers.innerHTML = ''; allPlayers.sort((a,b) => (b.goals||0) - (a.goals||0)).forEach((p, i) => { if((p.goals||0)>0) tScorers.innerHTML += `<tr class="clickable-player" onclick="window.openPlayerProfile('${p.name}','${p.team}')"><td>${i+1}</td><td style="text-align:right; padding-right:15px; display:flex; align-items:center; font-weight:bold;">${getPlayerImageHtml(p.name, p.team, 'var(--primary)')} <div>${p.name}<br><span style="font-size:10px; color:var(--muted); font-weight:normal;">${p.team}</span></div></td><td style="font-size:16px; color:var(--primary); font-family: Arial, sans-serif;">${p.goals}</td></tr>`; });
-            const tAssists = document.getElementById('topAssistsList'); tAssists.innerHTML = ''; allPlayers.sort((a,b) => (b.assists||0) - (a.assists||0)).forEach((p, i) => { if((p.assists||0)>0) tAssists.innerHTML += `<tr class="clickable-player" onclick="window.openPlayerProfile('${p.name}','${p.team}')"><td>${i+1}</td><td style="text-align:right; padding-right:15px; display:flex; align-items:center; font-weight:bold;">${getPlayerImageHtml(p.name, p.team, 'var(--primary)')} <div>${p.name}<br><span style="font-size:10px; color:var(--muted); font-weight:normal;">${p.team}</span></div></td><td style="font-size:16px; color:var(--primary); font-family: Arial, sans-serif;">${p.assists}</td></tr>`; });
-            const tMotms = document.getElementById('topMotmList'); tMotms.innerHTML = ''; allPlayers.sort((a,b) => (b.motm||0) - (a.motm||0)).forEach((p, i) => { if((p.motm||0)>0) tMotms.innerHTML += `<tr class="clickable-player" onclick="window.openPlayerProfile('${p.name}','${p.team}')"><td>${i+1}</td><td style="text-align:right; padding-right:15px; display:flex; align-items:center; font-weight:bold;">${getPlayerImageHtml(p.name, p.team, '#facc15')} <div>${p.name}<br><span style="font-size:10px; color:var(--muted); font-weight:normal;">${p.team}</span></div></td><td style="font-size:16px; color:#facc15; font-family: Arial, sans-serif;">${p.motm}</td></tr>`; });
-            const tCards = document.getElementById('cardsList'); tCards.innerHTML = ''; allPlayers.filter(p => p.yellow > 0 || p.red > 0).sort((a,b) => (b.red||0) - (a.red||0) || (b.yellow||0) - (a.yellow||0)).forEach(p => { tCards.innerHTML += `<tr class="clickable-player" onclick="window.openPlayerProfile('${p.name}','${p.team}')"><td style="text-align:right; padding-right:15px; display:flex; align-items:center; font-weight:bold;">${getPlayerImageHtml(p.name, p.team, '#ef4444')} <div>${p.name}<br><span style="font-size:10px; color:var(--muted); font-weight:normal;">${p.team}</span></div></td><td style="font-size:14px; color:#facc15; font-family: Arial, sans-serif;">${p.yellow||0}</td><td style="font-size:14px; color:#ef4444; font-family: Arial, sans-serif;">${p.red||0}</td></tr>`; });
-        });
-
-        function formatMatchDate(d) { if(!d) return ""; const matchDate = new Date(d); const today = new Date(); const tomorrow = new Date(today); tomorrow.setDate(tomorrow.getDate() + 1); if(matchDate.toDateString() === today.toDateString()) return t("اليوم"); if(matchDate.toDateString() === tomorrow.toDateString()) return t("غداً"); return d; }
-
-        function getStarPlayer(teamName) {
-            if(!teamsDataGlobal[teamName] || !teamsDataGlobal[teamName].players) return null;
-            let players = teamsDataGlobal[teamName].players;
-            let bestPlayer = null; let maxScore = -1;
-            for(let pName in players) {
-                let p = players[pName];
-                let score = (parseInt(p.goals)||0)*2 + (parseInt(p.assists)||0) + (parseInt(p.motm)||0)*3 + (parseInt(p.cs)||0);
-                if(score > maxScore && score > 0) { maxScore = score; bestPlayer = { name: pName, photo: p.photo }; }
-            }
-            return bestPlayer;
-        }
-
-        let timerInterval; let initialLoad = true; let lastS1 = -1, lastS2 = -1; let liveSquad1 = {}, liveSquad2 = {};
-        db.ref(`tournaments/${dbPath}/live_match`).on('value', snap => {
-            const d = snap.val(); if(!d) return; window.currentMatchActive = !!(d.team1 && d.team2 && d.team1.trim() !== '' && d.team2.trim() !== ''); window.triggerLiveVisibilityUpdate();
-            if (!initialLoad) { if (lastS1 !== -1 && (parseInt(d.score1) > lastS1 || parseInt(d.score2) > lastS2)) { document.getElementById('crowdSound').play().catch(e=>{}); if (navigator.vibrate) navigator.vibrate([300, 100, 300]); } }
-            lastS1 = parseInt(d.score1); lastS2 = parseInt(d.score2); initialLoad = false; liveSquad1 = d.squad1 || {}; liveSquad2 = d.squad2 || {};
-            let liveInfo = []; if(d.groupInfo && d.groupInfo !== 'أدوار إقصائية') liveInfo.push(t('مجموعة') + ' ' + d.groupInfo); if(d.round) liveInfo.push(t(d.round)); if(d.leg) liveInfo.push(t(d.leg)); document.getElementById('lContext').innerHTML = `<i class="fa-regular fa-futbol"></i> ${liveInfo.length > 0 ? liveInfo.join(' - ') : t('مباراة ودية')}`;
-            let customLabelText = d.customLabel || ''; let customLabelWrapper = document.getElementById('lCustomBadgeWrapper'); let customLabelEl = document.getElementById('lCustomBadgeText');
-            if(customLabelText.trim() !== '') { customLabelWrapper.style.display = 'block'; customLabelEl.innerText = t(customLabelText); } else { customLabelWrapper.style.display = 'none'; }
-            document.getElementById('lTeam1').innerText = d.team1 || '--'; document.getElementById('lTeam2').innerText = d.team2 || '--'; document.getElementById('lScore').innerText = `${parseInt(d.score1)||0} - ${parseInt(d.score2)||0}`; document.getElementById('lStatus').innerText = t(d.status) || t('انتظار'); 
-            document.getElementById('lTimelineList').innerHTML = formatEventsToTimeline(d.events);
-            document.getElementById('lLogo1').innerHTML = teamsDataGlobal[d.team1]?.logo ? `<img src="${teamsDataGlobal[d.team1].logo}">` : `<i class="fa-solid fa-shield-halved"></i>`; document.getElementById('lLogo2').innerHTML = teamsDataGlobal[d.team2]?.logo ? `<img src="${teamsDataGlobal[d.team2].logo}">` : `<i class="fa-solid fa-shield-halved"></i>`;
-            if(d.referee1 || d.referee2 || d.referee3 || d.referee4) { document.getElementById('lReferees').style.display = 'flex'; document.getElementById('lRef1Txt').innerHTML = getRefHtml(d.referee1); document.getElementById('lRef2Txt').innerHTML = getRefHtml(d.referee2); if(d.referee3) { document.getElementById('lRef3Wrap').style.display = 'flex'; document.getElementById('lRef3Txt').innerHTML = getRefHtml(d.referee3); } else { document.getElementById('lRef3Wrap').style.display = 'none'; } if(d.referee4) { document.getElementById('lRef4Wrap').style.display = 'flex'; document.getElementById('lRef4Txt').innerHTML = getRefHtml(d.referee4); } else { document.getElementById('lRef4Wrap').style.display = 'none'; } } else { document.getElementById('lReferees').style.display = 'none'; }
-            if(d.stats && (d.stats.possession1 !== undefined || d.stats.shots1 !== undefined)) { document.getElementById('lTabs').style.display = 'flex'; document.getElementById('pos1Txt').innerText = (d.stats.possession1 || 50) + '%'; document.getElementById('pos2Txt').innerText = (d.stats.possession2 || 50) + '%'; document.getElementById('pos1Bar').style.width = (d.stats.possession1 || 50) + '%'; document.getElementById('pos2Bar').style.width = (d.stats.possession2 || 50) + '%'; document.getElementById('shots1Txt').innerText = d.stats.shots1 || 0; document.getElementById('shots2Txt').innerText = d.stats.shots2 || 0; document.getElementById('corn1Txt').innerText = d.stats.corners1 || 0; document.getElementById('corn2Txt').innerText = d.stats.corners2 || 0; document.getElementById('fouls1Txt').innerText = d.stats.fouls1 || 0; document.getElementById('fouls2Txt').innerText = d.stats.fouls2 || 0; } else { document.getElementById('lTabs').style.display = 'none'; switchMatchTab('live', 'events'); }
-            document.getElementById('lTeam1Container').onclick = function() { window.openTeam(d.team1); }; document.getElementById('lTeam2Container').onclick = function() { window.openTeam(d.team2); };
-            let btnSq = document.getElementById('liveSquadBtn'); if(btnSq) { if((liveSquad1 && Object.keys(liveSquad1).length > 0) || (liveSquad2 && Object.keys(liveSquad2).length > 0)) { btnSq.style.display = 'block'; btnSq.onclick = function() { window.openSquads(d.team1, d.team2, liveSquad1, liveSquad2); }; } else { btnSq.style.display = 'none'; } }
-            clearInterval(timerInterval); if(d.timer && d.timer.isRunning) { timerInterval = setInterval(() => { let elapsedSecs = Math.floor((Date.now() - (d.timer.startTime || Date.now())) / 1000); let totalSecs = (d.timer.savedSeconds || 0) + elapsedSecs; let m = Math.floor(totalSecs / 60); let s = totalSecs % 60; document.getElementById('lTimer').innerText = `${m}:${s < 10 ? '0'+s : s}`; }, 1000); } else if (d.timer && !d.timer.isRunning) { let totalSecs = d.timer.savedSeconds || 0; let m = Math.floor(totalSecs / 60); let s = totalSecs % 60; document.getElementById('lTimer').innerText = `${m}:${s < 10 ? '0'+s : s}`; } else { document.getElementById('lTimer').innerText = `00:00`; }
-        });
-
-        window.sendLiveChatMessage = function() {
-            requireAuth(() => {
-                let name = localStorage.getItem('chatUserName'); let msg = document.getElementById('chatMsgInput').value.trim(); if(!msg) return;
-                db.ref(`tournaments/${dbPath}/live_match/chat`).push({ name: name, msg: msg, time: Date.now() }); document.getElementById('chatMsgInput').value = '';
-            });
-        };
-        db.ref(`tournaments/${dbPath}/live_match/chat`).limitToLast(50).on('value', snap => { let cont = document.getElementById('liveChatMessages'); if(!cont) return; cont.innerHTML = ''; let myName = localStorage.getItem('chatUserName') || ''; let hasMsgs = false; snap.forEach(child => { hasMsgs = true; let d = child.val(); let isSelf = d.name === myName; cont.innerHTML += `<div class="chat-msg ${isSelf ? 'self' : ''}"><div class="chat-sender">${d.name}</div><div>${d.msg}</div></div>`; }); if(!hasMsgs) { cont.innerHTML = `<div style="text-align:center; color:var(--muted); font-size:12px; margin-top:20px;">${t('لا توجد تعليقات حتى الآن. كن أول من يعلق!')}</div>`; } else { cont.scrollTop = cont.scrollHeight; } });
-
-        db.ref(`tournaments/${dbPath}/groups`).on('value', snap => {
-            const groups = snap.val() || {}; const cont = document.getElementById('groupsContainer'); cont.innerHTML = '';
-            ['A', 'B', 'C', 'D'].forEach(grp => {
-                let html = `<div style="display:flex; justify-content:space-between; align-items:center; margin: 20px 5px 10px;"><div class="title-section" style="margin:0; flex:1;">${t('مجموعة')} ${grp}</div><button onclick="shareAsImage('group-card-${grp}')" style="background:transparent; color:var(--primary); border:none; font-size:16px; cursor:pointer;"><i class="fa-solid fa-camera"></i></button></div><div class="card" id="group-card-${grp}" style="padding:0;"><table><tr><th>#</th><th style="text-align:right; padding-right:15px;">${t('الفريق')}</th><th>${t('لعب')}</th><th>${t('له')}</th><th>${t('عليه')}</th><th>${t('الفرق')}</th><th>${t('نقاط')}</th></tr>`;
-                if(groups[grp]) { 
-                    let ts = Object.keys(groups[grp]).map(k => ({name:k, ...groups[grp][k]})); 
-                    ts.sort((a,b) => {
-                        if(a.status === 'متأهل' && b.status !== 'متأهل') return -1;
-                        if(b.status === 'متأهل' && a.status !== 'متأهل') return 1;
-                        if(a.status === 'مغادر' && b.status !== 'مغادر') return 1;
-                        if(b.status === 'مغادر' && a.status !== 'مغادر') return -1;
-                        return b.points-a.points || b.gd-a.gd || (b.gf||0)-(a.gf||0);
-                    });
-                    ts.forEach((tData, idx) => { 
-                        let tLogo = teamsDataGlobal[tData.name]?.logo ? `<img src="${teamsDataGlobal[tData.name].logo}" style="width:20px;height:20px;object-fit:contain;margin-left:5px;">` : `<i class="fa-solid fa-shield-halved" style="margin-left:5px; color:var(--muted);"></i>`; 
-                        let sHtml = ''; if(tData.status === 'متأهل') sHtml = '<span style="color:#10b981; font-size:9px; background:rgba(16,185,129,0.15); padding:2px 6px; border-radius:4px; border:1px solid rgba(16,185,129,0.3); margin-right:5px; white-space:nowrap; font-weight:800;"><i class="fa-solid fa-circle-check"></i> '+t('تأهل')+'</span>'; else if(tData.status === 'مغادر') sHtml = '<span style="color:#ef4444; font-size:9px; background:rgba(239,68,68,0.15); padding:2px 6px; border-radius:4px; border:1px solid rgba(239,68,68,0.3); margin-right:5px; white-space:nowrap; font-weight:800;"><i class="fa-solid fa-circle-xmark"></i> '+t('مغادر')+'</span>'; 
-                        html += `<tr class="team-clickable" onclick="window.openTeam('${tData.name}')"><td>${idx+1}</td><td style="text-align:right; padding-right:15px; display:flex; align-items:center; font-weight:bold;">${tLogo}${tData.name} ${sHtml}</td><td style="font-family: Arial, sans-serif;">${tData.played}</td><td style="font-family: Arial, sans-serif;">${tData.gf||0}</td><td style="font-family: Arial, sans-serif;">${tData.ga||0}</td><td dir="ltr" style="font-family: Arial, sans-serif;">${tData.gd>0?'+'+tData.gd:tData.gd}</td><td style="font-weight:900; color:var(--primary); font-size:14px; font-family: Arial, sans-serif;">${tData.points}</td></tr>`; 
-                    }); 
-                } else html += `<tr><td colspan="7" style="color:var(--muted); padding:15px;">لا توجد فرق</td></tr>`; 
-                cont.innerHTML += html + `</table></div>`;
-            });
-        });
-
-        function renderSchedule() {
-            const list = document.getElementById('scheduleList'); list.innerHTML = ''; let groupedMatches = {};
-            for(let id in scheduleGlobal) { let m = scheduleGlobal[id]; let dString = formatMatchDate(m.date); if(!groupedMatches[dString]) groupedMatches[dString] = []; groupedMatches[dString].push({id:id, ...m}); }
-            let sortedDates = Object.keys(groupedMatches).sort((a, b) => { if(a === t("اليوم")) return -1; if(b === t("اليوم")) return 1; if(a === t("غداً")) return -1; if(b === t("غداً")) return 1; return new Date(a) - new Date(b); });
-            sortedDates.forEach(dateLabel => {
-                let matches = groupedMatches[dateLabel]; let titleIcon = dateLabel === t("اليوم") ? "fa-bolt" : "fa-calendar-day";
-                list.innerHTML += `<div class="schedule-date-group"><div class="schedule-date-header"><span><i class="fa-solid ${titleIcon}" style="color:var(--primary); margin-left:5px;"></i> ${dateLabel}</span><span class="schedule-match-count">${t('عدد المباريات')}: ${matches.length}</span></div>`;
-                matches.sort((a,b) => (a.time || "00:00").localeCompare(b.time || "00:00"));
-                matches.forEach(m => {
-                    let p1 = m.predictions ? (m.predictions.team1 || 0) : 0; let p0 = m.predictions ? (m.predictions.draw || 0) : 0; let p2 = m.predictions ? (m.predictions.team2 || 0) : 0; let total = p1 + p0 + p2 || 1;
-                    let voted = localStorage.getItem('voted_' + m.id); let predSection = '';
-                    if(!voted) predSection = `<div class="prediction-box"><div style="font-size:11px; margin-bottom:8px;">${t('توقع النتيجة')}</div><div style="display:flex; gap:5px;"><button class="pred-btn" onclick="voteMatch('${m.id}', 'team1')">${m.team1}</button><button class="pred-btn" onclick="voteMatch('${m.id}', 'draw')">${t('تعادل')}</button><button class="pred-btn" onclick="voteMatch('${m.id}', 'team2')">${m.team2}</button></div></div>`;
-                    else predSection = `<div class="prediction-box"><div style="display:flex; justify-content:space-between; font-size:10px; margin-bottom:2px;"><span style="font-family:Arial,sans-serif">${m.team1} (${Math.round(p1/total*100)}%)</span><span style="font-family:Arial,sans-serif">${t('تعادل')} (${Math.round(p0/total*100)}%)</span><span style="font-family:Arial,sans-serif">${m.team2} (${Math.round(p2/total*100)}%)</span></div><div class="pred-bar"><div style="width:${p1/total*100}%; background:var(--primary);"></div><div style="width:${p0/total*100}%; background:#a1a1aa;"></div><div style="width:${p2/total*100}%; background:var(--accent);"></div></div></div>`;
-                    let info = []; if(m.group) info.push(t('مجموعة') + ' ' + m.group); if(m.round) info.push(t(m.round)); if(m.leg) info.push(t(m.leg)); let badgeInfo = info.length > 0 ? `<div style="font-size:11px; color:var(--primary); margin-bottom:12px; text-align:center; font-weight:bold; background: rgba(59,130,246,0.1); padding: 6px; border-radius: 8px; border:1px solid rgba(59,130,246,0.3);">${info.join(' - ')}</div>` : '';
-                    
-                    let sp1 = getStarPlayer(m.team1); let sp2 = getStarPlayer(m.team2);
-                    let p1Img = sp1 && sp1.photo ? `<img src="${sp1.photo}" style="width:22px;height:22px;border-radius:50%;object-fit:cover;border:1px solid var(--primary);">` : `<i class="fa-solid fa-star" style="color:var(--primary); font-size:10px;"></i>`;
-                    let p2Img = sp2 && sp2.photo ? `<img src="${sp2.photo}" style="width:22px;height:22px;border-radius:50%;object-fit:cover;border:1px solid var(--accent);">` : `<i class="fa-solid fa-star" style="color:var(--accent); font-size:10px;"></i>`;
-                    let sp1Html = sp1 ? `<div style="display:flex; align-items:center; gap:5px; font-size:10px; color:var(--muted); font-weight:bold;">${p1Img} <span>${t('نجم الفريق:')} ${sp1.name}</span></div>` : `<div></div>`;
-                    let sp2Html = sp2 ? `<div style="display:flex; align-items:center; flex-direction:row-reverse; gap:5px; font-size:10px; color:var(--muted); font-weight:bold;">${p2Img} <span>${t('نجم الفريق:')} ${sp2.name}</span></div>` : `<div></div>`;
-
-                    list.innerHTML += `<div class="card" style="padding:15px; margin-bottom:12px; border-right: 4px solid var(--primary); background:rgba(255,255,255,0.02);">${badgeInfo}<div style="display:flex; justify-content:center; font-size:11px; color:var(--accent); margin-bottom:15px; background: rgba(0,0,0,0.3); padding: 8px 12px; border-radius: 8px;"><span><i class="fa-regular fa-clock"></i> <span style="font-family:Arial,sans-serif">${m.time || ''}</span></span></div><div style="display:flex; justify-content:space-between; align-items:center; font-weight:900; font-size:16px;"><span class="team-clickable" onclick="window.openTeam('${m.team1}')" style="flex:1; text-align:right;">${m.team1}</span><span style="font-size:12px; background:var(--primary); padding:4px 15px; border-radius:12px; color:#fff;">VS</span><span class="team-clickable" onclick="window.openTeam('${m.team2}')" style="flex:1; text-align:left;">${m.team2}</span></div><div style="display:flex; justify-content:space-between; margin-top:10px; padding-top:10px; border-top:1px solid rgba(255,255,255,0.05);">${sp1Html}${sp2Html}</div><div style="font-size:12px; color:var(--muted); margin-top:15px; text-align:center; font-weight:bold;"><i class="fa-solid fa-location-dot" style="color:var(--primary);"></i> ${t(m.stadium || 'لم يحدد')}</div>${predSection}<div style="display:flex; gap:10px; margin-top:15px;"><button class="btn-enter-match" onclick="window.openScheduledMatch('${m.id}')" style="flex:1; margin:0;"><i class="fa-solid fa-square-poll-horizontal"></i> ${t('التفاصيل')}</button></div></div>`;
-                }); list.innerHTML += `</div>`;
-            }); if(Object.keys(groupedMatches).length === 0) list.innerHTML = `<div style="text-align:center; color:var(--muted); font-size:13px; padding:30px 0; font-weight:bold;">لا توجد مباريات</div>`;
-        }
-
-        window.voteMatch = function(matchId, choice) { requireAuth(() => { db.ref(`tournaments/${dbPath}/schedule/${matchId}/predictions/${choice}`).transaction(c => (c||0)+1); localStorage.setItem('voted_' + matchId, 'true'); }); };
-        let scheduleGlobal = {};
-        db.ref(`tournaments/${dbPath}/schedule`).on('value', snap => { scheduleGlobal = snap.val() || {}; renderSchedule(); renderBracket(); });
-        
-        let groupMatchupsGlobal = {};
-        db.ref(`tournaments/${dbPath}/group_matchups`).on('value', snap => {
-            groupMatchupsGlobal = snap.val() || {}; const list = document.getElementById('groupMatchupsList'); if(!list) return; list.innerHTML = '';
-            if(Object.keys(groupMatchupsGlobal).length > 0) { for(let id in groupMatchupsGlobal) { let m = groupMatchupsGlobal[id]; let info = []; if(m.group) info.push(t('مجموعة') + ' ' + m.group); if(m.round) info.push(t(m.round)); if(m.leg) info.push(t(m.leg)); list.innerHTML += `<div class="card" style="padding:15px; margin-bottom:12px; border-right: 3px solid #f59e0b; background:rgba(255,255,255,0.02);"><div style="font-size:11px; color:#f59e0b; margin-bottom:12px; text-align:center; font-weight:bold; background: rgba(245,158,11,0.05); padding: 6px; border-radius: 6px; border:1px solid #f59e0b;">${info.length > 0 ? info.join(' - ') : t('مواجهة بدون موعد')}</div><div style="display:flex; justify-content:space-between; align-items:center; font-weight:bold; font-size:15px;"><span class="team-clickable" onclick="window.openTeam('${m.team1}')" style="flex:1; text-align:right;">${m.team1}</span><span style="font-size:11px; background:#f59e0b; padding:4px 12px; border-radius:12px; color:#fff;">VS</span><span class="team-clickable" onclick="window.openTeam('${m.team2}')" style="flex:1; text-align:left;">${m.team2}</span></div><div style="display:flex; gap:10px; margin-top:15px;"><button class="btn-enter-match" onclick="window.openGroupMatchup('${id}')" style="flex:1; margin:0; color:#f59e0b; border-color:#f59e0b;"><i class="fa-solid fa-square-poll-horizontal"></i> ${t('التفاصيل')}</button></div></div>`; } } else { list.innerHTML = `<div style="text-align:center; font-size:12px; color:var(--muted); margin-bottom:20px;"></div>`; }
-        });
-
-        let savedMatchesGlobal = {};
-        db.ref(`tournaments/${dbPath}/saved_matches`).on('value', snap => {
-            savedMatchesGlobal = snap.val() || {}; const aList = document.getElementById('archiveList'); const kList = document.getElementById('knockoutList'); if(!aList || !kList) return; aList.innerHTML = ''; kList.innerHTML = ''; let hasKnockouts = false;
-            if(savedMatchesGlobal) { Object.keys(savedMatchesGlobal).reverse().forEach(key => { let m = savedMatchesGlobal[key]; let s1 = parseInt(m.score1) || 0; let s2 = parseInt(m.score2) || 0; let info = []; if(m.groupInfo && m.groupInfo !== "أدوار إقصائية") info.push(t('مجموعة') + ' ' + m.groupInfo); if(m.round) info.push(t(m.round)); if(m.leg) info.push(t(m.leg)); let displayDate = formatMatchDate(m.date); let sqBtnArc = ''; if((m.squad1 && Object.keys(m.squad1).length > 0) || (m.squad2 && Object.keys(m.squad2).length > 0)) { sqBtnArc = `<button class="btn-enter-match" onclick="event.stopPropagation(); window.openArchiveSquads('${key}')" style="flex:0.4; background:rgba(255,255,255,0.05); color:#fff; border:1px solid rgba(255,255,255,0.1); margin-top:0;"><i class="fa-solid fa-users"></i> ${t('التشكيلة')}</button>`; } 
-            
-            // 1. نجم المباراة (رجل المباراة الأفضل)
-            let matchMotmHtml = '';
-            if(m.motmTeam && m.motm) {
-                let pData = teamsDataGlobal[m.motmTeam]?.players?.[m.motm] || {};
-                let pImg = pData.photo ? `<img src="${pData.photo}" style="width:45px;height:45px;border-radius:50%;object-fit:cover;border:2px solid #facc15;">` : `<div style="width:45px;height:45px;border-radius:50%;background:rgba(255,255,255,0.1);display:flex;align-items:center;justify-content:center;color:#facc15;border:2px solid #facc15;font-size:18px;"><i class="fa-solid fa-user"></i></div>`;
-                let pStats = getMatchPlayerStats(m.events, m.motm); let statBadges = '';
-                if(pStats.goals > 0) statBadges += `<span style="color:#4ade80; margin:0 3px; font-family:Arial,sans-serif;">${pStats.goals}⚽</span>`;
-                if(pStats.assists > 0) statBadges += `<span style="color:#8b5cf6; margin:0 3px; font-family:Arial,sans-serif;">${pStats.assists}🅰️</span>`;
-                
-                matchMotmHtml = `
-                <div style="background: linear-gradient(135deg, rgba(250,204,21,0.15), rgba(0,0,0,0.4)); border:1px solid rgba(250,204,21,0.4); border-radius:12px; padding:10px 15px; margin: 0 15px 15px; display:flex; align-items:center; gap:15px; justify-content:center; cursor:pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.3);" onclick="event.stopPropagation(); window.openPlayerProfile('${m.motm}', '${m.motmTeam}')">
-                    <div style="position:relative;">
-                        ${pImg}
-                        <i class="fa-solid fa-crown" style="position:absolute; top:-8px; right:-8px; color:#facc15; font-size:16px; text-shadow: 0 2px 5px #000; transform:rotate(15deg);"></i>
-                    </div>
-                    <div style="text-align:right; flex:1;">
-                        <div style="font-size:10px; color:#facc15; font-weight:900; letter-spacing:0.5px;">🏆 ${t('رجل المباراة (MOTM)')}</div>
-                        <div style="font-size:15px; color:#fff; font-weight:900; margin-top:2px;">${m.motm} <span style="font-size:10px; color:var(--muted); font-weight:normal;">(${m.motmTeam})</span></div>
-                        <div style="font-size:12px; margin-top:3px;">${statBadges}</div>
-                    </div>
-                </div>
-                `;
-            }
-
-            // 2. نجوم الفريقين (تلقائي حسب التقييم والأرقام)
-            let t1StarHtml = ''; let t2StarHtml = '';
-            let sp1 = getStarPlayer(m.team1);
-            if(sp1) {
-                let pImg = sp1.photo ? `<img src="${sp1.photo}" style="width:25px;height:25px;border-radius:50%;object-fit:cover;border:1px solid rgba(255,255,255,0.2);">` : `<div style="width:25px;height:25px;border-radius:50%;background:rgba(255,255,255,0.1);display:flex;align-items:center;justify-content:center;color:var(--muted);border:1px solid rgba(255,255,255,0.2);"><i class="fa-solid fa-star"></i></div>`;
-                t1StarHtml = `<div style="display:flex; align-items:center; gap:8px; background:rgba(255,255,255,0.03); padding:6px 10px; border-radius:8px; border:1px solid rgba(255,255,255,0.08); flex:1; max-width:48%; cursor:pointer;" onclick="event.stopPropagation(); window.openPlayerProfile('${sp1.name}', '${m.team1}')"><div style="display:flex; align-items:center; justify-content:center; width:25px; height:25px; background:rgba(0,0,0,0.2); border-radius:50%;">${pImg}</div><div style="overflow:hidden; text-align:right;"><div style="font-size:8px; color:var(--muted); font-weight:bold;">${t('نجم')} ${m.team1}</div><div style="font-size:10px; color:#fff; font-weight:bold; white-space:nowrap; text-overflow:ellipsis; overflow:hidden;">${sp1.name}</div></div></div>`;
-            }
-            let sp2 = getStarPlayer(m.team2);
-            if(sp2) {
-                let pImg = sp2.photo ? `<img src="${sp2.photo}" style="width:25px;height:25px;border-radius:50%;object-fit:cover;border:1px solid rgba(255,255,255,0.2);">` : `<div style="width:25px;height:25px;border-radius:50%;background:rgba(255,255,255,0.1);display:flex;align-items:center;justify-content:center;color:var(--muted);border:1px solid rgba(255,255,255,0.2);"><i class="fa-solid fa-star"></i></div>`;
-                t2StarHtml = `<div style="display:flex; flex-direction:row-reverse; align-items:center; gap:8px; background:rgba(255,255,255,0.03); padding:6px 10px; border-radius:8px; border:1px solid rgba(255,255,255,0.08); flex:1; max-width:48%; cursor:pointer;" onclick="event.stopPropagation(); window.openPlayerProfile('${sp2.name}', '${m.team2}')"><div style="display:flex; align-items:center; justify-content:center; width:25px; height:25px; background:rgba(0,0,0,0.2); border-radius:50%;">${pImg}</div><div style="overflow:hidden; text-align:left;"><div style="font-size:8px; color:var(--muted); font-weight:bold;">${t('نجم')} ${m.team2}</div><div style="font-size:10px; color:#fff; font-weight:bold; white-space:nowrap; text-overflow:ellipsis; overflow:hidden;">${sp2.name}</div></div></div>`;
-            }
-            let teamStarsHtml = (t1StarHtml !== '' || t2StarHtml !== '') ? `<div style="display:flex; justify-content:space-between; margin:0 15px 15px;">${t1StarHtml}${t2StarHtml}</div>` : '';
-
-            let logo1 = teamsDataGlobal[m.team1]?.logo ? `<img src="${teamsDataGlobal[m.team1].logo}" style="width:100%; height:100%; object-fit:contain;">` : `<i class="fa-solid fa-shield-halved"></i>`;
-            let logo2 = teamsDataGlobal[m.team2]?.logo ? `<img src="${teamsDataGlobal[m.team2].logo}" style="width:100%; height:100%; object-fit:contain;">` : `<i class="fa-solid fa-shield-halved"></i>`;
-
-            let htmlCard = `
-            <div class="card" onclick="window.openMatchDetails('${key}')" style="margin-bottom:15px; cursor:pointer; background: linear-gradient(145deg, #1a222b 0%, #0e1318 100%); border:1px solid rgba(255,255,255,0.08); border-radius:16px; overflow:hidden; box-shadow:0 8px 20px rgba(0,0,0,0.3); transition: transform 0.2s;">
-                <div style="background:rgba(0,0,0,0.4); padding:10px 15px; font-size:11px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.02);">
-                    <span style="color:var(--muted);"><i class="fa-regular fa-calendar-check"></i> ${displayDate || ''}</span>
-                    <span style="background:var(--primary); color:#fff; padding:3px 10px; border-radius:12px; font-weight:bold; box-shadow:0 2px 5px rgba(0,0,0,0.3);">${info.length > 0 ? info.join(' - ') : t('مباراة منتهية')}</span>
-                </div>
-                
-                <div style="padding:20px 15px; display:flex; justify-content:space-between; align-items:center;">
-                    <div style="flex:1; text-align:center;" onclick="event.stopPropagation(); window.openTeam('${m.team1}')">
-                        <div class="logo-ph" style="width:55px; height:55px; margin:0 auto 8px; background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.1); box-shadow:0 4px 10px rgba(0,0,0,0.4);">${logo1}</div>
-                        <div style="font-weight:900; font-size:13px; color:#fff;">${m.team1}</div>
-                    </div>
-                    
-                    <div style="padding:0 15px; text-align:center;">
-                        <div style="font-size:32px; font-weight:900; color:var(--accent); font-family:Arial, sans-serif; letter-spacing:2px; text-shadow:0 2px 5px rgba(0,0,0,0.8);">${s1} - ${s2}</div>
-                        <div style="font-size:10px; color:var(--muted); margin-top:3px; font-weight:bold;">${t('انتهت')}</div>
-                    </div>
-                    
-                    <div style="flex:1; text-align:center;" onclick="event.stopPropagation(); window.openTeam('${m.team2}')">
-                        <div class="logo-ph" style="width:55px; height:55px; margin:0 auto 8px; background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.1); box-shadow:0 4px 10px rgba(0,0,0,0.4);">${logo2}</div>
-                        <div style="font-weight:900; font-size:13px; color:#fff;">${m.team2}</div>
-                    </div>
-                </div>
-                
-                ${matchMotmHtml}
-                ${teamStarsHtml}
-                
-                <div style="padding: 0 15px 15px; display:flex; gap:10px;">
-                    <button class="btn-enter-match" style="flex:1; background:rgba(59,130,246,0.1); color:var(--primary); border:1px solid rgba(59,130,246,0.3); margin-top:0;"><i class="fa-solid fa-chart-simple"></i> ${t('التفاصيل والإحصائيات')}</button>
-                    ${sqBtnArc}
-                </div>
+        matchMotmHtml = `
+        <div style="background: linear-gradient(135deg, rgba(250,204,21,0.15), rgba(0,0,0,0.4)); border:1px solid rgba(250,204,21,0.4); border-radius:12px; padding:10px 15px; margin: 0 15px 15px; display:flex; align-items:center; gap:15px; justify-content:center; cursor:pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.3);" onclick="event.stopPropagation(); window.openPlayerProfile('${m.motm}', '${m.motmTeam}')">
+            <div style="position:relative;">
+                ${pImg}
+                <i class="fa-solid fa-crown" style="position:absolute; top:-8px; right:-8px; color:#facc15; font-size:16px; text-shadow: 0 2px 5px #000; transform:rotate(15deg);"></i>
             </div>
-            `; 
-                
-            if(m.round && (m.round.includes("النهائي") || m.round.includes("ربع") || m.round.includes("نصف"))) { kList.innerHTML += htmlCard; hasKnockouts = true; } else { aList.innerHTML += htmlCard; } }); } 
-            if(!hasKnockouts) kList.innerHTML = `<div style="text-align:center; font-size:12px; color:var(--muted); margin-bottom:20px;"></div>`;
-            renderBracket();
-        });
+            <div style="text-align:right; flex:1;">
+                <div style="font-size:10px; color:#facc15; font-weight:900; letter-spacing:0.5px;">🏆 ${t('رجل المباراة (MOTM)')}</div>
+                <div style="font-size:15px; color:#fff; font-weight:900; margin-top:2px;">${m.motm} <span style="font-size:10px; color:var(--muted); font-weight:normal;">(${m.motmTeam})</span></div>
+                <div style="font-size:12px; margin-top:3px;">${statBadges}</div>
+            </div>
+        </div>`;
+    }
 
-        function renderBracket() { let container = document.getElementById('bracketContainer'); if(!container) return; let rounds = { 'ربع النهائي': [], 'نصف النهائي': [], 'النهائي': [] }; let allMatches = [ ...Object.values(savedMatchesGlobal), ...Object.values(scheduleGlobal) ]; allMatches.forEach(m => { if(m.round && rounds[m.round]) rounds[m.round].push(m); }); let html = ''; ['ربع النهائي', 'نصف النهائي', 'النهائي'].forEach(r => { if(rounds[r].length > 0) { html += `<div class="bracket-round"><div style="text-align:center; font-size:12px; color:var(--primary); font-weight:bold;">${t(r)}</div>`; rounds[r].forEach(m => { let s1 = m.score1 !== undefined ? m.score1 : '-'; let s2 = m.score2 !== undefined ? m.score2 : '-'; html += `<div class="bracket-match"><div class="bracket-team"><span>${m.team1}</span><span class="bracket-score">${s1}</span></div><div style="border-top:1px solid rgba(255,255,255,0.1); margin:4px 0;"></div><div class="bracket-team"><span>${m.team2}</span><span class="bracket-score">${s2}</span></div></div>`; }); html += `</div>`; } }); container.innerHTML = html || `<div style="color:var(--muted); font-size:12px; text-align:center; padding:20px;"></div>`; }
+    let t1StarHtml = ''; let t2StarHtml = '';
+    let sp1 = getStarPlayer(m.team1);
+    if(sp1) {
+        let pImg = sp1.photo ? `<img src="${sp1.photo}" style="width:25px;height:25px;border-radius:50%;object-fit:cover;border:1px solid rgba(255,255,255,0.2);">` : `<div style="width:25px;height:25px;border-radius:50%;background:rgba(255,255,255,0.1);display:flex;align-items:center;justify-content:center;color:var(--muted);border:1px solid rgba(255,255,255,0.2);"><i class="fa-solid fa-star"></i></div>`;
+        t1StarHtml = `<div style="display:flex; align-items:center; gap:8px; background:rgba(255,255,255,0.03); padding:6px 10px; border-radius:8px; border:1px solid rgba(255,255,255,0.08); flex:1; max-width:48%; cursor:pointer;" onclick="event.stopPropagation(); window.openPlayerProfile('${sp1.name}', '${m.team1}')"><div style="display:flex; align-items:center; justify-content:center; width:25px; height:25px; background:rgba(0,0,0,0.2); border-radius:50%;">${pImg}</div><div style="overflow:hidden; text-align:right;"><div style="font-size:8px; color:var(--muted); font-weight:bold;">${t('نجم')} ${m.team1}</div><div style="font-size:10px; color:#fff; font-weight:bold; white-space:nowrap; text-overflow:ellipsis; overflow:hidden;">${sp1.name}</div></div></div>`;
+    }
+    let sp2 = getStarPlayer(m.team2);
+    if(sp2) {
+        let pImg = sp2.photo ? `<img src="${sp2.photo}" style="width:25px;height:25px;border-radius:50%;object-fit:cover;border:1px solid rgba(255,255,255,0.2);">` : `<div style="width:25px;height:25px;border-radius:50%;background:rgba(255,255,255,0.1);display:flex;align-items:center;justify-content:center;color:var(--muted);border:1px solid rgba(255,255,255,0.2);"><i class="fa-solid fa-star"></i></div>`;
+        t2StarHtml = `<div style="display:flex; flex-direction:row-reverse; align-items:center; gap:8px; background:rgba(255,255,255,0.03); padding:6px 10px; border-radius:8px; border:1px solid rgba(255,255,255,0.08); flex:1; max-width:48%; cursor:pointer;" onclick="event.stopPropagation(); window.openPlayerProfile('${sp2.name}', '${m.team2}')"><div style="display:flex; align-items:center; justify-content:center; width:25px; height:25px; background:rgba(0,0,0,0.2); border-radius:50%;">${pImg}</div><div style="overflow:hidden; text-align:left;"><div style="font-size:8px; color:var(--muted); font-weight:bold;">${t('نجم')} ${m.team2}</div><div style="font-size:10px; color:#fff; font-weight:bold; white-space:nowrap; text-overflow:ellipsis; overflow:hidden;">${sp2.name}</div></div></div>`;
+    }
+    let teamStarsHtml = (t1StarHtml !== '' || t2StarHtml !== '') ? `<div style="display:flex; justify-content:space-between; margin:0 15px 15px;">${t1StarHtml}${t2StarHtml}</div>` : '';
+
+    let logo1 = teamsDataGlobal[m.team1]?.logo ? `<img src="${teamsDataGlobal[m.team1].logo}" style="width:100%; height:100%; object-fit:contain;">` : `<i class="fa-solid fa-shield-halved"></i>`;
+    let logo2 = teamsDataGlobal[m.team2]?.logo ? `<img src="${teamsDataGlobal[m.team2].logo}" style="width:100%; height:100%; object-fit:contain;">` : `<i class="fa-solid fa-shield-halved"></i>`;
+
+    let htmlCard = `
+    <div class="card" onclick="window.openMatchDetails('${key}')" style="margin-bottom:15px; cursor:pointer; background: linear-gradient(145deg, #1a222b 0%, #0e1318 100%); border:1px solid rgba(255,255,255,0.08); border-radius:16px; overflow:hidden; box-shadow:0 8px 20px rgba(0,0,0,0.3); transition: transform 0.2s;">
+        <div style="background:rgba(0,0,0,0.4); padding:10px 15px; font-size:11px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.02);">
+            <span style="color:var(--muted);"><i class="fa-regular fa-calendar-check"></i> ${displayDate || ''}</span>
+            <span style="background:var(--primary); color:#fff; padding:3px 10px; border-radius:12px; font-weight:bold; box-shadow:0 2px 5px rgba(0,0,0,0.3);">${info.length > 0 ? info.join(' - ') : t('مباراة منتهية')}</span>
+        </div>
         
-        db.ref(`tournaments/${dbPath}/media_posts`).on('value', snap => {
-            const grid = document.getElementById('publicGalleryGrid'); if(!grid) return; grid.innerHTML = ''; let data = snap.val();
-            if(data) {
-                Object.keys(data).reverse().forEach(k => {
-                    let post = data[k];
-                    if(post.type === 'fb') { grid.innerHTML += `<div class="media-post"><div class="fb-embed-container">${post.embedCode}</div></div>`; } 
-                    else if (post.type === 'image_text') { let imgHtml = post.image ? `<img src="${post.image}" class="media-post-img" onclick="openImageViewer('${post.image}')">` : ''; let textHtml = post.text ? `<div class="media-post-text">${post.text}</div>` : ''; grid.innerHTML += `<div class="media-post">${imgHtml}${textHtml}</div>`; }
-                });
-                if(window.FB) { setTimeout(() => { window.FB.XFBML.parse(); }, 500); }
-            } else { grid.innerHTML = `<div style="color:var(--muted); font-size:12px; text-align:center; padding:20px;">${t('لا توجد منشورات حاليا')}</div>`; }
-        });
-
-        window.openArchiveSquads = function(matchId) { let m = savedMatchesGlobal[matchId]; if(m) { window.openSquads(m.team1, m.team2, m.squad1, m.squad2); } };
-
-        window.openMatchDetails = function(key) {
-            let m = savedMatchesGlobal[key]; if(!m) return; document.getElementById('currentArchiveMatchId').value = key; let info = []; if(m.groupInfo && m.groupInfo !== "أدوار إقصائية") info.push(t('مجموعة') + ' ' + m.groupInfo); if(m.round) info.push(t(m.round)); if(m.leg) info.push(t(m.leg));
-            document.getElementById('mdRound').innerText = info.length > 0 ? info.join(' - ') : t('نتيجة مباراة'); document.getElementById('mdT1Name').innerText = m.team1 || '--'; document.getElementById('mdT2Name').innerText = m.team2 || '--'; document.getElementById('mdLogo1').innerHTML = teamsDataGlobal[m.team1]?.logo ? `<img src="${teamsDataGlobal[m.team1].logo}">` : `<i class="fa-solid fa-shield"></i>`; document.getElementById('mdLogo2').innerHTML = teamsDataGlobal[m.team2]?.logo ? `<img src="${teamsDataGlobal[m.team2].logo}">` : `<i class="fa-solid fa-shield"></i>`; document.getElementById('mdScore').innerText = `${parseInt(m.score1) || 0} - ${parseInt(m.score2) || 0}`; 
-            document.getElementById('mdTimelineList').innerHTML = formatEventsToTimeline(m.events);
+        <div style="padding:20px 15px; display:flex; justify-content:space-between; align-items:center;">
+            <div style="flex:1; text-align:center;" onclick="event.stopPropagation(); window.openTeam('${m.team1}')">
+                <div class="logo-ph" style="width:55px; height:55px; margin:0 auto 8px; background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.1); box-shadow:0 4px 10px rgba(0,0,0,0.4);">${logo1}</div>
+                <div style="font-weight:900; font-size:13px; color:#fff;">${m.team1}</div>
+            </div>
             
-            let motmHtml = '';
-            if(m.motmTeam && m.motm) {
-                let pStats = getMatchPlayerStats(m.events, m.motm); let statBadges = '';
-                if(pStats.goals > 0) statBadges += `<span style="color:#4ade80; margin-left:3px; font-family:Arial,sans-serif;">${pStats.goals}⚽</span>`;
-                if(pStats.assists > 0) statBadges += `<span style="color:#8b5cf6; margin-left:3px; font-family:Arial,sans-serif;">${pStats.assists}🅰️</span>`;
-                motmHtml += `<div style="text-align:center; width:100%;"><i class="fa-solid fa-crown" style="color:#facc15;"></i> ${t('رجل المباراة')}: <span onclick="window.openPlayerProfile('${m.motm}', '${m.motmTeam}')" style="cursor:pointer; text-decoration:underline; color:#facc15; font-weight:bold;">${m.motm}</span> <span style="color:var(--muted); font-size:10px;">(${m.motmTeam})</span><br><div style="font-size:12px; margin-top:3px;">${statBadges}</div></div>`;
-            }
-            document.getElementById('mdMotmCtr').innerHTML = motmHtml !== '' ? `<div style="display:flex; justify-content:center; margin-top:15px; padding:10px; background:rgba(250,204,21,0.1); border:1px solid rgba(250,204,21,0.3); border-radius:8px; font-size:12px; font-weight:bold;">${motmHtml}</div>` : '';
-
-            if(m.referee1 || m.referee2 || m.referee3 || m.referee4) { document.getElementById('mdReferees').style.display = 'flex'; document.getElementById('mdRef1Txt').innerHTML = getRefHtml(m.referee1); document.getElementById('mdRef2Txt').innerHTML = getRefHtml(m.referee2); if(m.referee3) { document.getElementById('mdRef3Wrap').style.display = 'flex'; document.getElementById('mdRef3Txt').innerHTML = getRefHtml(m.referee3); } else { document.getElementById('mdRef3Wrap').style.display = 'none'; } if(m.referee4) { document.getElementById('mdRef4Wrap').style.display = 'flex'; document.getElementById('mdRef4Txt').innerHTML = getRefHtml(m.referee4); } else { document.getElementById('mdRef4Wrap').style.display = 'none'; } } else { document.getElementById('mdReferees').style.display = 'none'; }
+            <div style="padding:0 15px; text-align:center;">
+                <div style="font-size:32px; font-weight:900; color:var(--accent); font-family:Arial, sans-serif; letter-spacing:2px; text-shadow:0 2px 5px rgba(0,0,0,0.8);">${s1} - ${s2}</div>
+                <div style="font-size:10px; color:var(--muted); margin-top:3px; font-weight:bold;">${t('انتهت')}</div>
+            </div>
             
-            document.getElementById('mdTabs').style.display = 'flex'; 
-            let statsData = m.stats || {};
-            document.getElementById('mdPos1Txt').innerText = (statsData.possession1 !== undefined ? statsData.possession1 : 50) + '%'; 
-            document.getElementById('mdPos2Txt').innerText = (statsData.possession2 !== undefined ? statsData.possession2 : 50) + '%'; 
-            document.getElementById('mdPos1Bar').style.width = (statsData.possession1 !== undefined ? statsData.possession1 : 50) + '%'; 
-            document.getElementById('mdPos2Bar').style.width = (statsData.possession2 !== undefined ? statsData.possession2 : 50) + '%'; 
-            document.getElementById('mdShots1Txt').innerText = statsData.shots1 || 0; 
-            document.getElementById('mdShots2Txt').innerText = statsData.shots2 || 0; 
-            document.getElementById('mdCorn1Txt').innerText = statsData.corners1 || 0; 
-            document.getElementById('mdCorn2Txt').innerText = statsData.corners2 || 0; 
-            document.getElementById('mdFouls1Txt').innerText = statsData.fouls1 || 0; 
-            document.getElementById('mdFouls2Txt').innerText = statsData.fouls2 || 0; 
-            
-            switchMatchTab('md', 'events'); document.getElementById('mdTeam1Container').onclick = function() { window.openTeam(m.team1); }; document.getElementById('mdTeam2Container').onclick = function() { window.openTeam(m.team2); };
-            let btnSq = document.getElementById('mdSquadBtn'); if(btnSq) { if((m.squad1 && Object.keys(m.squad1).length > 0) || (m.squad2 && Object.keys(m.squad2).length > 0)) { btnSq.style.display = 'block'; btnSq.onclick = function() { window.openSquads(m.team1, m.team2, m.squad1, m.squad2); }; } else { btnSq.style.display = 'none'; } }
-            
-            db.ref(`tournaments/${dbPath}/saved_matches/${key}/comments`).on('value', snap => { let commentsHtml = ''; snap.forEach(child => { let c = child.val(); commentsHtml += `<div class="chat-msg" style="margin-bottom:5px;"><div class="chat-sender">${c.name}</div>${c.text}</div>`; }); document.getElementById('archiveCommentsList').innerHTML = commentsHtml || `<div style="font-size:11px; color:var(--muted); text-align:center;">${t('لا توجد تعليقات حتى الآن. كن أول من يعلق!')}</div>`; });
-
-            try { history.pushState({ modal: 'matchDetailsModal' }, "", "#match"); }catch(e){}
-            document.getElementById('matchDetailsModal').style.display = 'block';
-        };
-
-        window.closeMatchModal = function() { closeModal('matchDetailsModal'); if(history.state && history.state.modal) history.back(); };
-        window.closeTeamModal = function() { closeModal('teamModal'); if(history.state && history.state.modal) history.back(); };
-        window.closePlayerModal = function() { closeModal('playerModal'); if(history.state && history.state.modal) history.back(); };
-        window.closeSquadsModal = function() { closeModal('squadsModal'); if(history.state && history.state.modal) history.back(); };
-
-        window.sendArchiveComment = function() { requireAuth(() => { let id = document.getElementById('currentArchiveMatchId').value; let name = localStorage.getItem('chatUserName'); let text = document.getElementById('arcCommentText').value.trim(); if(!text) return; db.ref(`tournaments/${dbPath}/saved_matches/${id}/comments`).push({ name: name, text: text, time: Date.now() }); document.getElementById('arcCommentText').value = ''; }); };
-
-        window.openScheduledMatch = function(key) {
-            let m = scheduleGlobal[key]; if(!m) return; let info = []; if(m.group) info.push(t('مجموعة') + ' ' + m.group); if(m.round) info.push(t(m.round)); if(m.leg) info.push(t(m.leg));
-            document.getElementById('mdRound').innerText = info.length > 0 ? info.join(' - ') : t('مباراة قادمة'); document.getElementById('mdT1Name').innerText = m.team1 || '--'; document.getElementById('mdT2Name').innerText = m.team2 || '--'; document.getElementById('mdLogo1').innerHTML = teamsDataGlobal[m.team1]?.logo ? `<img src="${teamsDataGlobal[m.team1].logo}">` : `<i class="fa-solid fa-shield"></i>`; document.getElementById('mdLogo2').innerHTML = teamsDataGlobal[m.team2]?.logo ? `<img src="${teamsDataGlobal[m.team2].logo}">` : `<i class="fa-solid fa-shield"></i>`; document.getElementById('mdScore').innerText = `VS`; document.getElementById('mdTabs').style.display = 'none'; document.getElementById('md-content-stats').style.display = 'none'; document.getElementById('mdTimelineList').innerHTML = `<div style="text-align:center; padding: 20px;"><i class="fa-regular fa-clock" style="font-size:30px; color:var(--primary); margin-bottom:15px; display:block;"></i><strong style="font-size:14px; color:var(--text);">${t('لم تبدأ')}</strong><br><br><span style="color:var(--muted); font-size:12px;">${t('الساعة')} <span style="font-family:Arial,sans-serif">${m.time} | ${m.date}</span></span><br><span style="color:var(--muted); font-size:12px;"><i class="fa-solid fa-location-dot"></i> ${t('الملعب')}: ${t(m.stadium || 'لم يحدد')}</span></div>`; document.getElementById('mdMotmCtr').innerHTML = ''; switchMatchTab('md', 'events');
-            if(m.referee1 || m.referee2 || m.referee3 || m.referee4) { document.getElementById('mdReferees').style.display = 'flex'; document.getElementById('mdRef1Txt').innerHTML = getRefHtml(m.referee1); document.getElementById('mdRef2Txt').innerHTML = getRefHtml(m.referee2); if(m.referee3) { document.getElementById('mdRef3Wrap').style.display = 'flex'; document.getElementById('mdRef3Txt').innerHTML = getRefHtml(m.referee3); } else { document.getElementById('mdRef3Wrap').style.display = 'none'; } if(m.referee4) { document.getElementById('mdRef4Wrap').style.display = 'flex'; document.getElementById('mdRef4Txt').innerHTML = getRefHtml(m.referee4); } else { document.getElementById('mdRef4Wrap').style.display = 'none'; } } else { document.getElementById('mdReferees').style.display = 'none'; }
-            document.getElementById('mdTeam1Container').onclick = function() { window.openTeam(m.team1); }; document.getElementById('mdTeam2Container').onclick = function() { window.openTeam(m.team2); }; let btnSq = document.getElementById('mdSquadBtn'); if(btnSq) btnSq.style.display = 'none'; 
-            try{ history.pushState({ modal: 'matchDetailsModal' }, "", "#scheduled"); }catch(e){} document.getElementById('matchDetailsModal').style.display = 'block';
-        }
-
-        window.openGroupMatchup = function(key) {
-            let m = groupMatchupsGlobal[key]; if(!m) return; let info = []; if(m.group) info.push(t('مجموعة') + ' ' + m.group); if(m.round) info.push(t(m.round)); if(m.leg) info.push(t(m.leg));
-            document.getElementById('mdRound').innerText = info.length > 0 ? info.join(' - ') : t('مواجهة بدون موعد'); document.getElementById('mdT1Name').innerText = m.team1 || '--'; document.getElementById('mdT2Name').innerText = m.team2 || '--'; document.getElementById('mdLogo1').innerHTML = teamsDataGlobal[m.team1]?.logo ? `<img src="${teamsDataGlobal[m.team1].logo}">` : `<i class="fa-solid fa-shield"></i>`; document.getElementById('mdLogo2').innerHTML = teamsDataGlobal[m.team2]?.logo ? `<img src="${teamsDataGlobal[m.team2].logo}">` : `<i class="fa-solid fa-shield"></i>`; document.getElementById('mdScore').innerText = `VS`; document.getElementById('mdTabs').style.display = 'none'; document.getElementById('md-content-stats').style.display = 'none'; document.getElementById('mdTimelineList').innerHTML = `<div style="text-align:center; padding: 20px;"><i class="fa-regular fa-calendar-xmark" style="font-size:30px; color:#f59e0b; margin-bottom:15px; display:block;"></i><strong style="font-size:14px; color:var(--text);">${t('مواجهة بدون موعد')}</strong></div>`; document.getElementById('mdMotmCtr').innerHTML = ''; document.getElementById('mdReferees').style.display = 'none'; switchMatchTab('md', 'events');
-            document.getElementById('mdTeam1Container').onclick = function() { window.openTeam(m.team1); }; document.getElementById('mdTeam2Container').onclick = function() { window.openTeam(m.team2); }; let btnSq = document.getElementById('mdSquadBtn'); if(btnSq) btnSq.style.display = 'none'; 
-            try{ history.pushState({ modal: 'matchDetailsModal' }, "", "#matchup"); }catch(e){} document.getElementById('matchDetailsModal').style.display = 'block';
-        }
-
-        window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); });
-
-        window.openTeam = function(tName) { 
-            try { history.pushState({ modal: 'teamModal' }, "", "#team"); } catch(e){} 
-            const d = teamsDataGlobal[tName]; if(!d) return; 
-            document.getElementById('modalTeamName').innerText = tName; 
-            document.getElementById('modalLogo').innerHTML = d.logo ? `<img src="${d.logo}" style="width:100%; height:100%; object-fit:contain; border-radius:50%;">` : `<i class="fa-solid fa-shield-halved" style="font-size:40px; margin-top:25px; color:var(--muted);"></i>`; 
-            document.getElementById('modalGf').innerText = d.gf || 0; 
-            document.getElementById('modalGa').innerText = d.ga || 0; 
-            
-            let staff = ''; if(d.coach) staff += `<div style="background:rgba(255,255,255,0.05); padding:8px 15px; border-radius:12px; border:1px solid rgba(255,255,255,0.1); font-size:13px; color:var(--text); font-weight:bold;"><i class="fa-solid fa-user-tie" style="color:var(--primary);"></i> ${t('مدرب')}: ${d.coach}</div>`; if(d.assistant) staff += `<div style="background:rgba(255,255,255,0.05); padding:8px 15px; border-radius:12px; border:1px solid rgba(255,255,255,0.1); font-size:13px; color:var(--text); font-weight:bold;"><i class="fa-solid fa-user-tie" style="color:var(--muted);"></i> ${t('مساعد')}: ${d.assistant}</div>`; 
-            let jerseyHtml = ''; if (d.jerseyColor || d.jerseyImage || d.jerseyImage2) { let colorBox = d.jerseyColor ? `<div style="width:18px; height:18px; border-radius:6px; background-color:${d.jerseyColor}; border:1px solid rgba(255,255,255,0.2); display:inline-block; box-shadow:0 2px 5px rgba(0,0,0,0.5);"></div>` : ''; let imgBox1 = d.jerseyImage ? `<img src="${d.jerseyImage}" onclick="openImageViewer('${d.jerseyImage}')" style="width:40px; height:40px; object-fit:contain; border-radius:8px; cursor:pointer; background:rgba(0,0,0,0.5); padding:4px; border:1px solid rgba(255,255,255,0.1);">` : ''; let imgBox2 = d.jerseyImage2 ? `<img src="${d.jerseyImage2}" onclick="openImageViewer('${d.jerseyImage2}')" style="width:40px; height:40px; object-fit:contain; border-radius:8px; cursor:pointer; background:rgba(0,0,0,0.5); padding:4px; border:1px solid rgba(255,255,255,0.1);">` : ''; jerseyHtml = `<div style="background:rgba(255,255,255,0.05); padding:8px 15px; border-radius:12px; border:1px solid rgba(255,255,255,0.1); font-size:13px; color:var(--text); display:flex; align-items:center; gap:10px; font-weight:bold;">${colorBox} ${imgBox1} ${imgBox2}</div>`; }
-            
-            let bestPlayer = getStarPlayer(tName);
-            let bestPlayerHtml = '';
-            if(bestPlayer) {
-                let pImg = bestPlayer.photo ? `<img src="${bestPlayer.photo}" style="width:40px;height:40px;border-radius:50%;object-fit:cover;border:2px solid #facc15;">` : `<div style="width:40px;height:40px;border-radius:50%;background:#111;border:2px solid #facc15;display:flex;align-items:center;justify-content:center;color:#facc15;"><i class="fa-solid fa-star"></i></div>`;
-                bestPlayerHtml = `<div style="background:linear-gradient(135deg, rgba(250,204,21,0.1), rgba(0,0,0,0.4)); border:1px solid #facc15; border-radius:12px; padding:10px; display:flex; align-items:center; gap:10px; margin-bottom:15px; cursor:pointer;" onclick="window.openPlayerProfile('${bestPlayer.name}', '${tName}')"><div style="position:relative;">${pImg}<i class="fa-solid fa-crown" style="position:absolute; bottom:-5px; right:-5px; color:#facc15; font-size:12px; text-shadow:0 1px 2px #000;"></i></div><div style="text-align:right; flex:1;"><div style="font-size:10px; color:#facc15; font-weight:bold;">${t('نجم الفريق')}</div><div style="font-size:13px; color:#fff; font-weight:900;">${bestPlayer.name}</div></div><i class="fa-solid fa-chevron-left" style="color:var(--muted); font-size:12px;"></i></div>`;
-            }
-
-            document.getElementById('modalStaffArea').innerHTML = bestPlayerHtml + staff + jerseyHtml; 
-            
-            const tbody = document.getElementById('modalPlayersList'); tbody.innerHTML = ''; 
-            if(d.players) { 
-                for(let p in d.players) { 
-                    let s = d.players[p]; 
-                    let pImgHtml = s.photo ? `<img src="${s.photo}" style="width:45px;height:45px;border-radius:50%;object-fit:cover;border:2px solid var(--primary); box-shadow:0 2px 8px rgba(0,0,0,0.5);">` : `<div style="width:45px;height:45px;border-radius:50%;background:rgba(255,255,255,0.05);display:flex;align-items:center;justify-content:center;border:2px solid var(--primary);font-size:18px;color:var(--primary); box-shadow:0 2px 8px rgba(0,0,0,0.5);"><i class="fa-solid fa-user"></i></div>`; 
-                    let posBadge = s.position ? `<div style="background:var(--primary); padding:2px 8px; border-radius:6px; font-size:10px; color:#fff; display:inline-block; font-weight:900; margin-top:4px; box-shadow:0 2px 4px rgba(0,0,0,0.3);">${t(s.position)}</div>` : '';
-                    
-                    tbody.innerHTML += `
-                    <div class="modern-player-row" onclick="window.openPlayerProfile('${p}','${tName}')">
-                        <div class="mp-left">
-                            ${pImgHtml}
-                            <div style="display:flex; flex-direction:column; align-items:flex-start;">
-                                <span style="font-weight:900; font-size:15px; color:var(--text); text-shadow:0 1px 2px rgba(0,0,0,0.5);">${p}</span>
-                                ${posBadge}
-                            </div>
-                        </div>
-                        <div class="mp-right">
-                            <div class="mp-stat"><span class="mp-stat-val" style="color:var(--primary); font-family:Arial,sans-serif;">${s.goals||0}</span><span class="mp-stat-label">⚽</span></div>
-                            <div class="mp-stat"><span class="mp-stat-val" style="color:#facc15; font-family:Arial,sans-serif;">${s.motm||0}</span><span class="mp-stat-label">🌟</span></div>
-                        </div>
-                    </div>`; 
-                } 
-            } else {
-                tbody.innerHTML = `<div style="text-align:center; padding:20px; color:var(--muted); font-weight:bold;">لا يوجد لاعبين</div>`;
-            }
-            document.getElementById('teamModal').style.display = 'block'; 
-        };
+            <div style="flex:1; text-align:center;" onclick="event.stopPropagation(); window.openTeam('${m.team2}')">
+                <div class="logo-ph" style="width:55px; height:55px; margin:0 auto 8px; background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.1); box-shadow:0 4px 10px rgba(0,0,0,0.4);">${logo2}</div>
+                <div style="font-weight:900; font-size:13px; color:#fff;">${m.team2}</div>
+            </div>
+        </div>
         
-        window.openPlayerProfile = function(pName, tName) { 
-            try { history.pushState({ modal: 'playerModal' }, "", "#player"); }catch(e){} 
-            const p = teamsDataGlobal[tName].players[pName]; 
-            const pLogo = p.photo ? `<img src="${p.photo}" onclick="openImageViewer('${p.photo}')" style="width:100%; height:100%; object-fit:cover; cursor:pointer;">` : teamsDataGlobal[tName].logo ? `<img src="${teamsDataGlobal[tName].logo}" style="width:100%; height:100%; object-fit:contain; opacity:0.5; padding:20px;">` : `<i class="fa-solid fa-user" style="font-size:50px; color:var(--muted); line-height:120px;"></i>`; 
-            document.getElementById('pModalLogo').innerHTML = pLogo; 
-            document.getElementById('pModalName').innerText = pName; 
-            document.getElementById('pModalTeam').innerText = tName; 
-            document.getElementById('pModalTeam').onclick = () => { window.closePlayerModal(); window.openTeam(tName); }; 
-            
-            let pPosDisplay = document.getElementById('pModalPosDisplay'); 
-            let isGK = false; 
-            if(p.position) { 
-                pPosDisplay.innerText = t(p.position); 
-                pPosDisplay.style.display = 'inline-block'; 
-                if(p.position === 'حارس مرمى' || p.position === 'GK' || p.position === 'حارس') isGK = true;
-            } else { 
-                pPosDisplay.style.display = 'none'; 
-            } 
-            
-            document.getElementById('pModalMatches').innerText = p.matches || 0; 
-            document.getElementById('pModalGoals').innerText = p.goals || 0; 
-            document.getElementById('pModalAssists').innerText = p.assists || 0; 
-            document.getElementById('pModalMotm').innerText = p.motm || 0; 
-            document.getElementById('pModalY').innerText = p.yellow || 0; 
-            document.getElementById('pModalR').innerText = p.red || 0; 
-            
-            document.getElementById('pModalCS').innerText = p.cs || 0; 
-            const csBox = document.getElementById('pModalCS').parentElement;
-            if(isGK) { csBox.style.display = 'block'; } else { csBox.style.display = 'none'; }
-            
-            document.getElementById('playerModal').style.display = 'flex'; 
-        };
+        ${matchMotmHtml}
+        ${teamStarsHtml}
+        
+        <div style="padding: 0 15px 15px; display:flex; gap:10px;">
+            <button class="btn-enter-match" style="flex:1; background:rgba(59,130,246,0.1); color:var(--primary); border:1px solid rgba(59,130,246,0.3); margin-top:0;"><i class="fa-solid fa-chart-simple"></i> ${t('التفاصيل والإحصائيات')}</button>
+            ${sqBtnArc}
+        </div>
+    </div>`; 
+        
+    if(m.round && (m.round.includes("النهائي") || m.round.includes("ربع") || m.round.includes("نصف") || m.round.includes("16"))) { kList.innerHTML += htmlCard; hasKnockouts = true; } else { aList.innerHTML += htmlCard; } }); } 
+    if(!hasKnockouts) kList.innerHTML = `<div style="text-align:center; font-size:12px; color:var(--muted); margin-bottom:20px;"></div>`;
+    renderBracket();
+});
 
-        window.switchSquadTab = function(tabNum) {
-            document.getElementById('pitchWrapper1').style.display = 'none'; document.getElementById('pitchWrapper2').style.display = 'none'; document.getElementById('pitchWrapperBoth').style.display = 'none';
-            document.getElementById('tabSq1').style.background = 'transparent'; document.getElementById('tabSq1').style.color = 'var(--muted)'; document.getElementById('tabSq2').style.background = 'transparent'; document.getElementById('tabSq2').style.color = 'var(--muted)'; document.getElementById('tabSqBoth').style.background = 'transparent'; document.getElementById('tabSqBoth').style.color = 'var(--muted)';
-            if(tabNum === 1) { document.getElementById('pitchWrapper1').style.display = 'block'; document.getElementById('tabSq1').style.background = 'var(--primary)'; document.getElementById('tabSq1').style.color = '#fff'; }
-            else if(tabNum === 2) { document.getElementById('pitchWrapper2').style.display = 'block'; document.getElementById('tabSq2').style.background = 'var(--primary)'; document.getElementById('tabSq2').style.color = '#fff'; }
-            else { document.getElementById('pitchWrapperBoth').style.display = 'block'; document.getElementById('tabSqBoth').style.background = 'var(--primary)'; document.getElementById('tabSqBoth').style.color = '#fff'; }
-        };
+function renderBracket() { 
+    let container = document.getElementById('bracketContainer'); if(!container) return; 
+    let roundsOrder = ['دور الـ 16', 'ربع النهائي', 'نصف النهائي', 'النهائي']; 
+    let rounds = { 'دور الـ 16': [], 'ربع النهائي': [], 'نصف النهائي': [], 'النهائي': [] }; 
+    let allMatches = [ ...Object.values(savedMatchesGlobal), ...Object.values(scheduleGlobal), ...Object.values(groupMatchupsGlobal) ]; 
+    
+    allMatches.forEach(m => { 
+        if(m.round) {
+            let r = m.round.trim();
+            if(rounds[r]) rounds[r].push(m); 
+        }
+    }); 
+    
+    let html = ''; 
+    roundsOrder.forEach(r => { 
+        if(rounds[r] && rounds[r].length > 0) { 
+            html += `<div class="bracket-round"><div style="text-align:center; font-size:14px; color:var(--primary); font-weight:bold; margin-bottom: 10px; text-shadow:0 1px 3px rgba(0,0,0,0.8);">${t(r)}</div>`; 
+            rounds[r].forEach(m => { 
+                let s1 = m.score1 !== undefined ? m.score1 : '-'; 
+                let s2 = m.score2 !== undefined ? m.score2 : '-'; 
+                html += `<div class="bracket-match"><div class="bracket-team"><span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:80%;">${m.team1}</span><span class="bracket-score">${s1}</span></div><div style="border-top:1px solid rgba(255,255,255,0.1); margin:4px 0;"></div><div class="bracket-team"><span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:80%;">${m.team2}</span><span class="bracket-score">${s2}</span></div></div>`; 
+            }); 
+            html += `</div>`; 
+        } 
+    }); 
+    container.innerHTML = html || `<div style="color:var(--muted); font-size:12px; text-align:center; padding:20px;">لا توجد مباريات في الشجرة</div>`; 
+}
 
-        window.openSquads = function(t1, t2, sq1, sq2) {
-            try { history.pushState({ modal: 'squadsModal' }, "", "#squads"); } catch(e){}
-            document.getElementById('tabName1').innerText = t1 || 'فريق 1'; document.getElementById('tabName2').innerText = t2 || 'فريق 2';
-            let d1 = teamsDataGlobal[t1]; let d2 = teamsDataGlobal[t2];
-            const singleLayout = { gk: {top:'90%', left:'50%'}, cb: {top:'78%', left:'50%'}, lb: {top:'75%', left:'20%'}, rb: {top:'75%', left:'80%'}, cdm: {top:'65%', left:'50%'}, cm: {top:'50%', left:'50%'}, lm: {top:'50%', left:'20%'}, rm: {top:'50%', left:'80%'}, cam: {top:'35%', left:'50%'}, lw: {top:'22%', left:'25%'}, rw: {top:'22%', left:'75%'}, st: {top:'15%', left:'50%'} };
-            const vsTopLayout = { gk: {top:'6%', left:'50%'}, cb: {top:'15%', left:'50%'}, lb: {top:'18%', left:'82%'}, rb: {top:'18%', left:'18%'}, cdm: {top:'25%', left:'50%'}, cm: {top:'32%', left:'50%'}, lm: {top:'32%', left:'82%'}, rm: {top:'32%', left:'18%'}, cam: {top:'39%', left:'50%'}, lw: {top:'43%', left:'75%'}, rw: {top:'43%', left:'25%'}, st: {top:'46%', left:'50%'} };
-            const vsBottomLayout = { gk: {top:'94%', left:'50%'}, cb: {top:'85%', left:'50%'}, lb: {top:'82%', left:'18%'}, rb: {top:'82%', left:'82%'}, cdm: {top:'75%', left:'50%'}, cm: {top:'68%', left:'50%'}, lm: {top:'68%', left:'18%'}, rm: {top:'68%', left:'82%'}, cam: {top:'61%', left:'50%'}, lw: {top:'57%', left:'25%'}, rw: {top:'57%', left:'75%'}, st: {top:'54%', left:'50%'} };
-
-            const renderPitch = (sq, containerId, layout, teamName) => {
-                const cont = document.getElementById(containerId); if(!cont) return; cont.innerHTML = '<div class="p-center-line"></div><div class="p-center-circle"></div><div class="p-pen-top"></div><div class="p-pen-bottom"></div>';
-                const posNames = { gk:'GK', cb:'CB', lb:'LB', rb:'RB', cdm:'CDM', cm:'CM', cam:'CAM', lm:'LM', rm:'RM', lw:'LW', rw:'RW', st:'ST' };
-                for(let pos in sq) {
-                    let pData = sq[pos]; if(!pData) continue; let name = typeof pData === 'object' ? pData.name : pData; let rating = typeof pData === 'object' ? pData.rating : ''; if(!name || name.trim() === '') continue;
-                    let posCoords = layout[pos]; if(!posCoords) continue; let posLabel = posNames[pos] || pos.toUpperCase(); let pPhoto = teamsDataGlobal[teamName]?.players?.[name]?.photo || ''; let imgHtml = pPhoto ? `<img src="${pPhoto}">` : `<i class="fa-solid fa-user"></i>`;
-                    let ratingHtml = ''; if(rating && rating !== "") { let rNum = parseFloat(rating); let bg = '#3f3f46'; let color = '#fff'; if(rNum >= 8.0) { bg = '#10b981'; color = '#000'; } else if(rNum < 6.0) { bg = '#ef4444'; color = '#fff'; } ratingHtml = `<div class="pitch-player-rating" style="background:${bg}; color:${color};">${rating}</div>`; }
-                    cont.innerHTML += `<div class="pitch-player" style="top:${posCoords.top}; left:${posCoords.left};" onclick="window.openPlayerProfile('${name}', '${teamName}')"><div class="pitch-player-img-wrapper">${imgHtml}<div class="pitch-player-pos">${t(posLabel)}</div>${ratingHtml}</div><div class="pitch-player-info"><div class="pitch-player-name">${name}</div><div class="pitch-player-team">${teamName}</div></div></div>`;
-                }
-            };
-
-            const renderPitchBoth = (sq1, sq2, containerId, topLayout, bottomLayout, t1, t2) => {
-                const cont = document.getElementById(containerId); if(!cont) return; cont.innerHTML = '<div class="p-center-line"></div><div class="p-center-circle"></div><div class="p-pen-top"></div><div class="p-pen-bottom"></div>';
-                const posNames = { gk:'GK', cb:'CB', lb:'LB', rb:'RB', cdm:'CDM', cm:'CM', cam:'CAM', lm:'LM', rm:'RM', lw:'LW', rw:'RW', st:'ST' };
-                const drawHalf = (sq, layout, teamName) => {
-                    for(let pos in sq) {
-                        let pData = sq[pos]; if(!pData) continue; let name = typeof pData === 'object' ? pData.name : pData; let rating = typeof pData === 'object' ? pData.rating : ''; if(!name || name.trim() === '') continue;
-                        let posCoords = layout[pos]; if(!posCoords) continue; let posLabel = posNames[pos] || pos.toUpperCase(); let pPhoto = teamsDataGlobal[teamName]?.players?.[name]?.photo || ''; let imgHtml = pPhoto ? `<img src="${pPhoto}">` : `<i class="fa-solid fa-user"></i>`;
-                        let ratingHtml = ''; if(rating && rating !== "") { let rNum = parseFloat(rating); let bg = '#3f3f46'; let color = '#fff'; if(rNum >= 8.0) { bg = '#10b981'; color = '#000'; } else if(rNum < 6.0) { bg = '#ef4444'; color = '#fff'; } ratingHtml = `<div class="pitch-player-rating" style="background:${bg}; color:${color};">${rating}</div>`; }
-                        cont.innerHTML += `<div class="pitch-player" style="top:${posCoords.top}; left:${posCoords.left};" onclick="window.openPlayerProfile('${name}', '${teamName}')"><div class="pitch-player-img-wrapper">${imgHtml}<div class="pitch-player-pos">${t(posLabel)}</div>${ratingHtml}</div><div class="pitch-player-info"><div class="pitch-player-name">${name}</div><div class="pitch-player-team">${teamName}</div></div></div>`;
-                    }
-                };
-                drawHalf(sq1, topLayout, t1); drawHalf(sq2, bottomLayout, t2);
-            };
-            
-            renderPitch(sq1, 'pitchTeam1', singleLayout, t1); renderPitch(sq2, 'pitchTeam2', singleLayout, t2); renderPitchBoth(sq1, sq2, 'pitchBothTeams', vsTopLayout, vsBottomLayout, t1, t2); switchSquadTab(3); 
-            const modal = document.getElementById('squadsModal'); if(modal) { modal.style.display = 'flex'; modal.onclick = function(e) { if(e.target === modal) modal.style.display = 'none'; }; } 
-        };
-
-        window.nav = function(id, el) { try { if(!history.state || history.state.page !== id) history.pushState({ page: id }, "", "#" + id); } catch(e) {} document.querySelectorAll('.page').forEach(p => p.classList.remove('active')); document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active')); document.getElementById('page-' + id).classList.add('active'); if(el) el.classList.add('active'); window.scrollTo(0,0); };
-
-        window.addEventListener('popstate', function(event) {
-            let isModalOpen = false; const imageViewer = document.getElementById('imageViewerModal'); if(imageViewer && imageViewer.style.display === 'flex') { imageViewer.style.display = 'none'; isModalOpen = true; }
-            document.querySelectorAll('.modal').forEach(m => { if(m.style.display === 'block' || m.style.display === 'flex') { m.style.display = 'none'; isModalOpen = true; } }); if(isModalOpen) return;
-            if(event.state && event.state.page) {
-                let id = event.state.page; let navItems = document.querySelectorAll('.nav-item'); let el = navItems[0];
-                if(id === 'matches') el = navItems[1]; if(id === 'groups') el = navItems[2]; if(id === 'teams') el = navItems[3]; if(id === 'stats') el = navItems[4]; if(id === 'gallery') el = navItems[5];
-                document.querySelectorAll('.page').forEach(p => p.classList.remove('active')); document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active')); document.getElementById('page-' + id).classList.add('active'); if(el) el.classList.add('active'); window.scrollTo(0,0);
-            } else {
-                try { history.pushState({ page: 'live' }, "", "#live"); } catch(e) {} document.querySelectorAll('.page').forEach(p => p.classList.remove('active')); document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active')); document.getElementById('page-live').classList.add('active'); document.querySelectorAll('.nav-item')[0].classList.add('active'); 
-            }
+db.ref(`tournaments/${dbPath}/media_posts`).on('value', snap => {
+    const grid = document.getElementById('publicGalleryGrid'); if(!grid) return; grid.innerHTML = ''; let data = snap.val();
+    if(data) {
+        Object.keys(data).reverse().forEach(k => {
+            let post = data[k];
+            if(post.type === 'fb') { grid.innerHTML += `<div class="media-post"><div class="fb-embed-container">${post.embedCode}</div></div>`; } 
+            else if (post.type === 'image_text') { let imgHtml = post.image ? `<img src="${post.image}" class="media-post-img" onclick="openImageViewer('${post.image}')">` : ''; let textHtml = post.text ? `<div class="media-post-text">${post.text}</div>` : ''; grid.innerHTML += `<div class="media-post">${imgHtml}${textHtml}</div>`; }
         });
+        if(window.FB) { setTimeout(() => { window.FB.XFBML.parse(); }, 500); }
+    } else { grid.innerHTML = `<div style="color:var(--muted); font-size:12px; text-align:center; padding:20px;">${t('لا توجد منشورات حاليا')}</div>`; }
+});
+
+window.openArchiveSquads = function(matchId) { let m = savedMatchesGlobal[matchId]; if(m) { window.openSquads(m.team1, m.team2, m.squad1, m.squad2); } };
+
+window.openMatchDetails = function(key) {
+    let m = savedMatchesGlobal[key]; if(!m) return; document.getElementById('currentArchiveMatchId').value = key; let info = []; if(m.groupInfo && m.groupInfo !== "أدوار إقصائية") info.push(t('مجموعة') + ' ' + m.groupInfo); if(m.round) info.push(t(m.round)); if(m.leg) info.push(t(m.leg));
+    document.getElementById('mdRound').innerText = info.length > 0 ? info.join(' - ') : t('نتيجة مباراة'); document.getElementById('mdT1Name').innerText = m.team1 || '--'; document.getElementById('mdT2Name').innerText = m.team2 || '--'; document.getElementById('mdLogo1').innerHTML = teamsDataGlobal[m.team1]?.logo ? `<img src="${teamsDataGlobal[m.team1].logo}">` : `<i class="fa-solid fa-shield"></i>`; document.getElementById('mdLogo2').innerHTML = teamsDataGlobal[m.team2]?.logo ? `<img src="${teamsDataGlobal[m.team2].logo}">` : `<i class="fa-solid fa-shield"></i>`; document.getElementById('mdScore').innerText = `${parseInt(m.score1) || 0} - ${parseInt(m.score2) || 0}`; 
+    document.getElementById('mdTimelineList').innerHTML = formatEventsToTimeline(m.events);
+    
+    let motmHtml = '';
+    if(m.motmTeam && m.motm) {
+        let pStats = getMatchPlayerStats(m.events, m.motm); let statBadges = '';
+        if(pStats.goals > 0) statBadges += `<span style="color:#4ade80; margin-left:3px; font-family:Arial,sans-serif;">${pStats.goals}⚽</span>`;
+        if(pStats.assists > 0) statBadges += `<span style="color:#8b5cf6; margin-left:3px; font-family:Arial,sans-serif;">${pStats.assists}🅰️</span>`;
+        motmHtml += `<div style="text-align:center; width:100%;"><i class="fa-solid fa-crown" style="color:#facc15;"></i> ${t('رجل المباراة')}: <span onclick="window.openPlayerProfile('${m.motm}', '${m.motmTeam}')" style="cursor:pointer; text-decoration:underline; color:#facc15; font-weight:bold;">${m.motm}</span> <span style="color:var(--muted); font-size:10px;">(${m.motmTeam})</span><br><div style="font-size:12px; margin-top:3px;">${statBadges}</div></div>`;
+    }
+    document.getElementById('mdMotmCtr').innerHTML = motmHtml !== '' ? `<div style="display:flex; justify-content:center; margin-top:15px; padding:10px; background:rgba(250,204,21,0.1); border:1px solid rgba(250,204,21,0.3); border-radius:8px; font-size:12px; font-weight:bold;">${motmHtml}</div>` : '';
+
+    if(m.referee1 || m.referee2 || m.referee3 || m.referee4) { document.getElementById('mdReferees').style.display = 'flex'; document.getElementById('mdRef1Txt').innerHTML = getRefHtml(m.referee1); document.getElementById('mdRef2Txt').innerHTML = getRefHtml(m.referee2); if(m.referee3) { document.getElementById('mdRef3Wrap').style.display = 'flex'; document.getElementById('mdRef3Txt').innerHTML = getRefHtml(m.referee3); } else { document.getElementById('mdRef3Wrap').style.display = 'none'; } if(m.referee4) { document.getElementById('mdRef4Wrap').style.display = 'flex'; document.getElementById('mdRef4Txt').innerHTML = getRefHtml(m.referee4); } else { document.getElementById('mdRef4Wrap').style.display = 'none'; } } else { document.getElementById('mdReferees').style.display = 'none'; }
+    
+    document.getElementById('mdTabs').style.display = 'flex'; 
+    let statsData = m.stats || {};
+    document.getElementById('mdPos1Txt').innerText = (statsData.possession1 !== undefined ? statsData.possession1 : 50) + '%'; 
+    document.getElementById('mdPos2Txt').innerText = (statsData.possession2 !== undefined ? statsData.possession2 : 50) + '%'; 
+    document.getElementById('mdPos1Bar').style.width = (statsData.possession1 !== undefined ? statsData.possession1 : 50) + '%'; 
+    document.getElementById('mdPos2Bar').style.width = (statsData.possession2 !== undefined ? statsData.possession2 : 50) + '%'; 
+    document.getElementById('mdShots1Txt').innerText = statsData.shots1 || 0; 
+    document.getElementById('mdShots2Txt').innerText = statsData.shots2 || 0; 
+    document.getElementById('mdCorn1Txt').innerText = statsData.corners1 || 0; 
+    document.getElementById('mdCorn2Txt').innerText = statsData.corners2 || 0; 
+    document.getElementById('mdFouls1Txt').innerText = statsData.fouls1 || 0; 
+    document.getElementById('mdFouls2Txt').innerText = statsData.fouls2 || 0; 
+    
+    switchMatchTab('md', 'events'); document.getElementById('mdTeam1Container').onclick = function() { window.openTeam(m.team1); }; document.getElementById('mdTeam2Container').onclick = function() { window.openTeam(m.team2); };
+    let btnSq = document.getElementById('mdSquadBtn'); if(btnSq) { if((m.squad1 && Object.keys(m.squad1).length > 0) || (m.squad2 && Object.keys(m.squad2).length > 0)) { btnSq.style.display = 'block'; btnSq.onclick = function() { window.openSquads(m.team1, m.team2, m.squad1, m.squad2); }; } else { btnSq.style.display = 'none'; } }
+    
+    db.ref(`tournaments/${dbPath}/saved_matches/${key}/comments`).on('value', snap => { let commentsHtml = ''; snap.forEach(child => { let c = child.val(); commentsHtml += `<div class="chat-msg" style="margin-bottom:5px;"><div class="chat-sender">${c.name}</div>${c.text}</div>`; }); document.getElementById('archiveCommentsList').innerHTML = commentsHtml || `<div style="font-size:11px; color:var(--muted); text-align:center;">${t('لا توجد تعليقات حتى الآن. كن أول من يعلق!')}</div>`; });
+
+    try { history.pushState({ modal: 'matchDetailsModal' }, "", "#match"); }catch(e){}
+    document.getElementById('matchDetailsModal').style.display = 'block';
+};
+
+window.closeMatchModal = function() { closeModal('matchDetailsModal'); if(history.state && history.state.modal) history.back(); };
+window.closeTeamModal = function() { closeModal('teamModal'); if(history.state && history.state.modal) history.back(); };
+window.closePlayerModal = function() { closeModal('playerModal'); if(history.state && history.state.modal) history.back(); };
+window.closeSquadsModal = function() { closeModal('squadsModal'); if(history.state && history.state.modal) history.back(); };
+
+window.sendArchiveComment = function() { requireAuth(() => { let id = document.getElementById('currentArchiveMatchId').value; let name = localStorage.getItem('chatUserName'); let text = document.getElementById('arcCommentText').value.trim(); if(!text) return; db.ref(`tournaments/${dbPath}/saved_matches/${id}/comments`).push({ name: name, text: text, time: Date.now() }); document.getElementById('arcCommentText').value = ''; }); };
+
+window.openScheduledMatch = function(key) {
+    let m = scheduleGlobal[key]; if(!m) return; let info = []; if(m.group) info.push(t('مجموعة') + ' ' + m.group); if(m.round) info.push(t(m.round)); if(m.leg) info.push(t(m.leg));
+    document.getElementById('mdRound').innerText = info.length > 0 ? info.join(' - ') : t('مباراة قادمة'); document.getElementById('mdT1Name').innerText = m.team1 || '--'; document.getElementById('mdT2Name').innerText = m.team2 || '--'; document.getElementById('mdLogo1').innerHTML = teamsDataGlobal[m.team1]?.logo ? `<img src="${teamsDataGlobal[m.team1].logo}">` : `<i class="fa-solid fa-shield"></i>`; document.getElementById('mdLogo2').innerHTML = teamsDataGlobal[m.team2]?.logo ? `<img src="${teamsDataGlobal[m.team2].logo}">` : `<i class="fa-solid fa-shield"></i>`; document.getElementById('mdScore').innerText = `VS`; document.getElementById('mdTabs').style.display = 'none'; document.getElementById('md-content-stats').style.display = 'none'; document.getElementById('mdTimelineList').innerHTML = `<div style="text-align:center; padding: 20px;"><i class="fa-regular fa-clock" style="font-size:30px; color:var(--primary); margin-bottom:15px; display:block;"></i><strong style="font-size:14px; color:var(--text);">${t('لم تبدأ')}</strong><br><br><span style="color:var(--muted); font-size:12px;">${t('الساعة')} <span style="font-family:Arial,sans-serif">${m.time} | ${m.date}</span></span><br><span style="color:var(--muted); font-size:12px;"><i class="fa-solid fa-location-dot"></i> ${t('الملعب')}: ${t(m.stadium || 'لم يحدد')}</span></div>`; document.getElementById('mdMotmCtr').innerHTML = ''; switchMatchTab('md', 'events');
+    if(m.referee1 || m.referee2 || m.referee3 || m.referee4) { document.getElementById('mdReferees').style.display = 'flex'; document.getElementById('mdRef1Txt').innerHTML = getRefHtml(m.referee1); document.getElementById('mdRef2Txt').innerHTML = getRefHtml(m.referee2); if(m.referee3) { document.getElementById('mdRef3Wrap').style.display = 'flex'; document.getElementById('mdRef3Txt').innerHTML = getRefHtml(m.referee3); } else { document.getElementById('mdRef3Wrap').style.display = 'none'; } if(m.referee4) { document.getElementById('mdRef4Wrap').style.display = 'flex'; document.getElementById('mdRef4Txt').innerHTML = getRefHtml(m.referee4); } else { document.getElementById('mdRef4Wrap').style.display = 'none'; } } else { document.getElementById('mdReferees').style.display = 'none'; }
+    document.getElementById('mdTeam1Container').onclick = function() { window.openTeam(m.team1); }; document.getElementById('mdTeam2Container').onclick = function() { window.openTeam(m.team2); }; let btnSq = document.getElementById('mdSquadBtn'); if(btnSq) btnSq.style.display = 'none'; 
+    try{ history.pushState({ modal: 'matchDetailsModal' }, "", "#scheduled"); }catch(e){} document.getElementById('matchDetailsModal').style.display = 'block';
+}
+
+window.openGroupMatchup = function(key) {
+    let m = groupMatchupsGlobal[key]; if(!m) return; let info = []; if(m.group) info.push(t('مجموعة') + ' ' + m.group); if(m.round) info.push(t(m.round)); if(m.leg) info.push(t(m.leg));
+    document.getElementById('mdRound').innerText = info.length > 0 ? info.join(' - ') : t('مواجهة بدون موعد'); document.getElementById('mdT1Name').innerText = m.team1 || '--'; document.getElementById('mdT2Name').innerText = m.team2 || '--'; document.getElementById('mdLogo1').innerHTML = teamsDataGlobal[m.team1]?.logo ? `<img src="${teamsDataGlobal[m.team1].logo}">` : `<i class="fa-solid fa-shield"></i>`; document.getElementById('mdLogo2').innerHTML = teamsDataGlobal[m.team2]?.logo ? `<img src="${teamsDataGlobal[m.team2].logo}">` : `<i class="fa-solid fa-shield"></i>`; document.getElementById('mdScore').innerText = `VS`; document.getElementById('mdTabs').style.display = 'none'; document.getElementById('md-content-stats').style.display = 'none'; document.getElementById('mdTimelineList').innerHTML = `<div style="text-align:center; padding: 20px;"><i class="fa-regular fa-calendar-xmark" style="font-size:30px; color:#f59e0b; margin-bottom:15px; display:block;"></i><strong style="font-size:14px; color:var(--text);">${t('مواجهة بدون موعد')}</strong></div>`; document.getElementById('mdMotmCtr').innerHTML = ''; document.getElementById('mdReferees').style.display = 'none'; switchMatchTab('md', 'events');
+    document.getElementById('mdTeam1Container').onclick = function() { window.openTeam(m.team1); }; document.getElementById('mdTeam2Container').onclick = function() { window.openTeam(m.team2); }; let btnSq = document.getElementById('mdSquadBtn'); if(btnSq) btnSq.style.display = 'none'; 
+    try{ history.pushState({ modal: 'matchDetailsModal' }, "", "#matchup"); }catch(e){} document.getElementById('matchDetailsModal').style.display = 'block';
+}
+
+window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); });
+
+window.openTeam = function(tName) { 
+    try { history.pushState({ modal: 'teamModal' }, "", "#team"); } catch(e){} 
+    const d = teamsDataGlobal[tName]; if(!d) return; 
+    document.getElementById('modalTeamName').innerText = tName; 
+    document.getElementById('modalLogo').innerHTML = d.logo ? `<img src="${d.logo}" style="width:100%; height:100%; object-fit:contain; border-radius:50%;">` : `<i class="fa-solid fa-shield-halved" style="font-size:40px; margin-top:25px; color:var(--muted);"></i>`; 
+    document.getElementById('modalGf').innerText = d.gf || 0; 
+    document.getElementById('modalGa').innerText = d.ga || 0; 
+    
+    let extrasHtml = [];
+    if(d.nickname && d.nickname.trim() !== '') extrasHtml.push(`اللقب: ${d.nickname}`);
+    if(d.stadium && d.stadium.trim() !== '') extrasHtml.push(`الملعب: ${d.stadium}`);
+    document.getElementById('modalTeamExtras').innerHTML = extrasHtml.join(' | ');
+
+    let staff = ''; if(d.coach) staff += `<div style="background:rgba(255,255,255,0.05); padding:8px 15px; border-radius:12px; border:1px solid rgba(255,255,255,0.1); font-size:13px; color:var(--text); font-weight:bold;"><i class="fa-solid fa-user-tie" style="color:var(--primary);"></i> ${t('مدرب')}: ${d.coach}</div>`; if(d.assistant) staff += `<div style="background:rgba(255,255,255,0.05); padding:8px 15px; border-radius:12px; border:1px solid rgba(255,255,255,0.1); font-size:13px; color:var(--text); font-weight:bold;"><i class="fa-solid fa-user-tie" style="color:var(--muted);"></i> ${t('مساعد')}: ${d.assistant}</div>`; 
+    let jerseyHtml = ''; if (d.jerseyColor || d.jerseyImage || d.jerseyImage2) { let colorBox = d.jerseyColor ? `<div style="width:18px; height:18px; border-radius:6px; background-color:${d.jerseyColor}; border:1px solid rgba(255,255,255,0.2); display:inline-block; box-shadow:0 2px 5px rgba(0,0,0,0.5);"></div>` : ''; let imgBox1 = d.jerseyImage ? `<img src="${d.jerseyImage}" onclick="openImageViewer('${d.jerseyImage}')" style="width:40px; height:40px; object-fit:contain; border-radius:8px; cursor:pointer; background:rgba(0,0,0,0.5); padding:4px; border:1px solid rgba(255,255,255,0.1);">` : ''; let imgBox2 = d.jerseyImage2 ? `<img src="${d.jerseyImage2}" onclick="openImageViewer('${d.jerseyImage2}')" style="width:40px; height:40px; object-fit:contain; border-radius:8px; cursor:pointer; background:rgba(0,0,0,0.5); padding:4px; border:1px solid rgba(255,255,255,0.1);">` : ''; jerseyHtml = `<div style="background:rgba(255,255,255,0.05); padding:8px 15px; border-radius:12px; border:1px solid rgba(255,255,255,0.1); font-size:13px; color:var(--text); display:flex; align-items:center; gap:10px; font-weight:bold;">${colorBox} ${imgBox1} ${imgBox2}</div>`; }
+    
+    let bestPlayer = getStarPlayer(tName);
+    let bestPlayerHtml = '';
+    if(bestPlayer) {
+        let pImg = bestPlayer.photo ? `<img src="${bestPlayer.photo}" style="width:40px;height:40px;border-radius:50%;object-fit:cover;border:2px solid #facc15;">` : `<div style="width:40px;height:40px;border-radius:50%;background:#111;border:2px solid #facc15;display:flex;align-items:center;justify-content:center;color:#facc15;"><i class="fa-solid fa-star"></i></div>`;
+        bestPlayerHtml = `<div style="background:linear-gradient(135deg, rgba(250,204,21,0.1), rgba(0,0,0,0.4)); border:1px solid #facc15; border-radius:12px; padding:10px; display:flex; align-items:center; gap:10px; margin-bottom:15px; cursor:pointer;" onclick="window.openPlayerProfile('${bestPlayer.name}', '${tName}')"><div style="position:relative;">${pImg}<i class="fa-solid fa-crown" style="position:absolute; bottom:-5px; right:-5px; color:#facc15; font-size:12px; text-shadow:0 1px 2px #000;"></i></div><div style="text-align:right; flex:1;"><div style="font-size:10px; color:#facc15; font-weight:bold;">${t('نجم الفريق')}</div><div style="font-size:13px; color:#fff; font-weight:900;">${bestPlayer.name}</div></div><i class="fa-solid fa-chevron-left" style="color:var(--muted); font-size:12px;"></i></div>`;
+    }
+
+    document.getElementById('modalStaffArea').innerHTML = bestPlayerHtml + staff + jerseyHtml; 
+    
+    // اضافة المباريات المكتملة
+    let tMatchesHtml = '';
+    let finMatches = Object.entries(savedMatchesGlobal).filter(([k, m]) => m.team1 === tName || m.team2 === tName);
+    if(finMatches.length > 0) {
+        tMatchesHtml += `<h3 style="color:var(--muted); font-size:14px; margin-top:0; border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:10px;">المباريات المنتهية</h3>`;
+        finMatches.reverse().forEach(([k, m]) => {
+            tMatchesHtml += `
+            <div class="card" onclick="window.openMatchDetails('${k}')" style="padding:12px; margin-bottom:10px; cursor:pointer; background:linear-gradient(145deg, rgba(255,255,255,0.02), rgba(0,0,0,0.1)); border:1px solid rgba(255,255,255,0.05); border-radius:12px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; font-weight:bold; font-size:14px;">
+                    <span style="flex:1; text-align:right; color:${m.team1===tName?'var(--primary)':'#fff'};">${m.team1}</span>
+                    <span style="padding:0 15px; color:var(--accent); font-size:18px; font-family:Arial;">${m.score1} - ${m.score2}</span>
+                    <span style="flex:1; text-align:left; color:${m.team2===tName?'var(--primary)':'#fff'};">${m.team2}</span>
+                </div>
+            </div>`;
+        });
+    }
+
+    let schMatches = Object.entries(scheduleGlobal).filter(([k, m]) => m.team1 === tName || m.team2 === tName);
+    if(schMatches.length > 0) {
+        tMatchesHtml += `<h3 style="color:var(--primary); font-size:14px; margin-top:20px; border-bottom:1px solid rgba(59,130,246,0.2); padding-bottom:10px;">المباريات القادمة (مجدولة)</h3>`;
+        schMatches.forEach(([k, m]) => {
+            tMatchesHtml += `
+            <div class="card" onclick="window.openScheduledMatch('${k}')" style="padding:12px; margin-bottom:10px; cursor:pointer; border-right:3px solid var(--primary); background:linear-gradient(145deg, rgba(59,130,246,0.05), rgba(0,0,0,0.1)); border-radius:12px;">
+                <div style="font-size:11px; color:var(--primary); text-align:center; margin-bottom:8px; font-weight:bold;">${m.date} | ${m.time}</div>
+                <div style="display:flex; justify-content:space-between; align-items:center; font-weight:bold; font-size:14px;">
+                    <span style="flex:1; text-align:right; color:${m.team1===tName?'var(--primary)':'#fff'};">${m.team1}</span>
+                    <span style="padding:4px 12px; font-size:11px; background:var(--primary); color:#fff; border-radius:12px;">VS</span>
+                    <span style="flex:1; text-align:left; color:${m.team2===tName?'var(--primary)':'#fff'};">${m.team2}</span>
+                </div>
+            </div>`;
+        });
+    }
+
+    let unsMatches = Object.entries(groupMatchupsGlobal).filter(([k, m]) => m.team1 === tName || m.team2 === tName);
+    if(unsMatches.length > 0) {
+        tMatchesHtml += `<h3 style="color:#f59e0b; font-size:14px; margin-top:20px; border-bottom:1px solid rgba(245,158,11,0.2); padding-bottom:10px;">مواجهات غير مجدولة</h3>`;
+        unsMatches.forEach(([k, m]) => {
+            tMatchesHtml += `
+            <div class="card" onclick="window.openGroupMatchup('${k}')" style="padding:12px; margin-bottom:10px; cursor:pointer; border-right:3px solid #f59e0b; background:linear-gradient(145deg, rgba(245,158,11,0.05), rgba(0,0,0,0.1)); border-radius:12px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; font-weight:bold; font-size:14px;">
+                    <span style="flex:1; text-align:right; color:${m.team1===tName?'#f59e0b':'#fff'};">${m.team1}</span>
+                    <span style="padding:4px 12px; font-size:11px; background:#f59e0b; color:#fff; border-radius:12px;">VS</span>
+                    <span style="flex:1; text-align:left; color:${m.team2===tName?'#f59e0b':'#fff'};">${m.team2}</span>
+                </div>
+            </div>`;
+        });
+    }
+
+    if(tMatchesHtml === '') tMatchesHtml = `<div style="text-align:center; padding:30px; color:var(--muted); font-weight:bold; font-size:13px;">لا توجد مباريات مسجلة لهذا الفريق حالياً</div>`;
+    document.getElementById('modalTeamMatchesList').innerHTML = tMatchesHtml;
+
+    const tbody = document.getElementById('modalPlayersList'); tbody.innerHTML = ''; 
+    if(d.players) { 
+        for(let p in d.players) { 
+            let s = d.players[p]; 
+            let pImgHtml = s.photo ? `<img src="${s.photo}" style="width:45px;height:45px;border-radius:50%;object-fit:cover;border:2px solid var(--primary); box-shadow:0 2px 8px rgba(0,0,0,0.5);">` : `<div style="width:45px;height:45px;border-radius:50%;background:rgba(255,255,255,0.05);display:flex;align-items:center;justify-content:center;border:2px solid var(--primary);font-size:18px;color:var(--primary); box-shadow:0 2px 8px rgba(0,0,0,0.5);"><i class="fa-solid fa-user"></i></div>`; 
+            let posBadge = s.position ? `<div style="background:var(--primary); padding:2px 8px; border-radius:6px; font-size:10px; color:#fff; display:inline-block; font-weight:900; margin-top:4px; box-shadow:0 2px 4px rgba(0,0,0,0.3);">${t(s.position)}</div>` : '';
+            
+            tbody.innerHTML += `
+            <div class="modern-player-row" onclick="window.openPlayerProfile('${p}','${tName}')">
+                <div class="mp-left">
+                    ${pImgHtml}
+                    <div style="display:flex; flex-direction:column; align-items:flex-start;">
+                        <span style="font-weight:900; font-size:15px; color:var(--text); text-shadow:0 1px 2px rgba(0,0,0,0.5);">${p}</span>
+                        ${posBadge}
+                    </div>
+                </div>
+                <div class="mp-right">
+                    <div class="mp-stat"><span class="mp-stat-val" style="color:var(--primary); font-family:Arial,sans-serif;">${s.goals||0}</span><span class="mp-stat-label">⚽</span></div>
+                    <div class="mp-stat"><span class="mp-stat-val" style="color:#facc15; font-family:Arial,sans-serif;">${s.motm||0}</span><span class="mp-stat-label">🌟</span></div>
+                </div>
+            </div>`; 
+        } 
+    } else {
+        tbody.innerHTML = `<div style="text-align:center; padding:20px; color:var(--muted); font-weight:bold;">لا يوجد لاعبين</div>`;
+    }
+    
+    document.getElementById('teamModal').style.display = 'block'; 
+};
+
+window.openPlayerProfile = function(pName, tName) { 
+    try { history.pushState({ modal: 'playerModal' }, "", "#player"); }catch(e){} 
+    const p = teamsDataGlobal[tName].players[pName]; 
+    const pLogo = p.photo ? `<img src="${p.photo}" onclick="openImageViewer('${p.photo}')" style="width:100%; height:100%; object-fit:cover; cursor:pointer;">` : teamsDataGlobal[tName].logo ? `<img src="${teamsDataGlobal[tName].logo}" style="width:100%; height:100%; object-fit:contain; opacity:0.5; padding:20px;">` : `<i class="fa-solid fa-user" style="font-size:50px; color:var(--muted); line-height:120px;"></i>`; 
+    document.getElementById('pModalLogo').innerHTML = pLogo; 
+    document.getElementById('pModalName').innerText = pName; 
+    document.getElementById('pModalTeam').innerText = tName; 
+    document.getElementById('pModalTeam').onclick = () => { window.closePlayerModal(); window.openTeam(tName); }; 
+    
+    let pPosDisplay = document.getElementById('pModalPosDisplay'); 
+    let isGK = false; 
+    if(p.position) { 
+        pPosDisplay.innerText = t(p.position); 
+        pPosDisplay.style.display = 'inline-block'; 
+        if(p.position === 'حارس مرمى' || p.position === 'GK' || p.position === 'حارس') isGK = true;
+    } else { 
+        pPosDisplay.style.display = 'none'; 
+    } 
+    
+    document.getElementById('pModalMatches').innerText = p.matches || 0; 
+    document.getElementById('pModalGoals').innerText = p.goals || 0; 
+    document.getElementById('pModalAssists').innerText = p.assists || 0; 
+    document.getElementById('pModalMotm').innerText = p.motm || 0; 
+    document.getElementById('pModalY').innerText = p.yellow || 0; 
+    document.getElementById('pModalR').innerText = p.red || 0; 
+    
+    document.getElementById('pModalCS').innerText = p.cs || 0; 
+    const csBox = document.getElementById('pModalCS').parentElement;
+    if(isGK) { csBox.style.display = 'block'; } else { csBox.style.display = 'none'; }
+    
+    document.getElementById('playerModal').style.display = 'flex'; 
+};
+
+window.switchSquadTab = function(tabNum) {
+    document.getElementById('pitchWrapper1').style.display = 'none'; document.getElementById('pitchWrapper2').style.display = 'none'; document.getElementById('pitchWrapperBoth').style.display = 'none';
+    document.getElementById('tabSq1').style.background = 'transparent'; document.getElementById('tabSq1').style.color = 'var(--muted)'; document.getElementById('tabSq2').style.background = 'transparent'; document.getElementById('tabSq2').style.color = 'var(--muted)'; document.getElementById('tabSqBoth').style.background = 'transparent'; document.getElementById('tabSqBoth').style.color = 'var(--muted)';
+    if(tabNum === 1) { document.getElementById('pitchWrapper1').style.display = 'block'; document.getElementById('tabSq1').style.background = 'var(--primary)'; document.getElementById('tabSq1').style.color = '#fff'; }
+    else if(tabNum === 2) { document.getElementById('pitchWrapper2').style.display = 'block'; document.getElementById('tabSq2').style.background = 'var(--primary)'; document.getElementById('tabSq2').style.color = '#fff'; }
+    else { document.getElementById('pitchWrapperBoth').style.display = 'block'; document.getElementById('tabSqBoth').style.background = 'var(--primary)'; document.getElementById('tabSqBoth').style.color = '#fff'; }
+};
+
+window.openSquads = function(t1, t2, sq1, sq2) {
+    try { history.pushState({ modal: 'squadsModal' }, "", "#squads"); } catch(e){}
+    document.getElementById('tabName1').innerText = t1 || 'فريق 1'; document.getElementById('tabName2').innerText = t2 || 'فريق 2';
+    const singleLayout = { gk: {top:'90%', left:'50%'}, cb: {top:'78%', left:'50%'}, lb: {top:'75%', left:'20%'}, rb: {top:'75%', left:'80%'}, cdm: {top:'65%', left:'50%'}, cm: {top:'50%', left:'50%'}, lm: {top:'50%', left:'20%'}, rm: {top:'50%', left:'80%'}, cam: {top:'35%', left:'50%'}, lw: {top:'22%', left:'25%'}, rw: {top:'22%', left:'75%'}, st: {top:'15%', left:'50%'} };
+    const vsTopLayout = { gk: {top:'6%', left:'50%'}, cb: {top:'15%', left:'50%'}, lb: {top:'18%', left:'82%'}, rb: {top:'18%', left:'18%'}, cdm: {top:'25%', left:'50%'}, cm: {top:'32%', left:'50%'}, lm: {top:'32%', left:'82%'}, rm: {top:'32%', left:'18%'}, cam: {top:'39%', left:'50%'}, lw: {top:'43%', left:'75%'}, rw: {top:'43%', left:'25%'}, st: {top:'46%', left:'50%'} };
+    const vsBottomLayout = { gk: {top:'94%', left:'50%'}, cb: {top:'85%', left:'50%'}, lb: {top:'82%', left:'18%'}, rb: {top:'82%', left:'82%'}, cdm: {top:'75%', left:'50%'}, cm: {top:'68%', left:'50%'}, lm: {top:'68%', left:'18%'}, rm: {top:'68%', left:'82%'}, cam: {top:'61%', left:'50%'}, lw: {top:'57%', left:'25%'}, rw: {top:'57%', left:'75%'}, st: {top:'54%', left:'50%'} };
+
+    const renderPitch = (sq, containerId, layout, teamName) => {
+        const cont = document.getElementById(containerId); if(!cont) return; cont.innerHTML = '<div class="p-center-line"></div><div class="p-center-circle"></div><div class="p-pen-top"></div><div class="p-pen-bottom"></div>';
+        const posNames = { gk:'GK', cb:'CB', lb:'LB', rb:'RB', cdm:'CDM', cm:'CM', cam:'CAM', lm:'LM', rm:'RM', lw:'LW', rw:'RW', st:'ST' };
+        for(let pos in sq) {
+            let pData = sq[pos]; if(!pData) continue; let name = typeof pData === 'object' ? pData.name : pData; let rating = typeof pData === 'object' ? pData.rating : ''; if(!name || name.trim() === '') continue;
+            let posCoords = layout[pos]; if(!posCoords) continue; let posLabel = posNames[pos] || pos.toUpperCase(); let pPhoto = teamsDataGlobal[teamName]?.players?.[name]?.photo || ''; let imgHtml = pPhoto ? `<img src="${pPhoto}">` : `<i class="fa-solid fa-user"></i>`;
+            let ratingHtml = ''; if(rating && rating !== "") { let rNum = parseFloat(rating); let bg = '#3f3f46'; let color = '#fff'; if(rNum >= 8.0) { bg = '#10b981'; color = '#000'; } else if(rNum < 6.0) { bg = '#ef4444'; color = '#fff'; } ratingHtml = `<div class="pitch-player-rating" style="background:${bg}; color:${color};">${rating}</div>`; }
+            cont.innerHTML += `<div class="pitch-player" style="top:${posCoords.top}; left:${posCoords.left};" onclick="window.openPlayerProfile('${name}', '${teamName}')"><div class="pitch-player-img-wrapper">${imgHtml}<div class="pitch-player-pos">${t(posLabel)}</div>${ratingHtml}</div><div class="pitch-player-info"><div class="pitch-player-name">${name}</div><div class="pitch-player-team">${teamName}</div></div></div>`;
+        }
+    };
+
+    const renderPitchBoth = (sq1, sq2, containerId, topLayout, bottomLayout, t1, t2) => {
+        const cont = document.getElementById(containerId); if(!cont) return; cont.innerHTML = '<div class="p-center-line"></div><div class="p-center-circle"></div><div class="p-pen-top"></div><div class="p-pen-bottom"></div>';
+        const posNames = { gk:'GK', cb:'CB', lb:'LB', rb:'RB', cdm:'CDM', cm:'CM', cam:'CAM', lm:'LM', rm:'RM', lw:'LW', rw:'RW', st:'ST' };
+        const drawHalf = (sq, layout, teamName) => {
+            for(let pos in sq) {
+                let pData = sq[pos]; if(!pData) continue; let name = typeof pData === 'object' ? pData.name : pData; let rating = typeof pData === 'object' ? pData.rating : ''; if(!name || name.trim() === '') continue;
+                let posCoords = layout[pos]; if(!posCoords) continue; let posLabel = posNames[pos] || pos.toUpperCase(); let pPhoto = teamsDataGlobal[teamName]?.players?.[name]?.photo || ''; let imgHtml = pPhoto ? `<img src="${pPhoto}">` : `<i class="fa-solid fa-user"></i>`;
+                let ratingHtml = ''; if(rating && rating !== "") { let rNum = parseFloat(rating); let bg = '#3f3f46'; let color = '#fff'; if(rNum >= 8.0) { bg = '#10b981'; color = '#000'; } else if(rNum < 6.0) { bg = '#ef4444'; color = '#fff'; } ratingHtml = `<div class="pitch-player-rating" style="background:${bg}; color:${color};">${rating}</div>`; }
+                cont.innerHTML += `<div class="pitch-player" style="top:${posCoords.top}; left:${posCoords.left};" onclick="window.openPlayerProfile('${name}', '${teamName}')"><div class="pitch-player-img-wrapper">${imgHtml}<div class="pitch-player-pos">${t(posLabel)}</div>${ratingHtml}</div><div class="pitch-player-info"><div class="pitch-player-name">${name}</div><div class="pitch-player-team">${teamName}</div></div></div>`;
+            }
+        };
+        drawHalf(sq1, topLayout, t1); drawHalf(sq2, bottomLayout, t2);
+    };
+    
+    renderPitch(sq1, 'pitchTeam1', singleLayout, t1); renderPitch(sq2, 'pitchTeam2', singleLayout, t2); renderPitchBoth(sq1, sq2, 'pitchBothTeams', vsTopLayout, vsBottomLayout, t1, t2); switchSquadTab(3); 
+    const modal = document.getElementById('squadsModal'); if(modal) { modal.style.display = 'flex'; modal.onclick = function(e) { if(e.target === modal) modal.style.display = 'none'; }; } 
+};
+
+window.nav = function(id, el) { try { if(!history.state || history.state.page !== id) history.pushState({ page: id }, "", "#" + id); } catch(e) {} document.querySelectorAll('.page').forEach(p => p.classList.remove('active')); document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active')); document.getElementById('page-' + id).classList.add('active'); if(el) el.classList.add('active'); window.scrollTo(0,0); };
+
+window.addEventListener('popstate', function(event) {
+    let isModalOpen = false; const imageViewer = document.getElementById('imageViewerModal'); if(imageViewer && imageViewer.style.display === 'flex') { imageViewer.style.display = 'none'; isModalOpen = true; }
+    document.querySelectorAll('.modal').forEach(m => { if(m.style.display === 'block' || m.style.display === 'flex') { m.style.display = 'none'; isModalOpen = true; } }); if(isModalOpen) return;
+    if(event.state && event.state.page) {
+        let id = event.state.page; let navItems = document.querySelectorAll('.nav-item'); let el = navItems[0];
+        if(id === 'matches') el = navItems[1]; if(id === 'groups') el = navItems[2]; if(id === 'teams') el = navItems[3]; if(id === 'stats') el = navItems[4]; if(id === 'gallery') el = navItems[5];
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active')); document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active')); document.getElementById('page-' + id).classList.add('active'); if(el) el.classList.add('active'); window.scrollTo(0,0);
+    } else {
+        try { history.pushState({ page: 'live' }, "", "#live"); } catch(e) {} document.querySelectorAll('.page').forEach(p => p.classList.remove('active')); document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active')); document.getElementById('page-live').classList.add('active'); document.querySelectorAll('.nav-item')[0].classList.add('active'); window.scrollTo(0,0);
+    }
+});
+
+nav('live', document.querySelectorAll('.nav-item')[0]);
     </script>
 </body>
 </html>
