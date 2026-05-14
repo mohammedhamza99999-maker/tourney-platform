@@ -37,7 +37,7 @@
         .panel { background: var(--card); border-radius: 12px; padding: 20px; margin-bottom: 20px; border: 1px solid var(--border); box-shadow: 0 5px 15px rgba(0,0,0,0.4); }
         h2 { color: var(--primary); text-align: center; border-bottom: 1px solid var(--border); padding-bottom: 10px; margin-top:0; font-size: 18px;}
         input, select, textarea { width: 100%; padding: 12px 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--input-bg); color: #ffffff; box-sizing: border-box; font-family: 'Cairo'; margin-bottom: 10px; font-size: 14px;}
-        input:focus, select:focus { outline: none; border-color: var(--primary); background: #27272a;}
+        input:focus, select:focus, textarea:focus { outline: none; border-color: var(--primary); background: #27272a;}
         .flex-row { display: flex; gap: 10px; align-items: center;} .flex-row > div { flex: 1; }
         label { font-size: 12px; color: var(--muted); margin-bottom: 4px; display: block; font-weight: bold;}
         button { width: 100%; padding: 12px; background: #27272a; color: var(--text); border: 1px solid var(--border); border-radius: 8px; font-weight: bold; cursor: pointer; margin-bottom: 10px; transition: 0.2s; font-size: 14px; font-family: 'Cairo';}
@@ -90,7 +90,42 @@
             <button class="tab-btn" onclick="openTab('tab-teams', this)"><i class="fa-solid fa-users-gear"></i> الفرق</button>
             <button class="tab-btn" onclick="openTab('tab-groups', this)"><i class="fa-solid fa-sitemap"></i> المجموعات</button>
             <button class="tab-btn" onclick="openTab('tab-schedule', this)"><i class="fa-solid fa-calendar-days"></i> الجدول</button>
+            <button class="tab-btn" onclick="openTab('tab-finance', this)"><i class="fa-solid fa-sack-dollar"></i> المالية</button>
             <button class="tab-btn" onclick="openTab('tab-settings', this)"><i class="fa-solid fa-gear"></i> الإعدادات</button>
+        </div>
+
+        <div id="tab-finance" class="tab-content">
+            <div class="panel" style="border-color:#10b981; background:rgba(16, 185, 129, 0.05);">
+                <h2 style="color:#10b981;"><i class="fa-solid fa-wallet"></i> ملخص المالية</h2>
+                <div class="flex-row" style="text-align:center; margin-bottom:20px;">
+                    <div style="background:var(--input-bg); padding:15px; border-radius:12px; border:1px solid #10b981;">
+                        <div style="font-size:12px; color:var(--muted);">إجمالي الواردات</div>
+                        <div id="totalIncome" style="font-size:24px; font-weight:bold; color:#10b981;">0</div>
+                    </div>
+                    <div style="background:var(--input-bg); padding:15px; border-radius:12px; border:1px solid #ef4444;">
+                        <div style="font-size:12px; color:var(--muted);">إجمالي المصاريف</div>
+                        <div id="totalExpense" style="font-size:24px; font-weight:bold; color:#ef4444;">0</div>
+                    </div>
+                    <div style="background:var(--input-bg); padding:15px; border-radius:12px; border:1px solid var(--primary);">
+                        <div style="font-size:12px; color:var(--muted);">الصافي (الصندوق)</div>
+                        <div id="netBalance" style="font-size:24px; font-weight:bold; color:var(--primary);">0</div>
+                    </div>
+                </div>
+
+                <h3 style="color:var(--text); font-size:15px; border-bottom:1px solid var(--border); padding-bottom:10px;">إضافة معاملة جديدة</h3>
+                <div class="flex-row">
+                    <select id="finType" style="margin-bottom:10px;"><option value="income">واردات (+)</option><option value="expense">مصاريف (-)</option></select>
+                    <input type="number" id="finAmount" placeholder="المبلغ" style="margin-bottom:10px;">
+                </div>
+                <input type="text" id="finDesc" placeholder="البيان / الوصف" style="margin-bottom:10px;">
+                <input type="date" id="finDate" style="margin-bottom:10px;">
+                <button onclick="addFinanceRecord()" style="background:#10b981; color:#000;"><i class="fa-solid fa-plus"></i> إضافة المعاملة</button>
+            </div>
+
+            <div class="panel">
+                <h2 style="color:var(--text);"><i class="fa-solid fa-list-check"></i> سجل المعاملات</h2>
+                <div id="financeList" class="preview-box" style="padding:0; border:none; background:transparent;"></div>
+            </div>
         </div>
 
         <div id="tab-live" class="tab-content active">
@@ -217,6 +252,12 @@
             <div class="panel">
                 <h2>إضافة / تعديل فريق</h2>
                 <input type="text" id="dbTeamName" placeholder="اسم الفريق (إجباري)">
+                
+                <div class="flex-row" style="margin-bottom:10px;">
+                    <input type="text" id="dbStadium" placeholder="اسم الملعب (إن وجد)">
+                    <input type="text" id="dbNickname" placeholder="لقب الفريق (إن وجد)">
+                </div>
+
                 <div class="flex-row">
                     <input type="text" id="dbCoach" placeholder="اسم المدرب">
                     <div style="background:var(--input-bg); border:1px solid var(--border); border-radius:8px; display:flex; align-items:center; padding:0 10px;"><span style="font-size:11px; color:var(--muted);">صورة:</span><input type="file" id="dbCoachPhoto" accept="image/*" style="border:none; background:transparent; padding:5px; margin:0;"></div>
@@ -412,25 +453,11 @@
         </div>
 
         <div id="tab-settings" class="tab-content">
-            <div class="panel">
-                <h2 style="color:var(--text);"><i class="fa-solid fa-trophy"></i> اسم البطولة الأساسي</h2>
-                <input type="text" id="tourneyName" value="بطولة دوائر خانقين" onchange="updateVisualName()" style="font-weight:bold; font-size:16px; color:var(--accent); text-align: center;">
-            </div>
-
-            <div class="panel" style="border-color: #3b82f6; background:rgba(59, 130, 246, 0.05);">
-                <h2 style="color: #3b82f6;"><i class="fa-solid fa-share-nodes"></i> مشاركة رابط الجمهور</h2>
-                <div class="flex-row">
-                    <input type="text" id="audienceLinkInput" readonly style="color: var(--accent); font-weight: bold; text-align: left; margin: 0; background: #000;" dir="ltr">
-                    <button onclick="copyAudienceLink()" style="background: #3b82f6; color: #fff; margin: 0; width: auto; padding: 0 20px;"><i class="fa-solid fa-copy"></i> نسخ</button>
-                </div>
-                <div style="font-size: 11px; color: var(--muted); text-align: center; margin-top: 10px;">شارك هذا الرابط مع الجمهور لمتابعة بطولتك مباشرة.</div>
-            </div>
-
             <div class="panel" style="border-color:#8b5cf6; background:rgba(139, 92, 246, 0.05);">
                 <h2 style="color:#8b5cf6;"><i class="fa-solid fa-bolt"></i> إدارة شريط الأخبار العاجلة</h2>
                 <div style="background:rgba(0,0,0,0.2); padding:10px; border-radius:8px; border:1px solid var(--border);">
-                    <label style="color:var(--text); font-size:12px;">نص الخبر العاجل (يظهر كشريط متحرك للجمهور):</label>
-                    <input type="text" id="newsText" placeholder="مثال: قررت اللجنة المنظمة تأجيل مباراة...">
+                    <label style="color:var(--text); font-size:12px;">نص الخبر العاجل (يظهر كشريط متحرك للجمهور ويتحمل كلام كثير):</label>
+                    <textarea id="newsText" placeholder="مثال: قررت اللجنة المنظمة تأجيل مباراة..." rows="3" style="width:100%; padding:10px; border-radius:8px; border:1px solid var(--border); background:var(--input-bg); color:#fff; font-family:'Cairo'; margin-bottom:10px;"></textarea>
                     <label style="color:var(--text); font-size:12px;">رابط الخبر (اختياري - يفتح عند الضغط على الشريط):</label>
                     <input type="url" id="newsLink" placeholder="https://..." dir="ltr">
                     <label style="color:var(--text); font-size:12px;">سرعة الشريط (بالثواني - كلما قل الرقم زادت السرعة):</label>
@@ -499,6 +526,8 @@
                 <div id="mediaGallery" style="margin-top:15px; border-top:1px solid var(--border); padding-top:10px; display:flex; flex-direction:column; gap:10px; max-height: 250px; overflow-y:auto;"></div>
             </div>
 
+            <div class="panel"><label>اسم عرض البطولة:</label><input type="text" id="tourneyName" value="بطولة دوائر خانقين" onchange="updateVisualName()" style="font-weight:bold; font-size:16px; color:var(--accent);"></div>
+            
             <div class="panel" style="border-color:#ef4444; background:rgba(239, 68, 68, 0.05);">
                 <h2 style="color:#ef4444; margin-bottom:10px; border:none;"><i class="fa-solid fa-wrench"></i> إصلاح ومزامنة بيانات اللاعبين</h2>
                 <div style="font-size:12px; color:var(--text); margin-bottom:15px; text-align:center;">إعادة حساب المباريات، الأهداف، الصناعة، والبطاقات بالكامل بناءً على الأرشيف.</div>
@@ -581,21 +610,18 @@
         let testModeActive = false; let allData = {}; let adminClockInterval; let isInternalUpdate = false;
         let posActiveTeam = 0; let posSec1 = 0; let posSec2 = 0;
 
-      // 2. نظام الحماية الذكي (SaaS Logic + قفل الأجهزة)
         auth.onAuthStateChanged((user) => {
             if (user) {
                 db.ref(`saas_users/${user.uid}`).once('value').then(snap => {
                     const data = snap.val();
                     const today = new Date().toISOString().split('T')[0];
                     
-                    // استدعاء البصمة المخزنة في متصفح المستخدم
                     const localDeviceToken = localStorage.getItem('tourney_device_id');
                     
                     if (!data || data.status !== "active" || today > data.end_date) {
                         alert("اشتراكك منتهي أو حسابك موقوف.");
                         logoutAdmin();
                     } 
-                    // هنا الحارس الجديد: يطابق بصمة الجهاز ويه قاعدة البيانات!
                     else if (!data.device_id || data.device_id !== localDeviceToken) {
                         alert("هذا الجهاز غير موثق! 🔒 يرجى الدخول من صفحة تسجيل الدخول وإدخال كود التفعيل.");
                         logoutAdmin();
@@ -604,7 +630,6 @@
                         dbPath = data.tournament_id;
                         document.getElementById('currentAdminEmail').innerText = data.email || "مدير البطولة";
                         document.getElementById('currentTourneyId').innerText = dbPath;
-                        generateAudienceLink();
                         initAdminData();
                     }
                 });
@@ -613,7 +638,6 @@
             }
         });
 
-        // 3. الخروج الذكي (Smart Logout) يحافظ على بصمة الجهاز
         function logoutAdmin() {
             let deviceToken = localStorage.getItem('tourney_device_id');
             let audienceDb = localStorage.getItem('audienceDbPath');
@@ -630,14 +654,10 @@
             });
         }
 
-        // ==========================================
-        // منطقة كود الإشعارات
-        // ==========================================
         async function sendManualPush(title, message) {
-            console.log("تم إلغاء الإشعارات القديمة. النظام جاهز لاستقبال الكود الجديد:", title, message);
+            console.log("النظام جاهز لاستقبال الكود الجديد:", title, message);
             let msgBox = document.getElementById('autoSaveMsg1');
             if(msgBox) { msgBox.innerText = "تم تجهيز النظام للإشعارات الجديدة!"; msgBox.classList.add('show'); setTimeout(()=>msgBox.classList.remove('show'), 2000); }
-            // TODO: سيتم إضافة كود OneSignal هنا
         }
 
         window.sendCustomPreMatchPush = function(id) {
@@ -648,7 +668,6 @@
             let msg = `لا تفوتوا مباراة ${m.team1} ضد ${m.team2} - تبدأ ${timeText}`;
             sendManualPush(title, msg);
         }
-        // ==========================================
 
         function openTab(tabId, btn) { document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active')); document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active')); document.getElementById(tabId).classList.add('active'); btn.classList.add('active'); }
         
@@ -682,42 +701,8 @@
             </div>`; 
         }
         
-        function updateVisualName() {
-            const newName = document.getElementById('tourneyName').value;
-            try { localStorage.setItem('visualName', newName); } catch(e){}
-            if(dbPath) {
-                db.ref(`tournaments/${dbPath}/settings`).update({ tournamentName: newName }).then(() => {
-                    alert("تم حفظ اسم البطولة وسيظهر للجمهور مباشرة!");
-                });
-            } else {
-                alert("تم التغيير محلياً!");
-            }
-        }
+        function updateVisualName() { try { localStorage.setItem('visualName', document.getElementById('tourneyName').value); } catch(e){} alert("تم التغيير!"); }
         try { if(localStorage.getItem('visualName')) document.getElementById('tourneyName').value = localStorage.getItem('visualName'); } catch(e){}
-
-        function generateAudienceLink() {
-            let path = window.location.pathname;
-            let baseUrl = window.location.origin + path.substring(0, path.lastIndexOf('/')) + '/index.html';
-            let linkInput = document.getElementById('audienceLinkInput');
-            if(linkInput) linkInput.value = baseUrl + '?id=' + dbPath;
-        }
-
-        function copyAudienceLink() {
-            let linkInput = document.getElementById('audienceLinkInput');
-            linkInput.select();
-            linkInput.setSelectionRange(0, 99999);
-            try {
-                navigator.clipboard.writeText(linkInput.value).then(() => {
-                    alert("تم نسخ رابط الجمهور بنجاح! يمكنك مشاركته الآن.");
-                }).catch(() => {
-                    document.execCommand("copy");
-                    alert("تم نسخ رابط الجمهور بنجاح!");
-                });
-            } catch(e) {
-                document.execCommand("copy");
-                alert("تم نسخ رابط الجمهور بنجاح!");
-            }
-        }
 
         function updateAppSettings() { const tm = document.getElementById('testModeSelect').value === 'true'; db.ref(`tournaments/${dbPath}/settings`).update({ testMode: tm }); }
         function saveTourneySystem() { const sys = document.getElementById('tourneySystemType').value; db.ref(`tournaments/${dbPath}/settings`).update({ systemType: sys }).then(() => alert("تم حفظ النظام!")); }
@@ -904,6 +889,11 @@
         async function saveFullTeam() { 
             const tName = document.getElementById('dbTeamName').value.trim(); if (!tName) return alert("اكتب اسم الفريق!"); document.getElementById('autoSaveMsg1').innerText = "جاري الحفظ..."; document.getElementById('autoSaveMsg1').classList.add('show');
             let teamObj = { coach: document.getElementById('dbCoach').value || "", assistant: document.getElementById('dbAsst').value || "", players: {} }; 
+            
+            // حفظ الملعب واللقب
+            teamObj.stadium = document.getElementById('dbStadium').value || "";
+            teamObj.nickname = document.getElementById('dbNickname').value || "";
+
             for(let i=1; i<=15; i++) { 
                 let pName = document.getElementById('p'+i).value.trim(); 
                 let pFile = document.getElementById('pImg'+i).files[0]; 
@@ -929,9 +919,27 @@
             db.ref(`tournaments/${dbPath}/teams/${tName}`).set(teamObj).then(() => { document.getElementById('autoSaveMsg1').classList.remove('show'); setTimeout(() => { document.getElementById('autoSaveMsg1').innerText = "تم الحفظ"; }, 500); alert("تم حفظ الفريق!"); clearTeamForm(); }).catch(e => alert("خطأ!")); 
         }
 
-        function clearTeamForm() { document.getElementById('dbTeamName').value=''; document.getElementById('dbCoach').value=''; document.getElementById('dbAsst').value=''; document.getElementById('dbLogo').value=''; document.getElementById('dbCoachPhoto').value=''; document.getElementById('dbAsstPhoto').value=''; document.getElementById('dbJerseyColor').value='#ffffff'; document.getElementById('dbJerseyImg').value=''; document.getElementById('dbJerseyImg2').value=''; for(let i=1; i<=15; i++) { document.getElementById('p'+i).value=''; document.getElementById('pImg'+i).value=''; document.getElementById('pIcon'+i).className = 'fa-solid fa-camera'; document.getElementById('pIcon'+i).style.color = 'var(--muted)'; if(document.getElementById('pPos'+i)) document.getElementById('pPos'+i).value=''; } }
+        function clearTeamForm() { 
+            document.getElementById('dbTeamName').value=''; 
+            document.getElementById('dbCoach').value=''; 
+            document.getElementById('dbAsst').value=''; 
+            document.getElementById('dbStadium').value=''; 
+            document.getElementById('dbNickname').value=''; 
+            document.getElementById('dbLogo').value=''; document.getElementById('dbCoachPhoto').value=''; document.getElementById('dbAsstPhoto').value=''; document.getElementById('dbJerseyColor').value='#ffffff'; document.getElementById('dbJerseyImg').value=''; document.getElementById('dbJerseyImg2').value=''; for(let i=1; i<=15; i++) { document.getElementById('p'+i).value=''; document.getElementById('pImg'+i).value=''; document.getElementById('pIcon'+i).className = 'fa-solid fa-camera'; document.getElementById('pIcon'+i).style.color = 'var(--muted)'; if(document.getElementById('pPos'+i)) document.getElementById('pPos'+i).value=''; } 
+        }
 
-        window.loadTeamForEdit = function(tName) { const tData = allData.teams[tName]; if(!tData) return; clearTeamForm(); document.getElementById('dbTeamName').value = tName; document.getElementById('dbCoach').value = tData.coach || ''; document.getElementById('dbAsst').value = tData.assistant || ''; document.getElementById('dbJerseyColor').value = tData.jerseyColor || '#ffffff'; if(tData.players) { let i = 1; for(let pName in tData.players) { if(i > 15) break; document.getElementById('p'+i).value = pName; if(tData.players[pName].photo) { document.getElementById('pIcon'+i).className = 'fa-solid fa-check-double'; document.getElementById('pIcon'+i).style.color = '#3b82f6'; } if(tData.players[pName].position && document.getElementById('pPos'+i)) { document.getElementById('pPos'+i).value = tData.players[pName].position; } i++; } } openTab('tab-teams', document.querySelectorAll('.tab-btn')[1]); };
+        window.loadTeamForEdit = function(tName) { 
+            const tData = allData.teams[tName]; if(!tData) return; 
+            clearTeamForm(); 
+            document.getElementById('dbTeamName').value = tName; 
+            document.getElementById('dbCoach').value = tData.coach || ''; 
+            document.getElementById('dbAsst').value = tData.assistant || ''; 
+            document.getElementById('dbStadium').value = tData.stadium || ''; 
+            document.getElementById('dbNickname').value = tData.nickname || ''; 
+            document.getElementById('dbJerseyColor').value = tData.jerseyColor || '#ffffff'; 
+            if(tData.players) { let i = 1; for(let pName in tData.players) { if(i > 15) break; document.getElementById('p'+i).value = pName; if(tData.players[pName].photo) { document.getElementById('pIcon'+i).className = 'fa-solid fa-check-double'; document.getElementById('pIcon'+i).style.color = '#3b82f6'; } if(tData.players[pName].position && document.getElementById('pPos'+i)) { document.getElementById('pPos'+i).value = tData.players[pName].position; } i++; } } 
+            openTab('tab-teams', document.querySelectorAll('.tab-btn')[1]); 
+        };
 
         window.setGroupStatus = function(g, t, status) {
             db.ref(`tournaments/${dbPath}/groups/${g}/${t}`).update({ status: status });
@@ -1122,29 +1130,43 @@
         }
 
         async function saveArchiveEdit() { 
-            let id = document.getElementById('arcId').value; 
-            const motmVal = document.getElementById('arcMotm').value; let motmName = "", motmTeam = "";
-            if(motmVal && motmVal !== "") { [motmTeam, motmName] = motmVal.split('|'); }
-
-            const getSq = (prefix) => { let sq = {}; ['gk', 'cb', 'lb', 'rb', 'cdm', 'cm', 'cam', 'lm', 'rm', 'lw', 'rw', 'st'].forEach(pos => { sq[pos] = { name: document.getElementById(`${prefix}_${pos}`).value, rating: document.getElementById(`${prefix}_r_${pos}`).value }; }); return sq; };
-
-            let updates = { 
-                score1: parseInt(document.getElementById('arcS1').value) || 0, 
-                score2: parseInt(document.getElementById('arcS2').value) || 0, 
-                round: document.getElementById('arcRound').value, 
-                leg: document.getElementById('arcLeg').value, 
-                events: document.getElementById('arcEvents').value, 
-                referee1: document.getElementById('arcRef1').value, 
-                referee2: document.getElementById('arcRef2').value, 
-                referee3: document.getElementById('arcRef3').value, 
-                referee4: document.getElementById('arcRef4').value, 
-                motm: motmName, 
-                motmTeam: motmTeam, 
-                squad1: getSq('arc_sq1'), 
-                squad2: getSq('arc_sq2') 
-            }; 
-
             try {
+                let id = document.getElementById('arcId').value; 
+                if(!id) return;
+
+                const motmVal = document.getElementById('arcMotm').value; 
+                let motmName = "", motmTeam = "";
+                if(motmVal && motmVal !== "") { [motmTeam, motmName] = motmVal.split('|'); }
+
+                // تعديل الدالة لتجنب أخطاء null إذا لم يكن الحقل موجوداً
+                const getSq = (prefix) => { 
+                    let sq = {}; 
+                    ['gk', 'cb', 'lb', 'rb', 'cdm', 'cm', 'cam', 'lm', 'rm', 'lw', 'rw', 'st'].forEach(pos => { 
+                        let el = document.getElementById(`${prefix}_${pos}`);
+                        let rEl = document.getElementById(`${prefix}_r_${pos}`);
+                        if (el && el.value) {
+                            sq[pos] = { name: el.value, rating: rEl ? rEl.value : '' }; 
+                        }
+                    }); 
+                    return sq; 
+                };
+
+                let updates = { 
+                    score1: parseInt(document.getElementById('arcS1').value) || 0, 
+                    score2: parseInt(document.getElementById('arcS2').value) || 0, 
+                    round: document.getElementById('arcRound').value || '', 
+                    leg: document.getElementById('arcLeg').value || '', 
+                    events: document.getElementById('arcEvents').value || '', 
+                    referee1: document.getElementById('arcRef1').value || '', 
+                    referee2: document.getElementById('arcRef2').value || '', 
+                    referee3: document.getElementById('arcRef3').value || '', 
+                    referee4: document.getElementById('arcRef4').value || '', 
+                    motm: motmName || '', 
+                    motmTeam: motmTeam || '', 
+                    squad1: getSq('arc_sq1'), 
+                    squad2: getSq('arc_sq2') 
+                }; 
+
                 document.getElementById('archiveModal').style.display = 'none';
                 document.getElementById('autoSaveMsg1').innerText = "جاري الحفظ والمزامنة الشاملة...";
                 document.getElementById('autoSaveMsg1').classList.add('show');
@@ -1160,6 +1182,7 @@
                 document.getElementById('autoSaveMsg1').classList.remove('show');
                 alert("✅ تم تحديث الأرشيف وإعادة مزامنة إحصائيات اللاعبين (الأهداف والبطاقات) والمجموعات بنجاح تام!");
             } catch(e) {
+                console.error(e);
                 alert("حدث خطأ أثناء الحفظ: " + e.message);
                 document.getElementById('autoSaveMsg1').classList.remove('show');
             }
@@ -1385,6 +1408,46 @@
 
         // دالة تشغيل كافة جلب البيانات (يتم استدعاؤها بعد تسجيل الدخول بنجاح)
         function initAdminData() {
+            // جلب المالية
+            db.ref(`tournaments/${dbPath}/finance`).on('value', snap => {
+                let data = snap.val() || { incomes: {}, expenses: {} };
+                let totalInc = 0, totalExp = 0;
+                let records = [];
+                for(let id in data.incomes) { totalInc += data.incomes[id].amount || 0; records.push({...data.incomes[id], id, type:'income'}); }
+                for(let id in data.expenses) { totalExp += data.expenses[id].amount || 0; records.push({...data.expenses[id], id, type:'expense'}); }
+                
+                let elTotalInc = document.getElementById('totalIncome');
+                if(elTotalInc) elTotalInc.innerText = totalInc.toLocaleString();
+                
+                let elTotalExp = document.getElementById('totalExpense');
+                if(elTotalExp) elTotalExp.innerText = totalExp.toLocaleString();
+                
+                let elNet = document.getElementById('netBalance');
+                if(elNet) elNet.innerText = (totalInc - totalExp).toLocaleString();
+                
+                records.sort((a,b) => b.timestamp - a.timestamp);
+                let html = '';
+                records.forEach(r => {
+                    let isInc = r.type === 'income';
+                    let color = isInc ? '#10b981' : '#ef4444';
+                    let icon = isInc ? 'fa-arrow-down' : 'fa-arrow-up';
+                    html += `<div class="preview-item" style="border:1px solid ${color}; border-radius:8px; margin-bottom:8px; padding:10px; background:rgba(${isInc?'16,185,129':'239,68,68'},0.05);">
+                        <div class="preview-item-header">
+                            <div style="display:flex; align-items:center; gap:10px;">
+                                <div style="color:${color}; font-weight:bold; font-size:16px; width:100px;"><i class="fa-solid ${icon}"></i> ${r.amount.toLocaleString()}</div>
+                                <div>
+                                    <div style="font-size:13px; color:var(--text); font-weight:bold;">${r.desc}</div>
+                                    <div style="font-size:10px; color:var(--muted);">${r.date}</div>
+                                </div>
+                            </div>
+                            <button class="del-btn" onclick="deleteFinanceRecord('${r.type}', '${r.id}')"><i class="fa-solid fa-trash"></i></button>
+                        </div>
+                    </div>`;
+                });
+                let listEl = document.getElementById('financeList');
+                if(listEl) listEl.innerHTML = html || '<div style="text-align:center; color:var(--muted); padding:15px; font-size:12px;">لا توجد معاملات</div>';
+            });
+
             db.ref(`tournaments/${dbPath}/media_posts`).on('value', snap => {
                 let cont = document.getElementById('mediaGallery'); if(!cont) return; cont.innerHTML = '';
                 let d = snap.val();
@@ -1405,7 +1468,6 @@
                 if(document.getElementById('newsText')) document.getElementById('newsText').value = s.newsText || '';
                 if(document.getElementById('newsLink')) document.getElementById('newsLink').value = s.newsLink || '';
                 if(document.getElementById('newsSpeed')) document.getElementById('newsSpeed').value = s.newsSpeed || 25;
-                if(s.tournamentName && document.getElementById('tourneyName')) { document.getElementById('tourneyName').value = s.tournamentName; localStorage.setItem('visualName', s.tournamentName); }
                 
                 if(s.groupCriteria) {
                     let crit = s.groupCriteria;
