@@ -21,9 +21,9 @@
 
     <style>
         :root { --bg: #0e1318; --card: #1a222b; --input-bg: rgba(0,0,0,0.4); --primary: #3b82f6; --accent: #ffffff; --text: #ffffff; --muted: #8d939e; --border: #2a2b31; --live: #ffffff; }
-        * { font-variant-numeric: tabular-nums lining-nums; }
+        * { font-variant-numeric: tabular-nums lining-nums; box-sizing: border-box; }
         body { background: radial-gradient(circle at top, #1a222b 0%, #0e1318 100%); color: var(--text); font-family: 'Cairo', Arial, sans-serif; margin: 0; padding: 0; display: flex; justify-content: center; -webkit-tap-highlight-color: transparent; }
-        .app { width: 100%; max-width: 480px; min-height: 100vh; position: relative; padding-bottom: 100px; overflow-x: hidden; margin: 0 auto; background: var(--bg); box-shadow: 0 0 20px rgba(0,0,0,0.5);}
+        .app { width: 100%; max-width: 480px; min-height: 100vh; position: relative; padding-bottom: 100px; overflow-x: hidden; margin: 0 auto; background: var(--bg); box-shadow: 0 0 20px rgba(0,0,0,0.5); }
         
         .header { padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 50; background: rgba(26, 34, 43, 0.95); backdrop-filter: blur(10px); border-bottom: 1px solid var(--border); }
         .header-title { font-size: 15px; font-weight: 900; color: var(--text); margin: 0; text-overflow: ellipsis; white-space: nowrap; overflow: hidden; flex: 1; text-align: right;}
@@ -217,232 +217,59 @@
         .export-horizontal-mode { display: grid !important; grid-template-columns: repeat(2, 1fr) !important; gap: 20px !important; padding: 40px !important; background: var(--bg) !important; border: none !important; width: 1000px !important; max-width: none !important; }
         .export-horizontal-mode .title-section { color: var(--text) !important; font-size: 20px !important; justify-content: center !important;}
         .export-horizontal-mode .title-section button { display: none !important; }
-        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } }
-
-        /* تنسيق ترويسة الأيام (اليوم وعدد المباريات) */
+        
         .schedule-date-header { display: flex; justify-content: space-between; align-items: center; background: linear-gradient(90deg, rgba(59, 130, 246, 0.1), transparent); border-right: 3px solid var(--primary); padding: 12px 15px; border-radius: 8px; margin-bottom: 15px; margin-top: 10px; }
         .schedule-date-header span:first-child { color: var(--text); font-weight: 900; font-size: 15px; display: flex; align-items: center; gap: 8px;}
         .schedule-match-count { background: var(--primary); color: #fff; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 900; font-family: Arial, sans-serif;}
 
-        /* إجبار الأيقونات في التايم لاين على أخذ اللون الصحيح للبطاقات والأهداف */
         .badge-⚽ i { color: #4ade80 !important; opacity: 1 !important; }
         .badge-🅰️ i { color: #8b5cf6 !important; opacity: 1 !important; }
         .badge-🟨 i { color: #facc15 !important; opacity: 1 !important; }
         .badge-🟥 i { color: #ef4444 !important; opacity: 1 !important; }
         .badge-🔃 i { color: #3b82f6 !important; opacity: 1 !important; }
 
+        .sub-tab-btn { flex: 1; background: transparent; color: var(--muted); border: none; padding: 10px; border-radius: 8px; font-weight: bold; font-size: 12px; cursor: pointer; font-family: 'Cairo'; transition: 0.3s; }
+        .sub-tab-btn.active { background: var(--primary); color: #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.4); }
     </style>
+
     <script>
-        let currentLang = 'ar';
-        const dictKU = {
-            'المباشر': 'ڕاستەوخۆ', 'المباريات': 'یارییەکان', 'المجموعات': 'کۆمەڵەکان', 'الفرق': 'تیمەکان', 'إحصائيات': 'ئامارەکان', 'الإعلام': 'ڕاگەیاندن',
-            'الأحداث': 'ڕووداوەکان', 'الإحصائيات': 'ئامارەکان', 'التعليقات': 'لێدوانەکان',
-            'المجدولة': 'خشتەی یارییەکان', 'المنتظرة': 'چاوەڕوانکراو', 'المنتهية': 'کۆتایی هاتووە', 'شجرة البطولة': 'خشتەی پاڵەوانێتی',
-            'الاستحواذ': 'تۆپ کۆنترۆڵکردن', 'التسديدات': 'لێدانەکان', 'الركنيات': 'کۆڕنەرەکان', 'الفاولات': 'فاوڵەکان',
-            'الهدافين': 'گۆڵکاران', 'الصناعة': 'ئەسیست', 'النجوم': 'ئەستێرەکان', 'الإنذارات': 'کارتەکان',
-            'إحصائيات الفرق': 'ئاماری تیمەکان', 'صناع اللعب': 'دروستکەرانی یاری', 'نجوم المباريات': 'ئەستێرەکانی یاری', 'السجل التأديبي': 'تۆماری سزاکان',
-            'لاعب الجولة': 'یاریزانی هەفتە', 'تشكيلة الجولة': 'پێکهاتەی هەفتە',
-            'الفريق': 'تیم', 'لعب': 'یاری', 'له': 'گۆڵی کراو', 'عليه': 'لێکراو', 'الفرق': 'جیاوازی', 'نقاط': 'خاڵەکان',
-            'اللاعب': 'یاریزان', 'المركز': 'شوێن', 'صورة': 'وێنە',
-            'مجموعة': 'کۆمەڵەی', 'الجولة الأولى': 'گەڕی یەکەم', 'الجولة الثانية': 'گەڕی دووەم', 'الجولة الثالثة': 'گەڕی سێیەم', 'الجولة الرابعة': 'گەڕی چوارەم', 'الجولة الخامسة': 'گەڕی پێنجەم',
-            'دور الـ 16': 'قۆناغی شانزە', 'ربع النهائي': 'قۆناغی هەشت', 'نصف النهائي': 'پێش کۆتایی', 'تحديد المركز الثالث': 'دیاریکردنی پلەی سێیەم', 'النهائي': 'یاری کۆتایی',
-            'لم تبدأ': 'دەستی پێ نەکردووە', 'الشوط الأول': 'گێمی یەکەم', 'استراحة': 'پشوو', 'الشوط الثاني': 'گێمی دووەم', 'إضافي أول': 'زیادکراوی یەکەم', 'إضافي ثاني': 'زیادکراوی دووەم', 'ركلات ترجيح': 'پەناڵتی', 'انتهت': 'کۆتایی هات', 'انتظار': 'چاوەڕوان', 'مباشر': 'ڕاستەوخۆ',
-            'هدف': 'گۆڵ', 'عكسي': 'بەهەڵە', 'أسيست': 'ئەسیست', 'بطاقة صفراء': 'کارتی زەرد', 'بطاقة حمراء': 'کارتی سوور', 'تبديل': 'گۆڕانکاری',
-            'حارس مرمى': 'گۆڵپارێز', 'قلب دفاع': 'بەرگریکار', 'مدافع أيسر': 'بەرگریکاری چەپ', 'مدافع أيمن': 'بەرگریکاری ڕاست', 'ارتكاز دفاعي': 'ناوەڕاستی بەرگری', 'وسط محور': 'ناوەڕاست', 'صانع ألعاب': 'دروستکەری یاری', 'وسط أيسر': 'ناوەڕاستی چەپ', 'وسط أيمن': 'ناوەڕاستی ڕاست', 'جناح أيسر': 'باڵی چەپ', 'جناح أيمن': 'باڵی ڕاست', 'مهاجم': 'هێرشبەر',
-            'مدرب': 'ڕاهێنەر', 'مساعد': 'یاریدەدەر',
-            'مباريات': 'یارییەکان', 'أهداف': 'گۆڵەکان', 'صناعة': 'ئەسیست', 'نجومية': 'ئەستێرە', 'إنذار': 'ئاگادارکردنەوە', 'طرد': 'دەرکردن', 'كلين شيت': 'گۆڵی خاوێن',
-            'توقع النتيجة': 'پێشبینی ئەنجام', 'تعادل': 'یەکسانبوون', 'لا توجد مباريات مباشرة الآن': 'ئێستا یاری ڕاستەوخۆ نییە', 'ترقبوا انطلاق المباريات القادمة': 'چاوەڕێی یارییەکانی داهاتوو بن',
-            'ساحة': 'ناوەڕاست', 'رابع': 'چوارەم', 'نجم الفريق:': 'ئەستێرەی تیم:', 'اليوم': 'ئەمڕۆ', 'غداً': 'سبەی', 'الساعة': 'کاتژمێر', 'الملعب': 'یاریگا', 'لم يحدد': 'دیاری نەکراوە', 'لم يحدد بعد': 'دیاری نەکراوە',
-            'مواجهة بدون موعد': 'ڕووبەڕووبوونەوە بێ کات', 'مباراة منتهية': 'یاری کۆتایی هات', 'نتيجة مباراة': 'ئەنجامی یاری', 'مباراة قادمة': 'یاری داهاتوو',
-            'التفاصيل والبوستر': 'وردەکاری و پۆستەر', 'التفاصيل': 'وردەکارییەکان', 'التشكيلة': 'پێکهاتە', 'بوستر': 'پۆستەر', 'حفظ الصورة': 'پاشەکەوتکردنی وێنە', 'حفظ المجموعات': 'پاشەکەوتکردنی کۆمەڵەکان',
-            'إرسال': 'ناردن', 'عاجل': 'بەپەلە', 'لا توجد منشورات حاليا': 'هیچ بڵاوکراوەیەک نییە', 'مباريات الحسم': 'یارییە یەکلاکەرەوەکان', 'نتائج المجموعات': 'ئەنجامی کۆمەڵەکان',
-            'حساب المشجع': 'هەژماری هاندەر', 'الاسم الكامل...': 'ناوی تەواو...', 'البريد الإلكتروني...': 'ئیمەیڵ...', 'حفظ ودخول': 'چوونەژوورەوە', 'إلغاء': 'هەڵوەشاندنەوە', 'اكتب تعليقك هنا...': 'لێدوانەکەت بنووسە...', 'جاري تحميل التعليقات...': 'لێدوانەکان باردەکرێن...', 'لا توجد تعليقات حتى الآن. كن أول من يعلق!': 'تا ئێستا هیچ لێدوانێک نییە!', 'اكتب تعليقا...': 'لێدوانێک بنووسە...',
-            'عدد المباريات': 'ژمارەی یارییەکان', 'نجم الفريق': 'ئەستێرەی تیم', 'نجم': 'ئەستێرەی', 'لا توجد أحداث مسجلة': 'هیچ ڕووداوێک تۆمار نەکراوە', 'رجل المباراة': 'رجل المباراة', 'رجل المباراة (MOTM)': 'رجل المباراة (MOTM)'
-        };
-        const dictEN = {
-            'المباشر': 'Live', 'المباريات': 'Matches', 'المجموعات': 'Groups', 'الفرق': 'Teams', 'إحصائيات': 'Stats', 'الإعلام': 'Media',
-            'الأحداث': 'Events', 'الإحصائيات': 'Stats', 'التعليقات': 'Comments',
-            'المجدولة': 'Scheduled', 'المنتظرة': 'Upcoming', 'المنتهية': 'Finished', 'شجرة البطولة': 'Bracket',
-            'الاستحواذ': 'Possession', 'التسديدات': 'Shots', 'الركنيات': 'Corners', 'الفاولات': 'Fouls',
-            'الهدافين': 'Top Scorers', 'الصناعة': 'Assists', 'النجوم': 'Stars', 'الإنذارات': 'Cards',
-            'إحصائيات الفرق': 'Team Stats', 'صناع اللعب': 'Playmakers', 'نجوم المباريات': 'Match Stars', 'السجل التأديبي': 'Disciplinary',
-            'لاعب الجولة': 'Player of the Week', 'تشكيلة الجولة': 'Team of the Week',
-            'الفريق': 'Team', 'لعب': 'P', 'له': 'GF', 'عليه': 'GA', 'الفرق': 'GD', 'نقاط': 'Pts',
-            'اللاعب': 'Player', 'المركز': 'Pos', 'صورة': 'Pic',
-            'مجموعة': 'Group ', 'الجولة الأولى': 'Round 1', 'الجولة الثانية': 'Round 2', 'الجولة الثالثة': 'Round 3', 'الجولة الرابعة': 'Round 4', 'الجولة الخامسة': 'Round 5',
-            'دور الـ 16': 'Round of 16', 'ربع النهائي': 'Quarter-Final', 'نصف النهائي': 'Semi-Final', 'تحديد المركز الثالث': 'Third Place', 'النهائي': 'Final',
-            'لم تبدأ': 'Not Started', 'الشوط الأول': 'First Half', 'استراحة': 'Half Time', 'الشوط الثاني': 'Second Half', 'إضافي أول': 'Extra Time 1', 'إضافي ثاني': 'Extra Time 2', 'ركلات ترجيح': 'Penalties', 'انتهت': 'Ended', 'انتظار': 'Waiting', 'مباشر': 'LIVE',
-            'هدف': 'Goal', 'عكسي': 'Own Goal', 'أسيست': 'Assist', 'بطاقة صفراء': 'Yellow Card', 'بطاقة حمراء': 'Red Card', 'تبديل': 'Sub',
-            'حارس مرمى': 'GK', 'قلب دفاع': 'CB', 'مدافع أيسر': 'LB', 'مدافع أيمن': 'RB', 'ارتكاز دفاعي': 'CDM', 'وسط محور': 'CM', 'صانع ألعاب': 'CAM', 'وسط أيسر': 'LM', 'وسط أيمن': 'RM', 'جناح أيسر': 'LW', 'جناح أيمن': 'RW', 'مهاجم': 'ST',
-            'مدرب': 'Coach', 'مساعد': 'Assistant',
-            'مباريات': 'Matches', 'أهداف': 'Goals', 'صناعة': 'Assists', 'نجومية': 'MOTM', 'إنذار': 'Yellow', 'طرد': 'Red', 'كلين شيت': 'Clean Sheet',
-            'توقع النتيجة': 'Predict Result', 'تعادل': 'Draw', 'لا توجد مباريات مباشرة الآن': 'No live matches now', 'ترقبوا انطلاق المباريات القادمة': 'Stay tuned for matches',
-            'ساحة': 'Ref', 'رابع': '4th', 'نجم الفريق:': 'Star:', 'اليوم': 'Today', 'غداً': 'Tomorrow', 'الساعة': 'Time', 'الملعب': 'Stadium', 'لم يحدد': 'TBD', 'لم يحدد بعد': 'TBD',
-            'مواجهة بدون موعد': 'Match w/o Date', 'مباراة منتهية': 'Finished Match', 'نتيجة مباراة': 'Match Result', 'مباراة قادمة': 'Upcoming Match',
-            'التفاصيل والبوستر': 'Details & Poster', 'التفاصيل': 'Details', 'التشكيلة': 'Lineup', 'بوستر': 'Poster', 'حفظ الصورة': 'Save Image', 'حفظ المجموعات': 'Save Groups',
-            'إرسال': 'Send', 'عاجل': 'Urgent', 'لا توجد منشورات حاليا': 'No posts available', 'مباريات الحسم': 'Knockouts', 'نتائج المجموعات': 'Group Results',
-            'حساب المشجع': 'Fan Account', 'الاسم الكامل...': 'Full Name...', 'البريد الإلكتروني...': 'Email...', 'حفظ ودخول': 'Login', 'إلغاء': 'Cancel', 'اكتب تعليقك هنا...': 'Write a comment...', 'جاري تحميل التعليقات...': 'Loading comments...', 'لا توجد تعليقات حتى الآن. كن أول من يعلق!': 'No comments yet. Be the first!', 'اكتب تعليقا...': 'Write a comment...',
-            'عدد المباريات': 'Matches count', 'نجم الفريق': 'Team Star', 'نجم': 'Star', 'لا توجد أحداث مسجلة': 'No events recorded', 'رجل المباراة': 'MOTM', 'رجل المباراة (MOTM)': 'Man of the Match'
-        };
-
-        function t(arText) {
-            if (!arText) return '';
-            if (currentLang === 'ar') return arText;
-            let d = currentLang === 'ku' ? dictKU : dictEN;
-            if (d[arText]) return d[arText];
-            let keys = Object.keys(d).sort((a,b) => b.length - a.length);
-            let out = arText;
-            keys.forEach(k => { if (out.includes(k)) { out = out.split(k).join(d[k]); } });
-            return out;
-        }
-
-        function toggleLang() {
-            if(currentLang === 'ar') currentLang = 'ku';
-            else if(currentLang === 'ku') currentLang = 'en';
-            else currentLang = 'ar';
-            
-            let btnTxt = 'KU'; if(currentLang === 'ku') btnTxt = 'EN'; if(currentLang === 'en') btnTxt = 'عربي';
-            document.getElementById('langBtn').innerText = btnTxt;
-            updateStaticTexts();
-        }
-
-        function updateStaticTexts() {
-            document.querySelectorAll('[data-trn]').forEach(el => { el.innerText = t(el.getAttribute('data-trn')); });
-            renderNav();
-            if(typeof renderSchedule === 'function') renderSchedule();
-            if(typeof renderBracket === 'function') renderBracket();
-        }
-
-        function renderNav() {
-            const nav = document.querySelector('.nav');
-            if(!nav) return;
-            const items = [
-                { id: 'live', icon: 'fa-tv', text: 'المباشر' },
-                { id: 'matches', icon: 'fa-regular fa-futbol', text: 'المباريات' },
-                { id: 'groups', icon: 'fa-solid fa-list-ol', text: 'المجموعات' },
-                { id: 'teams', icon: 'fa-solid fa-shield-halved', text: 'الفرق' },
-                { id: 'stats', icon: 'fa-regular fa-chart-bar', text: 'إحصائيات' },
-                { id: 'gallery', icon: 'fa-solid fa-images', text: 'الإعلام' }
-            ];
-            
-            let activeId = 'live';
-            if(window.location.hash) { let h = window.location.hash.substring(1); if(items.find(i => i.id === h)) activeId = h; }
-
-            nav.innerHTML = items.map(item => `
-                <div class="nav-item ${item.id === activeId ? 'active' : ''}" onclick="nav('${item.id}', this)">
-                    <div style="position:relative; display:inline-block; width: 100%;">
-                        <i class="fa-solid ${item.icon} nav-icon"></i>
-                        ${item.id === 'live' ? '<i id="navLiveDot" class="fa-solid fa-circle" style="display:none; position:absolute; top:-2px; right:calc(50% - 15px); color:#ef4444; font-size:8px; animation: pulse 1.5s infinite; text-shadow: 0 0 5px #ef4444;"></i>' : ''}
-                    </div>
-                    <span data-trn="${item.text}">${t(item.text)}</span>
-                </div>
-            `).join('');
-            
-            if(typeof window.triggerLiveVisibilityUpdate === 'function') window.triggerLiveVisibilityUpdate();
-        }
-
-        function openSubTab(tabId, btn) {
-            document.querySelectorAll('.sub-tab-content').forEach(t => t.style.display = 'none');
-            document.querySelectorAll('.sub-tab-btn').forEach(b => { b.style.background = 'transparent'; b.style.color = 'var(--muted)'; });
-            document.getElementById(tabId).style.display = 'block'; btn.style.background = 'var(--primary)'; btn.style.color = '#000';
-        }
-        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
-        
-        function switchMatchTab(context, tab) {
-            if(context === 'live') {
-                ['events', 'stats', 'chat'].forEach(id => {
-                    let btn = document.getElementById('btnLive' + capitalize(id));
-                    let content = document.getElementById('live-content-' + id);
-                    if(btn) btn.classList.remove('active');
-                    if(content) content.style.display = 'none';
-                });
-                let actBtn = document.getElementById('btnLive' + capitalize(tab));
-                let actContent = document.getElementById('live-content-' + tab);
-                if(actBtn) actBtn.classList.add('active');
-                if(actContent) actContent.style.display = 'block';
-                if(tab === 'chat') {
-                    let chatCont = document.getElementById('liveChatMessages');
-                    if(chatCont) chatCont.scrollTop = chatCont.scrollHeight;
-                }
-            } else if (context === 'md') {
-                ['events', 'stats', 'comments'].forEach(id => {
-                    let btn = document.getElementById('btnMd' + capitalize(id));
-                    let content = document.getElementById('md-content-' + id);
-                    if(btn) btn.classList.remove('active');
-                    if(content) content.style.display = 'none';
-                });
-                let actBtn = document.getElementById('btnMd' + capitalize(tab));
-                let actContent = document.getElementById('md-content-' + tab);
-                if(actBtn) actBtn.classList.add('active');
-                if(actContent) actContent.style.display = 'block';
-            }
-        }
-        function capitalize(str) { return str.charAt(0).toUpperCase() + str.slice(1); }
-
-        function openAuthModal() {
-            document.getElementById('regNameInput').value = localStorage.getItem('chatUserName') || '';
-            document.getElementById('regEmailInput').value = localStorage.getItem('chatUserEmail') || '';
-            document.getElementById('authModal').style.display = 'block';
-        }
-
-        function requireAuth(callback) {
-            let name = localStorage.getItem('chatUserName'); let email = localStorage.getItem('chatUserEmail');
-            if(!name || !email) { document.getElementById('authModal').style.display = 'block'; window.pendingAuthCallback = callback; } else { callback(); }
-        }
-
-        function registerUser() {
-            let name = document.getElementById('regNameInput').value.trim(); let email = document.getElementById('regEmailInput').value.trim();
-            if(!name || !email || !email.includes('@')) return alert(t('الرجاء كتابة الاسم والبريد الإلكتروني بشكل صحيح'));
-            localStorage.setItem('chatUserName', name); localStorage.setItem('chatUserEmail', email);
-            closeModal('authModal');
-            if(typeof window.pendingAuthCallback === 'function') { window.pendingAuthCallback(); window.pendingAuthCallback = null; } else { alert(t('تم حفظ الحساب بنجاح!')); }
-        }
-    </script>
-</head>
-<body onload="updateStaticTexts()">
-    <script>
-        // نظام الجدار الناري وحماية الدخول وبحث البطولة
+        // إعداد الجدار الناري الذكي والتحقق الفوري لمنع تعليق الموبايل
         const urlParamsSec = new URLSearchParams(window.location.search);
         let idCheck = urlParamsSec.get('id');
 
-        // تحديد دالة الدخول ليتم استدعاؤها من خلال الزر
         window.goToTournament = function() {
             let val = document.getElementById('tourneyIdInput').value.trim();
             if(val) {
                 try {
-                    // محاولة استخراج الـ ID في حال قام المستخدم بلصق الرابط بالكامل
-                    let parsedUrl = new URL(val);
-                    let extractedId = parsedUrl.searchParams.get('id');
-                    if (extractedId) {
-                        val = extractedId;
+                    if (val.includes('id=')) {
+                        let parsedUrl = new URL(val);
+                        let extractedId = parsedUrl.searchParams.get('id');
+                        if (extractedId) val = extractedId;
                     }
-                } catch (e) {
-                    // القيمة ليست رابطاً كاملاً، وهذا طبيعي لأنه قد يكون أدخل الـ ID مباشرة
-                }
-
-                const url = new URL(window.location.href);
-                url.searchParams.set('id', val);
-                window.location.href = url.toString();
+                } catch (e) {}
+                window.location.href = '?id=' + encodeURIComponent(val);
             } else {
-                alert('الرجاء إدخال معرف البطولة أو الرابط أولاً');
+                alert('الرجاء إدخال معرف البطولة أولاً');
             }
         };
 
         if (!idCheck) {
-            document.body.innerHTML = `
-                <div style="display:flex; justify-content:center; align-items:center; min-height:100vh; background: radial-gradient(circle at top, #1a222b 0%, #0e1318 100%); color:#fff; flex-direction:column; font-family:'Cairo', sans-serif; padding: 20px; box-sizing: border-box; width: 100%; max-width: 480px; margin: 0 auto; box-shadow: 0 0 20px rgba(0,0,0,0.5);">
+            document.write(`
+                <div style="display:flex; justify-content:center; align-items:center; min-height:100vh; background: radial-gradient(circle at top, #1a222b 0%, #0e1318 100%); color:#fff; flex-direction:column; font-family:'Cairo', sans-serif; padding: 20px; box-sizing: border-box; width:100%;">
                     <i class="fa-solid fa-trophy" style="font-size:70px; color:#3b82f6; margin-bottom:20px; filter: drop-shadow(0 0 15px rgba(59,130,246,0.5));"></i>
                     <h2 style="margin:0 0 10px 0; font-weight:900; font-size:24px;">نظام البطولات الذكي</h2>
-                    <p style="color:#8d939e; text-align:center; max-width:90%; line-height:1.6; font-size:14px; margin-bottom:30px;">الرجاء إدخال رابط البطولة أو المعرف (ID) الخاص بك للوصول إلى صفحة الجمهور.</p>
+                    <p style="color:#8d939e; text-align:center; max-width:90%; line-height:1.6; font-size:14px; margin-bottom:30px;">الرجاء إدخال معرف البطولة (ID) أو الرابط للوصول إلى صفحة الجمهور.</p>
                     <div style="width:100%; max-width:350px; display:flex; flex-direction:column; gap:12px;">
-                        <input type="text" id="tourneyIdInput" placeholder="أدخل الرابط أو المعرف هنا..." style="width:100%; padding:16px; border-radius:12px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:#fff; font-family:'Cairo'; text-align:center; font-size:16px; font-weight:bold; box-sizing:border-box; outline:none; transition: 0.3s;" onfocus="this.style.borderColor='#3b82f6'" onblur="this.style.borderColor='rgba(255,255,255,0.1)'" onkeypress="if (event.key === 'Enter') window.goToTournament()">
-                        <button onclick="window.goToTournament()" style="background:#3b82f6; color:#fff; width:100%; padding:16px; border-radius:12px; border:none; font-family:'Cairo'; font-weight:900; font-size:16px; cursor:pointer; transition:0.3s; box-shadow:0 4px 15px rgba(59,130,246,0.4);"><i class="fa-solid fa-magnifying-glass"></i> دخول للبطولة</button>
+                        <input type="text" id="tourneyIdInput" placeholder="أدخل المعرف أو الرابط هنا..." style="width:100%; padding:16px; border-radius:12px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:#fff; font-family:'Cairo'; text-align:center; font-size:16px; font-weight:bold; box-sizing:border-box; outline:none;" onkeypress="if(event.key === 'Enter') window.goToTournament()">
+                        <button onclick="window.goToTournament()" style="background:#3b82f6; color:#fff; width:100%; padding:16px; border-radius:12px; border:none; font-family:'Cairo'; font-weight:900; font-size:16px; cursor:pointer; box-shadow:0 4px 15px rgba(59,130,246,0.4);"><i class="fa-solid fa-magnifying-glass"></i> دخول للبطولة</button>
                     </div>
                 </div>
-            `;
-            throw new Error("Access Blocked: Missing Tournament ID.");
+            `);
+            window.stop();
         }
     </script>
+</head>
+<body>
 
     <audio id="crowdSound" src="https://assets.mixkit.co/active_storage/sfx/2000/2000-preview.mp3" preload="auto"></audio>
     <div id="osNotification" class="os-notification"><div style="font-size:24px; color:var(--primary);"><i class="fa-solid fa-futbol"></i></div><div><strong id="notifTitle" style="font-size:14px; font-family:'Cairo';">تحديث</strong><div id="notifText" style="font-size:12px; color:var(--muted); margin-top:3px;"></div></div></div>
@@ -562,21 +389,21 @@
 
         <div id="page-matches" class="page">
             <div style="display:flex; gap:5px; margin: 15px 0; background:var(--card); padding:5px; border-radius:12px; border:1px solid var(--border);">
-                <button class="sub-tab-btn" onclick="openSubTab('matches-scheduled', this)" style="flex:1; background:var(--primary); color:#000; border:none; padding:10px; border-radius:8px; font-weight:bold; font-size:12px; font-family:'Cairo';" data-trn="المجدولة">المجدولة</button>
-                <button class="sub-tab-btn" onclick="openSubTab('matches-unscheduled', this)" style="flex:1; background:transparent; color:var(--muted); border:none; padding:10px; border-radius:8px; font-weight:bold; font-size:12px; font-family:'Cairo';" data-trn="المنتظرة">المنتظرة</button>
-                <button class="sub-tab-btn" onclick="openSubTab('matches-finished', this)" style="flex:1; background:transparent; color:var(--muted); border:none; padding:10px; border-radius:8px; font-weight:bold; font-size:12px; font-family:'Cairo';" data-trn="المنتهية">المنتهية</button>
-                <button class="sub-tab-btn" onclick="openSubTab('matches-bracket', this)" style="flex:1; background:transparent; color:var(--muted); border:none; padding:10px; border-radius:8px; font-weight:bold; font-size:12px; font-family:'Cairo';" data-trn="شجرة البطولة">شجرة البطولة</button>
+                <button class="sub-tab-btn active" onclick="openSubTab('matches-scheduled', this)" data-trn="المجدولة">المجدولة</button>
+                <button class="sub-tab-btn" onclick="openSubTab('matches-unscheduled', this)" data-trn="المنتظرة">المنتظرة</button>
+                <button class="sub-tab-btn" onclick="openSubTab('matches-finished', this)" data-trn="المنتهية">المنتهية</button>
+                <button class="sub-tab-btn" onclick="openSubTab('matches-bracket', this)" data-trn="شجرة البطولة">شجرة البطولة</button>
             </div>
             
             <div id="matches-scheduled" class="sub-tab-content" style="display:block;">
                 <div id="scheduleExportWrapper" style="padding:10px; background:var(--bg); border-radius:16px;">
                     <div id="scheduleExportHeader" style="display:none; text-align:center; margin-bottom:20px;">
-                        <h2 style="margin:0; color:var(--text); font-size:20px; font-weight:900; text-shadow:0 2px 4px rgba(0,0,0,0.8);" data-trn="المجدولة">جدول المباريات القادمة</h2>
+                        <h2 style="margin:0; color:var(--text); font-size:20px; font-weight:900;" data-trn="المجدولة">جدول المباريات القادمة</h2>
                     </div>
                     <div id="scheduleList"></div>
                 </div>
                 <div style="display:flex; justify-content:center; margin-top:10px;">
-                    <button onclick="shareAsImage('scheduleExportWrapper')" style="background:rgba(59,130,246,0.15); color:var(--primary); border:1px solid var(--primary); padding:8px 20px; border-radius:12px; cursor:pointer; font-family:'Cairo'; font-weight:bold; font-size:12px; transition:0.3s;"><i class="fa-solid fa-camera"></i> <span data-trn="حفظ الصورة">حفظ الصورة</span></button>
+                    <button onclick="shareAsImage('scheduleExportWrapper')" style="background:rgba(59,130,246,0.15); color:var(--primary); border:1px solid var(--primary); padding:8px 20px; border-radius:12px; cursor:pointer; font-weight:bold; font-size:12px;"><i class="fa-solid fa-camera"></i> <span data-trn="حفظ الصورة">حفظ الصورة</span></button>
                 </div>
             </div>
             <div id="matches-unscheduled" class="sub-tab-content" style="display:none;"><div id="groupMatchupsList"></div></div>
@@ -586,6 +413,7 @@
         
         <div id="page-groups" class="page"><button onclick="exportAllGroupsHorizontal()" class="btn-enter-match" style="margin-bottom:15px; margin-top:5px;"><i class="fa-solid fa-images"></i> <span data-trn="حفظ المجموعات">حفظ المجموعات</span></button><div id="groupsContainer"></div></div>
         <div id="page-teams" class="page"><div class="team-grid" id="teamsContainer"></div></div>
+        
         <div id="page-stats" class="page">
             <div id="adminPushedComparisonDisplay" style="display:none; background:linear-gradient(180deg, rgba(59,130,246,0.1) 0%, rgba(0,0,0,0.4) 100%); border:1px solid var(--primary); border-radius:20px; padding:20px; margin-bottom:20px; position:relative;">
                 <div style="position:absolute; top:0; right:15px; background:var(--primary); color:#fff; font-size:10px; font-weight:bold; padding:2px 10px; border-radius:0 0 8px 8px;">VS</div>
@@ -597,11 +425,11 @@
                 <div id="totwContainer" class="card" style="flex:1; text-align:center; padding:10px; display:none; border-color:var(--primary);"><div style="font-size:14px; color:var(--primary); font-weight:bold; margin-bottom:5px;"><i class="fa-solid fa-users"></i> <span data-trn="تشكيلة الجولة">تشكيلة الجولة</span></div><img id="totwImgDisplay" src="" style="width:100%; border-radius:8px; cursor:pointer; object-fit:contain;" onclick="openImageViewer(this.src)"></div>
             </div>
             <div style="display:flex; gap:5px; margin: 15px 0; background:var(--card); padding:5px; border-radius:12px; border:1px solid var(--border); overflow-x: auto; white-space: nowrap;">
-                <button class="sub-tab-btn" onclick="openSubTab('stats-team-tab', this)" style="flex:1; min-width:80px; background:var(--primary); color:#000; border:none; padding:10px; border-radius:8px; font-weight:bold; font-size:12px; cursor:pointer; font-family:'Cairo';" data-trn="الفرق">الفرق</button>
-                <button class="sub-tab-btn" onclick="openSubTab('stats-scorers-tab', this)" style="flex:1; min-width:80px; background:transparent; color:var(--muted); border:none; padding:10px; border-radius:8px; font-weight:bold; font-size:12px; cursor:pointer; font-family:'Cairo';" data-trn="الهدافين">الهدافين</button>
-                <button class="sub-tab-btn" onclick="openSubTab('stats-assists-tab', this)" style="flex:1; min-width:80px; background:transparent; color:var(--muted); border:none; padding:10px; border-radius:8px; font-weight:bold; font-size:12px; cursor:pointer; font-family:'Cairo';" data-trn="الصناعة">الصناعة</button>
-                <button class="sub-tab-btn" onclick="openSubTab('stats-motm-tab', this)" style="flex:1; min-width:80px; background:transparent; color:var(--muted); border:none; padding:10px; border-radius:8px; font-weight:bold; font-size:12px; cursor:pointer; font-family:'Cairo';" data-trn="النجوم">النجوم</button>
-                <button class="sub-tab-btn" onclick="openSubTab('stats-cards-tab', this)" style="flex:1; min-width:80px; background:transparent; color:var(--muted); border:none; padding:10px; border-radius:8px; font-weight:bold; font-size:12px; cursor:pointer; font-family:'Cairo';" data-trn="الإنذارات">الإنذارات</button>
+                <button class="sub-tab-btn active" onclick="openSubTab('stats-team-tab', this)" data-trn="الفرق">الفرق</button>
+                <button class="sub-tab-btn" onclick="openSubTab('stats-scorers-tab', this)" data-trn="الهدافين">الهدافين</button>
+                <button class="sub-tab-btn" onclick="openSubTab('stats-assists-tab', this)" data-trn="الصناعة">الصناعة</button>
+                <button class="sub-tab-btn" onclick="openSubTab('stats-motm-tab', this)" data-trn="النجوم">النجوم</button>
+                <button class="sub-tab-btn" onclick="openSubTab('stats-cards-tab', this)" data-trn="الإنذارات">الإنذارات</button>
             </div>
             <div id="stats-team-tab" class="sub-tab-content" style="display:block;"><div id="stats-team"><div class="title-section" style="justify-content:space-between;"><span data-trn="إحصائيات الفرق">إحصائيات الفرق</span><button onclick="shareAsImage('stats-team')" style="background:transparent; color:var(--primary); border:none; cursor:pointer;"><i class="fa-solid fa-camera"></i></button></div><div class="card" style="padding:0;"><table><thead><tr><th style="text-align:right; padding-right:15px;" data-trn="الفريق">الفريق</th><th data-trn="له">له</th><th data-trn="عليه">عليه</th><th data-trn="الفرق">الفرق</th></tr></thead><tbody id="teamStatsList"></tbody></table></div></div></div>
             <div id="stats-scorers-tab" class="sub-tab-content" style="display:none;"><div id="stats-scorers"><div class="title-section" style="justify-content:space-between;"><span data-trn="الهدافين">الهدافين</span><button onclick="shareAsStatsImage('stats-scorers')" style="background:transparent; color:var(--primary); border:none; cursor:pointer;"><i class="fa-solid fa-camera"></i></button></div><div class="card" style="padding:0;"><table><thead><tr><th>#</th><th style="text-align:right;" data-trn="اللاعب">اللاعب</th><th>⚽</th></tr></thead><tbody id="topScorersList"></tbody></table></div></div></div>
@@ -611,7 +439,7 @@
         </div>
         
         <div id="page-gallery" class="page">
-            <div class="title-section" data-trn="الإعلام">الإعلام</div>
+            <div class="title-section" data-trn="إعلام">الاعلام</div>
             <div id="publicGalleryGrid" style="display:flex; flex-direction:column; gap:15px;"></div>
         </div>
 
@@ -622,16 +450,15 @@
             <div style="background:rgba(255,255,255,0.03); padding:15px; border-radius:12px; border:1px solid rgba(255,255,255,0.05); margin-bottom: 20px; max-width: 300px; margin-left: auto; margin-right: auto;">
                 <div style="font-size:11px; margin-bottom:10px; color:var(--muted); font-weight:bold;">هل تبحث عن بطولة أخرى؟</div>
                 <div style="display:flex; gap:5px;">
-                    <input type="text" id="footerTourneyIdInput" placeholder="أدخل الرابط أو المعرف (ID)" style="flex:1; padding:10px; border-radius:8px; background:rgba(0,0,0,0.5); border:1px solid var(--border); color:#fff; font-family:'Cairo'; font-size:12px; text-align:center; outline:none;" onkeypress="if(event.key === 'Enter') switchTournament()">
-                    <button onclick="switchTournament()" style="background:var(--primary); color:#fff; border:none; padding:0 15px; border-radius:8px; font-weight:bold; cursor:pointer; transition:0.3s;"><i class="fa-solid fa-arrow-left"></i></button>
+                    <input type="text" id="footerTourneyIdInput" placeholder="أدخل معرف البطولة (ID)" style="flex:1; padding:10px; border-radius:8px; background:rgba(0,0,0,0.5); border:1px solid var(--border); color:#fff; font-family:'Cairo'; font-size:12px; text-align:center; outline:none;" onkeypress="if(event.key === 'Enter') switchTournament()">
+                    <button onclick="switchTournament()" style="background:var(--primary); color:#fff; border:none; padding:0 15px; border-radius:8px; font-weight:bold; cursor:pointer;"><i class="fa-solid fa-arrow-left"></i></button>
                 </div>
             </div>
 
             <div class="footer-social"><a href="https://www.facebook.com/share/1AnD5a4oY1/" target="_blank"><i class="fab fa-facebook"></i></a><a href="https://www.instagram.com/moe_hz9" target="_blank"><i class="fab fa-instagram"></i></a><a href="https://wa.me/9647717007839" target="_blank"><i class="fab fa-whatsapp"></i></a></div>
         </div>
 
-        <div class="nav">
-            </div>
+        <div class="nav"></div>
     </div>
 
     <div id="authModal" class="modal" style="z-index: 2000; background:rgba(0,0,0,0.9); backdrop-filter:blur(10px);">
@@ -657,11 +484,11 @@
                 
                 <div style="display:flex; gap:15px; justify-content:center; margin-bottom:20px; z-index:2; position:relative;">
                     <div style="background:rgba(59,130,246,0.1); border:1px solid rgba(59,130,246,0.3); padding:10px 25px; border-radius:12px; backdrop-filter:blur(5px);">
-                        <div id="modalGf" style="font-size:22px; font-weight:900; color:var(--primary); text-shadow:0 1px 3px rgba(0,0,0,0.5); font-family: Arial, sans-serif;">0</div>
+                        <div id="modalGf" style="font-size:22px; font-weight:900; color:var(--primary); font-family: Arial;">0</div>
                         <div style="font-size:11px; color:#fff; font-weight:bold;" data-trn="له">أهداف له</div>
                     </div>
                     <div style="background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.3); padding:10px 25px; border-radius:12px; backdrop-filter:blur(5px);">
-                        <div id="modalGa" style="font-size:22px; font-weight:900; color:#ef4444; text-shadow:0 1px 3px rgba(0,0,0,0.5); font-family: Arial, sans-serif;">0</div>
+                        <div id="modalGa" style="font-size:22px; font-weight:900; color:#ef4444; font-family: Arial;">0</div>
                         <div style="font-size:11px; color:#fff; font-weight:bold;" data-trn="عليه">أهداف عليه</div>
                     </div>
                 </div>
@@ -679,30 +506,30 @@
                 <div class="player-profile-bg"></div>
                 <div class="logo-ph" id="pModalLogo" style="width:130px; height:130px; margin:0 auto 15px; border-radius:50%; overflow:hidden; background:#111; border:3px solid var(--primary); box-shadow:0 10px 25px rgba(0,0,0,0.8); position:relative; z-index:2;"></div>
                 <h2 id="pModalName" style="margin:0; font-size:28px; font-weight:900; text-shadow:0 2px 5px rgba(0,0,0,0.8); position:relative; z-index:2;">الاسم</h2>
-                <div id="pModalTeam" class="team-clickable" style="color:var(--primary); font-weight:900; font-size:14px; margin-top:5px; cursor:pointer; position:relative; z-index:2;">الفريق</div>
+                <div id="pModalTeam" class="team-clickable" style="color:var(--primary); font-weight:900; font-size:14px; margin-top:5px; position:relative; z-index:2;">الفريق</div>
                 <div id="pModalPosDisplay" style="font-size:12px; color:#fff; background:var(--primary); display:inline-block; padding:4px 15px; border-radius:12px; font-weight:bold; margin-top:12px; box-shadow:0 4px 10px rgba(59,130,246,0.4); position:relative; z-index:2; display:none;"></div>
                 
                 <div class="p-stat-grid" style="position:relative; z-index:2;">
-                    <div class="p-stat-box"><div id="pModalMatches" style="font-size:24px; font-weight:900; color:#fff;">0</div><div style="font-size:10px; color:var(--muted); font-weight:bold; margin-top:2px;" data-trn="مباريات">مباريات</div></div>
-                    <div class="p-stat-box" style="border-color:rgba(59,130,246,0.3);"><div id="pModalGoals" style="font-size:24px; font-weight:900; color:var(--primary);">0</div><div style="font-size:10px; color:var(--muted); font-weight:bold; margin-top:2px;" data-trn="أهداف">أهداف ⚽</div></div>
-                    <div class="p-stat-box" style="border-color:rgba(255,255,255,0.3);"><div id="pModalAssists" style="font-size:24px; font-weight:900; color:#fff;">0</div><div style="font-size:10px; color:var(--muted); font-weight:bold; margin-top:2px;" data-trn="صناعة">صناعة 🅰️</div></div>
-                    <div class="p-stat-box" style="border-color:rgba(250,204,21,0.3);"><div id="pModalMotm" style="font-size:24px; font-weight:900; color:#facc15;">0</div><div style="font-size:10px; color:var(--muted); font-weight:bold; margin-top:2px;" data-trn="نجومية">نجومية 🌟</div></div>
-                    <div class="p-stat-box" style="background:rgba(250,204,21,0.1); border-color:rgba(250,204,21,0.3);"><div id="pModalY" style="font-size:24px; font-weight:900; color:#facc15;">0</div><div style="font-size:10px; color:#facc15; font-weight:bold; margin-top:2px;" data-trn="إنذار">إنذار 🟨</div></div>
-                    <div class="p-stat-box" style="background:rgba(239,68,68,0.1); border-color:rgba(239,68,68,0.3);"><div id="pModalR" style="font-size:24px; font-weight:900; color:#ef4444;">0</div><div style="font-size:10px; color:#ef4444; font-weight:bold; margin-top:2px;" data-trn="طرد">طرد 🟥</div></div>
-                    <div class="p-stat-box" id="csBox" style="background:rgba(16,185,129,0.1); border-color:rgba(16,185,129,0.3); grid-column: span 3; display:none;"><div id="pModalCS" style="font-size:24px; font-weight:900; color:#10b981;">0</div><div style="font-size:10px; color:var(--muted); font-weight:bold; margin-top:2px;" data-trn="كلين شيت">كلين شيت 🛡️</div></div>
+                    <div class="p-stat-box"><div id="pModalMatches" style="font-size:24px; font-weight:900; color:#fff; font-family:Arial;">0</div><div style="font-size:10px; color:var(--muted); font-weight:bold; margin-top:2px;" data-trn="مباريات">مباريات</div></div>
+                    <div class="p-stat-box" style="border-color:rgba(59,130,246,0.3);"><div id="pModalGoals" style="font-size:24px; font-weight:900; color:var(--primary); font-family:Arial;">0</div><div style="font-size:10px; color:var(--muted); font-weight:bold; margin-top:2px;" data-trn="أهداف">أهداف ⚽</div></div>
+                    <div class="p-stat-box" style="border-color:rgba(255,255,255,0.3);"><div id="pModalAssists" style="font-size:24px; font-weight:900; color:#fff; font-family:Arial;">0</div><div style="font-size:10px; color:var(--muted); font-weight:bold; margin-top:2px;" data-trn="صناعة">صناعة 🅰️</div></div>
+                    <div class="p-stat-box" style="border-color:rgba(250,204,21,0.3);"><div id="pModalMotm" style="font-size:24px; font-weight:900; color:#facc15; font-family:Arial;">0</div><div style="font-size:10px; color:var(--muted); font-weight:bold; margin-top:2px;" data-trn="نجومية">نجومية 🌟</div></div>
+                    <div class="p-stat-box" style="background:rgba(250,204,21,0.1); border-color:rgba(250,204,21,0.3);"><div id="pModalY" style="font-size:24px; font-weight:900; color:#facc15; font-family:Arial;">0</div><div style="font-size:10px; color:#facc15; font-weight:bold; margin-top:2px;" data-trn="إنذار">إنذار 🟨</div></div>
+                    <div class="p-stat-box" style="background:rgba(239,68,68,0.1); border-color:rgba(239,68,68,0.3);"><div id="pModalR" style="font-size:24px; font-weight:900; color:#ef4444; font-family:Arial;">0</div><div style="font-size:10px; color:#ef4444; font-weight:bold; margin-top:2px;" data-trn="طرد">طرد 🟥</div></div>
+                    <div class="p-stat-box" id="csBox" style="background:rgba(16,185,129,0.1); border-color:rgba(16,185,129,0.3); grid-column: span 3; display:none;"><div id="pModalCS" style="font-size:24px; font-weight:900; color:#10b981; font-family:Arial;">0</div><div style="font-size:10px; color:var(--muted); font-weight:bold; margin-top:2px;" data-trn="كلين شيت">كلين شيت 🛡️</div></div>
                 </div>
             </div>
         </div>
     </div>
 
     <div id="matchDetailsModal" class="modal" style="z-index: 102;">
-        <div class="modal-header-nav"><button class="close-btn" onclick="window.closeMatchModal()"><i class="fa-solid fa-arrow-right"></i></button><div style="font-weight:bold; font-size:16px;" data-trn="التفاصيل والبوستر">تفاصيل المباراة</div><button class="export-btn" onclick="shareAsImage('mdContentArea')" style="background:transparent; color:var(--primary); border:none; font-size:18px; cursor:pointer; padding:0;"><i class="fa-solid fa-camera"></i></button></div>
+        <div class="modal-header-nav"><button class="close-btn" onclick="window.closeMatchModal()"><i class="fa-solid fa-arrow-right"></i></button><div style="font-weight:bold; font-size:16px;" data-trn="التفاصيل والبوستر">تفاصيل المباراة</div><button class="export-btn" onclick="shareAsImage('mdContentArea')" style="background:transparent; color:var(--primary); border:none; font-size:18px; padding:0;"><i class="fa-solid fa-camera"></i></button></div>
         <div style="padding:20px;" id="mdContentArea">
             <div class="card" style="background:var(--card); text-align:center;">
                 <div style="font-size:13px; color:var(--primary); font-weight:bold; margin-bottom:15px; background:rgba(255,255,255,0.05); padding:8px; border-radius:8px; border:1px solid var(--primary);" id="mdRound"></div>
                 <div style="display:flex; justify-content:space-between; align-items:center;">
                     <div class="team-clickable" style="width:30%; font-weight:bold; font-size:15px; display:flex; flex-direction:column; align-items:center;" id="mdTeam1Container"><div class="logo-ph" id="mdLogo1" style="width:45px; height:45px; margin-bottom:5px;"></div><span id="mdT1Name"></span></div>
-                    <div style="width:40%; font-size:40px; font-weight:900; letter-spacing:2px; color:var(--accent); font-family: Arial, sans-serif;" id="mdScore"></div>
+                    <div style="width:40%; font-size:40px; font-weight:900; letter-spacing:2px; color:var(--accent); font-family: Arial;" id="mdScore"></div>
                     <div class="team-clickable" style="width:30%; font-weight:bold; font-size:15px; display:flex; flex-direction:column; align-items:center;" id="mdTeam2Container"><div class="logo-ph" id="mdLogo2" style="width:45px; height:45px; margin-bottom:5px;"></div><span id="mdT2Name"></span></div>
                 </div>
                 
@@ -727,7 +554,7 @@
             <div id="md-content-stats" style="display:none;">
                 <div class="card glass-box" id="mdStats" style="margin-bottom:15px; border-radius:12px;">
                     <div style="font-size: 13px; color: #fff; text-align: center; margin-bottom: 8px; font-weight:900;" data-trn="الاستحواذ">الاستحواذ</div>
-                    <div style="display: flex; justify-content: space-between; font-size: 16px; font-weight: 900; margin-bottom: 8px; font-family: Arial, sans-serif;"><span id="mdPos1Txt" style="color: var(--primary);">50%</span><span id="mdPos2Txt" style="color: var(--accent);">50%</span></div>
+                    <div style="display: flex; justify-content: space-between; font-size: 16px; font-weight: 900; margin-bottom: 8px; font-family: Arial;"><span id="mdPos1Txt" style="color: var(--primary);">50%</span><span id="mdPos2Txt" style="color: var(--accent);">50%</span></div>
                     <div style="display: flex; height: 8px; border-radius: 4px; overflow: hidden; margin-bottom: 20px; background: rgba(255,255,255,0.1);"><div id="mdPos1Bar" style="width: 50%; background: var(--primary);"></div><div id="mdPos2Bar" style="width: 50%; background: var(--accent);"></div></div>
                     <div class="stat-list-row"><div class="stat-item-val right" id="mdShots1Txt">0</div><div class="stat-item-title" style="color:#facc15;" data-trn="التسديدات">التسديدات</div><div class="stat-item-val left" id="mdShots2Txt">0</div></div>
                     <div class="stat-list-row"><div class="stat-item-val right" id="mdCorn1Txt">0</div><div class="stat-item-title" style="color:#fff;" data-trn="الركنيات">الركنيات</div><div class="stat-item-val left" id="mdCorn2Txt">0</div></div>
@@ -745,19 +572,19 @@
             </div>
 
             <div class="export-btn" style="display:flex; gap:10px; margin-top:20px; border:none; padding:0; background:transparent;">
-                <button id="mdSquadBtn" style="flex:1; padding:12px; background:rgba(0,0,0,0.6); color:var(--primary); border:1px solid var(--primary); border-radius:12px; font-weight:bold; font-size:14px; cursor:pointer; font-family:'Cairo'; display:none;"><i class="fa-solid fa-users"></i> <span data-trn="التشكيلة">التشكيلة</span></button>
-                <button onclick="shareAsImage('mdContentArea')" style="flex:1; padding:12px; background:var(--primary); color:#fff; border:none; border-radius:12px; font-weight:bold; font-size:14px; cursor:pointer; font-family:'Cairo';"><i class="fa-solid fa-camera"></i> <span data-trn="بوستر">حفظ بوستر</span></button>
+                <button id="mdSquadBtn" style="flex:1; padding:12px; background:rgba(0,0,0,0.6); color:var(--primary); border:1px solid var(--primary); border-radius:12px; font-weight:bold; font-size:14px; font-family:'Cairo'; display:none;"><i class="fa-solid fa-users"></i> <span data-trn="التشكيلة">التشكيلة</span></button>
+                <button onclick="shareAsImage('mdContentArea')" style="flex:1; padding:12px; background:var(--primary); color:#fff; border:none; border-radius:12px; font-weight:bold; font-size:14px; font-family:'Cairo';"><i class="fa-solid fa-camera"></i> <span data-trn="بوستر">حفظ بوستر</span></button>
             </div>
         </div>
     </div>
     
     <div id="squadsModal" class="modal" style="z-index: 108; background:#000;">
-        <div class="modal-header-nav" style="border-bottom:none; background:transparent;"><button class="close-btn" onclick="window.closeSquadsModal()"><i class="fa-solid fa-arrow-right"></i></button><div style="font-weight:bold; font-size:15px; color:#fff;" data-trn="التشكيلة">التشكيلة</div><button class="export-btn" onclick="shareAsImage('pitchExportArea')" style="background:transparent; color:var(--primary); border:none; font-size:20px; cursor:pointer; padding:0;"><i class="fa-solid fa-camera"></i></button></div>
+        <div class="modal-header-nav" style="border-bottom:none; background:transparent;"><button class="close-btn" onclick="window.closeSquadsModal()"><i class="fa-solid fa-arrow-right"></i></button><div style="font-weight:bold; font-size:15px; color:#fff;" data-trn="التشكيلة">التشكيلة</div><button class="export-btn" onclick="shareAsImage('pitchExportArea')" style="background:transparent; color:var(--primary); border:none; font-size:20px; padding:0;"><i class="fa-solid fa-camera"></i></button></div>
         <div style="padding:15px;" id="pitchExportArea">
             <div style="display:flex; background:rgba(255,255,255,0.05); border-radius:12px; padding:5px; margin-bottom:15px; gap:5px; overflow-x:auto;">
-                <button id="tabSq1" onclick="switchSquadTab(1)" style="flex:1; min-width:80px; background:var(--primary); color:#fff; border:none; padding:10px; border-radius:8px; font-family:'Cairo'; font-weight:bold; cursor:pointer; transition:0.3s; white-space:nowrap;"><span id="tabName1">فريق 1</span></button>
-                <button id="tabSqBoth" onclick="switchSquadTab(3)" style="flex:1; min-width:80px; background:transparent; color:var(--muted); border:none; padding:10px; border-radius:8px; font-family:'Cairo'; font-weight:bold; cursor:pointer; transition:0.3s; white-space:nowrap;">VS</button>
-                <button id="tabSq2" onclick="switchSquadTab(2)" style="flex:1; min-width:80px; background:transparent; color:var(--muted); border:none; padding:10px; border-radius:8px; font-family:'Cairo'; font-weight:bold; cursor:pointer; transition:0.3s; white-space:nowrap;"><span id="tabName2">فريق 2</span></button>
+                <button id="tabSq1" onclick="switchSquadTab(1)" style="flex:1; min-width:80px; background:var(--primary); color:#fff; border:none; padding:10px; border-radius:8px; font-family:'Cairo'; font-weight:bold; white-space:nowrap;"><span id="tabName1">فريق 1</span></button>
+                <button id="tabSqBoth" onclick="switchSquadTab(3)" style="flex:1; min-width:80px; background:transparent; color:var(--muted); border:none; padding:10px; border-radius:8px; font-family:'Cairo'; font-weight:bold; white-space:nowrap;">VS</button>
+                <button id="tabSq2" onclick="switchSquadTab(2)" style="flex:1; min-width:80px; background:transparent; color:var(--muted); border:none; padding:10px; border-radius:8px; font-family:'Cairo'; font-weight:bold; white-space:nowrap;"><span id="tabName2">فريق 2</span></button>
             </div>
             <div id="pitchWrapper1" style="display:block; width:100%;"><div class="pitch-container" id="pitchTeam1"></div></div>
             <div id="pitchWrapper2" style="display:none; width:100%;"><div class="pitch-container" id="pitchTeam2"></div></div>
@@ -766,7 +593,6 @@
     </div>
 
     <script>
-        // 1. إعدادات قاعدة البيانات
         const firebaseConfig = {
             apiKey: "AIzaSyCfaXlGarmxWH8HkxDqdvOAtTqJaF0LXvg",
             authDomain: "kdcsaas.firebaseapp.com",
@@ -839,7 +665,7 @@
                     stats.forEach(s => {
                         let val1 = d1[s.key] || 0; let val2 = d2[s.key] || 0; let max = Math.max(val1, val2, 1); let w1 = (val1 / max) * 100; let w2 = (val2 / max) * 100;
                         let c1 = val1 >= val2 && val1 > 0 ? 'var(--primary)' : 'rgba(255,255,255,0.2)'; let c2 = val2 >= val1 && val2 > 0 ? 'var(--accent)' : 'rgba(255,255,255,0.2)';
-                        barsHtml += `<div style="margin-bottom:12px; background:rgba(0,0,0,0.3); padding:8px; border-radius:12px; border:1px solid rgba(255,255,255,0.05);"><div style="text-align:center; font-size:11px; color:#fff; font-weight:900; margin-bottom:5px;">${t(s.label.split(' ')[0])} ${s.label.split(' ')[1]||''}</div><div style="display:flex; justify-content:space-between; align-items:center; gap:10px;"><div style="width:25px; text-align:center; font-weight:900; font-size:14px; color:${c1}; text-shadow:0 1px 2px rgba(0,0,0,0.8); font-family: Arial, sans-serif;">${val1}</div><div style="flex:1; display:flex; gap:3px;"><div style="flex:1; background:rgba(255,255,255,0.05); height:8px; border-radius:4px 0 0 4px; display:flex; justify-content:flex-end; overflow:hidden;"><div style="width:${w1}%; background:${c1}; border-radius:4px 0 0 4px; transition:0.5s;"></div></div><div style="flex:1; background:rgba(255,255,255,0.05); height:8px; border-radius:0 4px 4px 0; overflow:hidden;"><div style="width:${w2}%; background:${c2}; border-radius:0 4px 4px 0; transition:0.5s;"></div></div></div><div style="width:25px; text-align:center; font-weight:900; font-size:14px; color:${c2}; text-shadow:0 1px 2px rgba(0,0,0,0.8); font-family: Arial, sans-serif;">${val2}</div></div></div>`;
+                        barsHtml += `<div style="margin-bottom:12px; background:rgba(0,0,0,0.3); padding:8px; border-radius:12px; border:1px solid rgba(255,255,255,0.05);"><div style="text-align:center; font-size:11px; color:#fff; font-weight:900; margin-bottom:5px;">${t(s.label.split(' ')[0])} ${s.label.split(' ')[1]||''}</div><div style="display:flex; justify-content:space-between; align-items:center; gap:10px;"><div style="width:25px; text-align:center; font-weight:900; font-size:14px; color:${c1}; font-family: Arial;">${val1}</div><div style="flex:1; display:flex; gap:3px;"><div style="flex:1; background:rgba(255,255,255,0.05); height:8px; border-radius:4px 0 0 4px; display:flex; justify-content:flex-end; overflow:hidden;"><div style="width:${w1}%; background:${c1}; border-radius:4px 0 0 4px; transition:0.5s;"></div></div><div style="flex:1; background:rgba(255,255,255,0.05); height:8px; border-radius:0 4px 4px 0; overflow:hidden;"><div style="width:${w2}%; background:${c2}; border-radius:0 4px 4px 0; transition:0.5s;"></div></div></div><div style="width:25px; text-align:center; font-weight:900; font-size:14px; color:${c2}; font-family: Arial;">${val2}</div></div></div>`;
                     });
                     document.getElementById('adminCompContent').innerHTML = `<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:15px;"><div style="text-align:center; width:40%;"><div class="logo-ph" style="width:60px; height:60px; margin:0 auto 8px; border:2px solid var(--primary); box-shadow:0 5px 10px rgba(59,130,246,0.3); background:#111;">${p1Img}</div><div style="font-weight:900; font-size:12px; color:#fff;">${data.p1}</div><div style="font-size:10px; color:var(--muted); font-weight:bold;">${data.t1}</div></div><div style="font-size:20px; color:rgba(255,255,255,0.2); font-weight:900; font-style:italic;">VS</div><div style="text-align:center; width:40%;"><div class="logo-ph" style="width:60px; height:60px; margin:0 auto 8px; border:2px solid var(--accent); box-shadow:0 5px 10px rgba(255,255,255,0.3); background:#111;">${p2Img}</div><div style="font-weight:900; font-size:12px; color:#fff;">${data.p2}</div><div style="font-size:10px; color:var(--muted); font-weight:bold;">${data.t2}</div></div></div>${barsHtml}`;
                     container.style.display = 'block';
@@ -925,10 +751,10 @@
             teamsDataGlobal = snap.val() || {}; const cont = document.getElementById('teamsContainer'); cont.innerHTML = ''; let allPlayers = []; let allTeamsArr = [];
             for(const tName in teamsDataGlobal) { let tData = teamsDataGlobal[tName]; const logo = tData.logo ? `<img src="${tData.logo}">` : `<i class="fa-solid fa-shield-halved"></i>`; cont.innerHTML += `<div class="team-btn" onclick="window.openTeam('${tName}')"><div class="logo-ph" style="margin: 0 auto 10px; width:70px; height:70px; border-width:2px; box-shadow:0 5px 15px rgba(0,0,0,0.5);">${logo}</div><div style="font-size:16px; font-weight:900; color:var(--text); text-shadow:0 2px 4px rgba(0,0,0,0.5);">${tName}</div></div>`; allTeamsArr.push({name: tName, gf: tData.gf || 0, ga: tData.ga || 0}); if(tData.players) for(let p in tData.players) allPlayers.push({ name: p, team: tName, ...tData.players[p] }); }
             const tStatsList = document.getElementById('teamStatsList'); tStatsList.innerHTML = ''; allTeamsArr.sort((a,b) => b.gf - a.gf).forEach(t => { let gd = t.gf - t.ga; let tLogo = teamsDataGlobal[t.name]?.logo ? `<img src="${teamsDataGlobal[t.name].logo}" style="width:20px;height:20px;object-fit:contain;margin-left:5px;">` : `<i class="fa-solid fa-shield-halved" style="margin-left:5px; color:var(--muted);"></i>`; tStatsList.innerHTML += `<tr class="team-clickable" onclick="window.openTeam('${t.name}')"><td style="text-align:right; font-weight:bold; padding-right:15px; display:flex; align-items:center;">${tLogo}${t.name}</td><td>${t.gf}</td><td>${t.ga}</td><td dir="ltr">${gd>0?'+'+gd:gd}</td></tr>`; }); if(allTeamsArr.length === 0) tStatsList.innerHTML = `<tr><td colspan="4" style="color:var(--muted); padding:15px;">لا توجد فرق</td></tr>`;
-            const tScorers = document.getElementById('topScorersList'); tScorers.innerHTML = ''; allPlayers.sort((a,b) => (b.goals||0) - (a.goals||0)).forEach((p, i) => { if((p.goals||0)>0) tScorers.innerHTML += `<tr class="clickable-player" onclick="window.openPlayerProfile('${p.name}','${p.team}')"><td>${i+1}</td><td style="text-align:right; padding-right:15px; display:flex; align-items:center; font-weight:bold;">${getPlayerImageHtml(p.name, p.team, 'var(--primary)')} <div>${p.name}<br><span style="font-size:10px; color:var(--muted); font-weight:normal;">${p.team}</span></div></td><td style="font-size:16px; color:var(--primary); font-family: Arial, sans-serif;">${p.goals}</td></tr>`; });
-            const tAssists = document.getElementById('topAssistsList'); tAssists.innerHTML = ''; allPlayers.sort((a,b) => (b.assists||0) - (a.assists||0)).forEach((p, i) => { if((p.assists||0)>0) tAssists.innerHTML += `<tr class="clickable-player" onclick="window.openPlayerProfile('${p.name}','${p.team}')"><td>${i+1}</td><td style="text-align:right; padding-right:15px; display:flex; align-items:center; font-weight:bold;">${getPlayerImageHtml(p.name, p.team, 'var(--primary)')} <div>${p.name}<br><span style="font-size:10px; color:var(--muted); font-weight:normal;">${p.team}</span></div></td><td style="font-size:16px; color:var(--primary); font-family: Arial, sans-serif;">${p.assists}</td></tr>`; });
-            const tMotms = document.getElementById('topMotmList'); tMotms.innerHTML = ''; allPlayers.sort((a,b) => (b.motm||0) - (a.motm||0)).forEach((p, i) => { if((p.motm||0)>0) tMotms.innerHTML += `<tr class="clickable-player" onclick="window.openPlayerProfile('${p.name}','${p.team}')"><td>${i+1}</td><td style="text-align:right; padding-right:15px; display:flex; align-items:center; font-weight:bold;">${getPlayerImageHtml(p.name, p.team, '#facc15')} <div>${p.name}<br><span style="font-size:10px; color:var(--muted); font-weight:normal;">${p.team}</span></div></td><td style="font-size:16px; color:#facc15; font-family: Arial, sans-serif;">${p.motm}</td></tr>`; });
-            const tCards = document.getElementById('cardsList'); tCards.innerHTML = ''; allPlayers.filter(p => p.yellow > 0 || p.red > 0).sort((a,b) => (b.red||0) - (a.red||0) || (b.yellow||0) - (a.yellow||0)).forEach(p => { tCards.innerHTML += `<tr class="clickable-player" onclick="window.openPlayerProfile('${p.name}','${p.team}')"><td style="text-align:right; padding-right:15px; display:flex; align-items:center; font-weight:bold;">${getPlayerImageHtml(p.name, p.team, '#ef4444')} <div>${p.name}<br><span style="font-size:10px; color:var(--muted); font-weight:normal;">${p.team}</span></div></td><td style="font-size:14px; color:#facc15; font-family: Arial, sans-serif;">${p.yellow||0}</td><td style="font-size:14px; color:#ef4444; font-family: Arial, sans-serif;">${p.red||0}</td></tr>`; });
+            const tScorers = document.getElementById('topScorersList'); tScorers.innerHTML = ''; allPlayers.sort((a,b) => (b.goals||0) - (a.goals||0)).forEach((p, i) => { if((p.goals||0)>0) tScorers.innerHTML += `<tr class="clickable-player" onclick="window.openPlayerProfile('${p.name}','${p.team}')"><td>${i+1}</td><td style="text-align:right; padding-right:15px; display:flex; align-items:center; font-weight:bold;">${getPlayerImageHtml(p.name, p.team, 'var(--primary)')} <div>${p.name}<br><span style="font-size:10px; color:var(--muted); font-weight:normal;">${p.team}</span></div></td><td style="font-size:16px; color:var(--primary); font-family: Arial;">${p.goals}</td></tr>`; });
+            const tAssists = document.getElementById('topAssistsList'); tAssists.innerHTML = ''; allPlayers.sort((a,b) => (b.assists||0) - (a.assists||0)).forEach((p, i) => { if((p.assists||0)>0) tAssists.innerHTML += `<tr class="clickable-player" onclick="window.openPlayerProfile('${p.name}','${p.team}')"><td>${i+1}</td><td style="text-align:right; padding-right:15px; display:flex; align-items:center; font-weight:bold;">${getPlayerImageHtml(p.name, p.team, 'var(--primary)')} <div>${p.name}<br><span style="font-size:10px; color:var(--muted); font-weight:normal;">${p.team}</span></div></td><td style="font-size:16px; color:var(--primary); font-family: Arial;">${p.assists}</td></tr>`; });
+            const tMotms = document.getElementById('topMotmList'); tMotms.innerHTML = ''; allPlayers.sort((a,b) => (b.motm||0) - (a.motm||0)).forEach((p, i) => { if((p.motm||0)>0) tMotms.innerHTML += `<tr class="clickable-player" onclick="window.openPlayerProfile('${p.name}','${p.team}')"><td>${i+1}</td><td style="text-align:right; padding-right:15px; display:flex; align-items:center; font-weight:bold;">${getPlayerImageHtml(p.name, p.team, '#facc15')} <div>${p.name}<br><span style="font-size:10px; color:var(--muted); font-weight:normal;">${p.team}</span></div></td><td style="font-size:16px; color:#facc15; font-family: Arial;">${p.motm}</td></tr>`; });
+            const tCards = document.getElementById('cardsList'); tCards.innerHTML = ''; allPlayers.filter(p => p.yellow > 0 || p.red > 0).sort((a,b) => (b.red||0) - (a.red||0) || (b.yellow||0) - (a.yellow||0)).forEach(p => { tCards.innerHTML += `<tr class="clickable-player" onclick="window.openPlayerProfile('${p.name}','${p.team}')"><td style="text-align:right; padding-right:15px; display:flex; align-items:center; font-weight:bold;">${getPlayerImageHtml(p.name, p.team, '#ef4444')} <div>${p.name}<br><span style="font-size:10px; color:var(--muted); font-weight:normal;">${p.team}</span></div></td><td style="font-size:14px; color:#facc15; font-family: Arial;">${p.yellow||0}</td><td style="font-size:14px; color:#ef4444; font-family: Arial;">${p.red||0}</td></tr>`; });
         });
 
         function formatMatchDate(d) { if(!d) return ""; const matchDate = new Date(d); const today = new Date(); const tomorrow = new Date(today); tomorrow.setDate(tomorrow.getDate() + 1); if(matchDate.toDateString() === today.toDateString()) return t("اليوم"); if(matchDate.toDateString() === tomorrow.toDateString()) return t("غداً"); return d; }
@@ -987,7 +813,7 @@
                     ts.forEach((tData, idx) => { 
                         let tLogo = teamsDataGlobal[tData.name]?.logo ? `<img src="${teamsDataGlobal[tData.name].logo}" style="width:20px;height:20px;object-fit:contain;margin-left:5px;">` : `<i class="fa-solid fa-shield-halved" style="margin-left:5px; color:var(--muted);"></i>`; 
                         let sHtml = ''; if(tData.status === 'متأهل') sHtml = '<span style="color:#10b981; font-size:9px; background:rgba(16,185,129,0.15); padding:2px 6px; border-radius:4px; border:1px solid rgba(16,185,129,0.3); margin-right:5px; white-space:nowrap; font-weight:800;"><i class="fa-solid fa-circle-check"></i> '+t('تأهل')+'</span>'; else if(tData.status === 'مغادر') sHtml = '<span style="color:#ef4444; font-size:9px; background:rgba(239,68,68,0.15); padding:2px 6px; border-radius:4px; border:1px solid rgba(239,68,68,0.3); margin-right:5px; white-space:nowrap; font-weight:800;"><i class="fa-solid fa-circle-xmark"></i> '+t('مغادر')+'</span>'; 
-                        html += `<tr class="team-clickable" onclick="window.openTeam('${tData.name}')"><td>${idx+1}</td><td style="text-align:right; padding-right:15px; display:flex; align-items:center; font-weight:bold;">${tLogo}${tData.name} ${sHtml}</td><td style="font-family: Arial, sans-serif;">${tData.played}</td><td style="font-family: Arial, sans-serif;">${tData.gf||0}</td><td style="font-family: Arial, sans-serif;">${tData.ga||0}</td><td dir="ltr" style="font-family: Arial, sans-serif;">${tData.gd>0?'+'+tData.gd:tData.gd}</td><td style="font-weight:900; color:var(--primary); font-size:14px; font-family: Arial, sans-serif;">${tData.points}</td></tr>`; 
+                        html += `<tr class="team-clickable" onclick="window.openTeam('${tData.name}')"><td>${idx+1}</td><td style="text-align:right; padding-right:15px; display:flex; align-items:center; font-weight:bold;">${tLogo}${tData.name} ${sHtml}</td><td style="font-family: Arial;">${tData.played}</td><td style="font-family: Arial;">${tData.gf||0}</td><td style="font-family: Arial;">${tData.ga||0}</td><td dir="ltr" style="font-family: Arial;">${tData.gd>0?'+'+tData.gd:tData.gd}</td><td style="font-weight:900; color:var(--primary); font-size:14px; font-family: Arial;">${tData.points}</td></tr>`; 
                     }); 
                 } else html += `<tr><td colspan="7" style="color:var(--muted); padding:15px;">لا توجد فرق</td></tr>`; 
                 cont.innerHTML += html + `</table></div>`;
@@ -1006,7 +832,7 @@
                     let p1 = m.predictions ? (m.predictions.team1 || 0) : 0; let p0 = m.predictions ? (m.predictions.draw || 0) : 0; let p2 = m.predictions ? (m.predictions.team2 || 0) : 0; let total = p1 + p0 + p2 || 1;
                     let voted = localStorage.getItem('voted_' + m.id); let predSection = '';
                     if(!voted) predSection = `<div class="prediction-box"><div style="font-size:11px; margin-bottom:8px;">${t('توقع النتيجة')}</div><div style="display:flex; gap:5px;"><button class="pred-btn" onclick="voteMatch('${m.id}', 'team1')">${m.team1}</button><button class="pred-btn" onclick="voteMatch('${m.id}', 'draw')">${t('تعادل')}</button><button class="pred-btn" onclick="voteMatch('${m.id}', 'team2')">${m.team2}</button></div></div>`;
-                    else predSection = `<div class="prediction-box"><div style="display:flex; justify-content:space-between; font-size:10px; margin-bottom:2px;"><span style="font-family:Arial,sans-serif">${m.team1} (${Math.round(p1/total*100)}%)</span><span style="font-family:Arial,sans-serif">${t('تعادل')} (${Math.round(p0/total*100)}%)</span><span style="font-family:Arial,sans-serif">${m.team2} (${Math.round(p2/total*100)}%)</span></div><div class="pred-bar"><div style="width:${p1/total*100}%; background:var(--primary);"></div><div style="width:${p0/total*100}%; background:#a1a1aa;"></div><div style="width:${p2/total*100}%; background:var(--accent);"></div></div></div>`;
+                    else predSection = `<div class="prediction-box"><div style="display:flex; justify-content:space-between; font-size:10px; margin-bottom:2px;"><span style="font-family:Arial">${m.team1} (${Math.round(p1/total*100)}%)</span><span style="font-family:Arial">${t('تعادل')} (${Math.round(p0/total*100)}%)</span><span style="font-family:Arial">${m.team2} (${Math.round(p2/total*100)}%)</span></div><div class="pred-bar"><div style="width:${p1/total*100}%; background:var(--primary);"></div><div style="width:${p0/total*100}%; background:#a1a1aa;"></div><div style="width:${p2/total*100}%; background:var(--accent);"></div></div></div>`;
                     let info = []; if(m.group) info.push(t('مجموعة') + ' ' + m.group); if(m.round) info.push(t(m.round)); if(m.leg) info.push(t(m.leg)); let badgeInfo = info.length > 0 ? `<div style="font-size:11px; color:var(--primary); margin-bottom:12px; text-align:center; font-weight:bold; background: rgba(59,130,246,0.1); padding: 6px; border-radius: 8px; border:1px solid rgba(59,130,246,0.3);">${info.join(' - ')}</div>` : '';
                     
                     let sp1 = getStarPlayer(m.team1); let sp2 = getStarPlayer(m.team2);
@@ -1015,7 +841,7 @@
                     let sp1Html = sp1 ? `<div style="display:flex; align-items:center; gap:5px; font-size:10px; color:var(--muted); font-weight:bold;">${p1Img} <span>${t('نجم الفريق:')} ${sp1.name}</span></div>` : `<div></div>`;
                     let sp2Html = sp2 ? `<div style="display:flex; align-items:center; flex-direction:row-reverse; gap:5px; font-size:10px; color:var(--muted); font-weight:bold;">${p2Img} <span>${t('نجم الفريق:')} ${sp2.name}</span></div>` : `<div></div>`;
 
-                    list.innerHTML += `<div class="card" style="padding:15px; margin-bottom:12px; border-right: 4px solid var(--primary); background:rgba(255,255,255,0.02);">${badgeInfo}<div style="display:flex; justify-content:center; font-size:11px; color:var(--accent); margin-bottom:15px; background: rgba(0,0,0,0.3); padding: 8px 12px; border-radius: 8px;"><span><i class="fa-regular fa-clock"></i> <span style="font-family:Arial,sans-serif">${m.time || ''}</span></span></div><div style="display:flex; justify-content:space-between; align-items:center; font-weight:900; font-size:16px;"><span class="team-clickable" onclick="window.openTeam('${m.team1}')" style="flex:1; text-align:right;">${m.team1}</span><span style="font-size:12px; background:var(--primary); padding:4px 15px; border-radius:12px; color:#fff;">VS</span><span class="team-clickable" onclick="window.openTeam('${m.team2}')" style="flex:1; text-align:left;">${m.team2}</span></div><div style="display:flex; justify-content:space-between; margin-top:10px; padding-top:10px; border-top:1px solid rgba(255,255,255,0.05);">${sp1Html}${sp2Html}</div><div style="font-size:12px; color:var(--muted); margin-top:15px; text-align:center; font-weight:bold;"><i class="fa-solid fa-location-dot" style="color:var(--primary);"></i> ${t(m.stadium || 'لم يحدد')}</div>${predSection}<div style="display:flex; gap:10px; margin-top:15px;"><button class="btn-enter-match" onclick="window.openScheduledMatch('${m.id}')" style="flex:1; margin:0;"><i class="fa-solid fa-square-poll-horizontal"></i> ${t('التفاصيل')}</button></div></div>`;
+                    list.innerHTML += `<div class="card" style="padding:15px; margin-bottom:12px; border-right: 4px solid var(--primary); background:rgba(255,255,255,0.02);">${badgeInfo}<div style="display:flex; justify-content:center; font-size:11px; color:var(--accent); margin-bottom:15px; background: rgba(0,0,0,0.3); padding: 8px 12px; border-radius: 8px;"><span><i class="fa-regular fa-clock"></i> <span style="font-family:Arial">${m.time || ''}</span></span></div><div style="display:flex; justify-content:space-between; align-items:center; font-weight:900; font-size:16px;"><span class="team-clickable" onclick="window.openTeam('${m.team1}')" style="flex:1; text-align:right;">${m.team1}</span><span style="font-size:12px; background:var(--primary); padding:4px 15px; border-radius:12px; color:#fff;">VS</span><span class="team-clickable" onclick="window.openTeam('${m.team2}')" style="flex:1; text-align:left;">${m.team2}</span></div><div style="display:flex; justify-content:space-between; margin-top:10px; padding-top:10px; border-top:1px solid rgba(255,255,255,0.05);">${sp1Html}${sp2Html}</div><div style="font-size:12px; color:var(--muted); margin-top:15px; text-align:center; font-weight:bold;"><i class="fa-solid fa-location-dot" style="color:var(--primary);"></i> ${t(m.stadium || 'لم يحدد')}</div>${predSection}<div style="display:flex; gap:10px; margin-top:15px;"><button class="btn-enter-match" onclick="window.openScheduledMatch('${m.id}')" style="flex:1; margin:0;"><i class="fa-solid fa-square-poll-horizontal"></i> ${t('التفاصيل')}</button></div></div>`;
                 }); list.innerHTML += `</div>`;
             }); if(Object.keys(groupedMatches).length === 0) list.innerHTML = `<div style="text-align:center; color:var(--muted); font-size:13px; padding:30px 0; font-weight:bold;">لا توجد مباريات</div>`;
         }
@@ -1035,14 +861,13 @@
             savedMatchesGlobal = snap.val() || {}; const aList = document.getElementById('archiveList'); const kList = document.getElementById('knockoutList'); if(!aList || !kList) return; aList.innerHTML = ''; kList.innerHTML = ''; let hasKnockouts = false;
             if(savedMatchesGlobal) { Object.keys(savedMatchesGlobal).reverse().forEach(key => { let m = savedMatchesGlobal[key]; let s1 = parseInt(m.score1) || 0; let s2 = parseInt(m.score2) || 0; let info = []; if(m.groupInfo && m.groupInfo !== "أدوار إقصائية") info.push(t('مجموعة') + ' ' + m.groupInfo); if(m.round) info.push(t(m.round)); if(m.leg) info.push(t(m.leg)); let displayDate = formatMatchDate(m.date); let sqBtnArc = ''; if((m.squad1 && Object.keys(m.squad1).length > 0) || (m.squad2 && Object.keys(m.squad2).length > 0)) { sqBtnArc = `<button class="btn-enter-match" onclick="event.stopPropagation(); window.openArchiveSquads('${key}')" style="flex:0.4; background:rgba(255,255,255,0.05); color:#fff; border:1px solid rgba(255,255,255,0.1); margin-top:0;"><i class="fa-solid fa-users"></i> ${t('التشكيلة')}</button>`; } 
             
-            // 1. نجم المباراة (رجل المباراة الأفضل)
             let matchMotmHtml = '';
             if(m.motmTeam && m.motm) {
                 let pData = teamsDataGlobal[m.motmTeam]?.players?.[m.motm] || {};
                 let pImg = pData.photo ? `<img src="${pData.photo}" style="width:45px;height:45px;border-radius:50%;object-fit:cover;border:2px solid #facc15;">` : `<div style="width:45px;height:45px;border-radius:50%;background:rgba(255,255,255,0.1);display:flex;align-items:center;justify-content:center;color:#facc15;border:2px solid #facc15;font-size:18px;"><i class="fa-solid fa-user"></i></div>`;
                 let pStats = getMatchPlayerStats(m.events, m.motm); let statBadges = '';
-                if(pStats.goals > 0) statBadges += `<span style="color:#4ade80; margin:0 3px; font-family:Arial,sans-serif;">${pStats.goals}⚽</span>`;
-                if(pStats.assists > 0) statBadges += `<span style="color:#8b5cf6; margin:0 3px; font-family:Arial,sans-serif;">${pStats.assists}🅰️</span>`;
+                if(pStats.goals > 0) statBadges += `<span style="color:#4ade80; margin:0 3px; font-family:Arial;">${pStats.goals}⚽</span>`;
+                if(pStats.assists > 0) statBadges += `<span style="color:#8b5cf6; margin:0 3px; font-family:Arial;">${pStats.assists}🅰️</span>`;
                 
                 matchMotmHtml = `
                 <div style="background: linear-gradient(135deg, rgba(250,204,21,0.15), rgba(0,0,0,0.4)); border:1px solid rgba(250,204,21,0.4); border-radius:12px; padding:10px 15px; margin: 0 15px 15px; display:flex; align-items:center; gap:15px; justify-content:center; cursor:pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.3);" onclick="event.stopPropagation(); window.openPlayerProfile('${m.motm}', '${m.motmTeam}')">
@@ -1059,7 +884,6 @@
                 `;
             }
 
-            // 2. نجوم الفريقين (تلقائي حسب التقييم والأرقام)
             let t1StarHtml = ''; let t2StarHtml = '';
             let sp1 = getStarPlayer(m.team1);
             if(sp1) {
@@ -1090,7 +914,7 @@
                     </div>
                     
                     <div style="padding:0 15px; text-align:center;">
-                        <div style="font-size:32px; font-weight:900; color:var(--accent); font-family:Arial, sans-serif; letter-spacing:2px; text-shadow:0 2px 5px rgba(0,0,0,0.8);">${s1} - ${s2}</div>
+                        <div style="font-size:32px; font-weight:900; color:var(--accent); font-family:Arial; letter-spacing:2px; text-shadow:0 2px 5px rgba(0,0,0,0.8);">${s1} - ${s2}</div>
                         <div style="font-size:10px; color:var(--muted); margin-top:3px; font-weight:bold;">${t('انتهت')}</div>
                     </div>
                     
@@ -1139,8 +963,8 @@
             let motmHtml = '';
             if(m.motmTeam && m.motm) {
                 let pStats = getMatchPlayerStats(m.events, m.motm); let statBadges = '';
-                if(pStats.goals > 0) statBadges += `<span style="color:#4ade80; margin-left:3px; font-family:Arial,sans-serif;">${pStats.goals}⚽</span>`;
-                if(pStats.assists > 0) statBadges += `<span style="color:#8b5cf6; margin-left:3px; font-family:Arial,sans-serif;">${pStats.assists}🅰️</span>`;
+                if(pStats.goals > 0) statBadges += `<span style="color:#4ade80; margin-left:3px; font-family:Arial;">${pStats.goals}⚽</span>`;
+                if(pStats.assists > 0) statBadges += `<span style="color:#8b5cf6; margin-left:3px; font-family:Arial;">${pStats.assists}🅰️</span>`;
                 motmHtml += `<div style="text-align:center; width:100%;"><i class="fa-solid fa-crown" style="color:#facc15;"></i> ${t('رجل المباراة')}: <span onclick="window.openPlayerProfile('${m.motm}', '${m.motmTeam}')" style="cursor:pointer; text-decoration:underline; color:#facc15; font-weight:bold;">${m.motm}</span> <span style="color:var(--muted); font-size:10px;">(${m.motmTeam})</span><br><div style="font-size:12px; margin-top:3px;">${statBadges}</div></div>`;
             }
             document.getElementById('mdMotmCtr').innerHTML = motmHtml !== '' ? `<div style="display:flex; justify-content:center; margin-top:15px; padding:10px; background:rgba(250,204,21,0.1); border:1px solid rgba(250,204,21,0.3); border-radius:8px; font-size:12px; font-weight:bold;">${motmHtml}</div>` : '';
@@ -1178,7 +1002,7 @@
 
         window.openScheduledMatch = function(key) {
             let m = scheduleGlobal[key]; if(!m) return; let info = []; if(m.group) info.push(t('مجموعة') + ' ' + m.group); if(m.round) info.push(t(m.round)); if(m.leg) info.push(t(m.leg));
-            document.getElementById('mdRound').innerText = info.length > 0 ? info.join(' - ') : t('مباراة قادمة'); document.getElementById('mdT1Name').innerText = m.team1 || '--'; document.getElementById('mdT2Name').innerText = m.team2 || '--'; document.getElementById('mdLogo1').innerHTML = teamsDataGlobal[m.team1]?.logo ? `<img src="${teamsDataGlobal[m.team1].logo}">` : `<i class="fa-solid fa-shield"></i>`; document.getElementById('mdLogo2').innerHTML = teamsDataGlobal[m.team2]?.logo ? `<img src="${teamsDataGlobal[m.team2].logo}">` : `<i class="fa-solid fa-shield"></i>`; document.getElementById('mdScore').innerText = `VS`; document.getElementById('mdTabs').style.display = 'none'; document.getElementById('md-content-stats').style.display = 'none'; document.getElementById('mdTimelineList').innerHTML = `<div style="text-align:center; padding: 20px;"><i class="fa-regular fa-clock" style="font-size:30px; color:var(--primary); margin-bottom:15px; display:block;"></i><strong style="font-size:14px; color:var(--text);">${t('لم تبدأ')}</strong><br><br><span style="color:var(--muted); font-size:12px;">${t('الساعة')} <span style="font-family:Arial,sans-serif">${m.time} | ${m.date}</span></span><br><span style="color:var(--muted); font-size:12px;"><i class="fa-solid fa-location-dot"></i> ${t('الملعب')}: ${t(m.stadium || 'لم يحدد')}</span></div>`; document.getElementById('mdMotmCtr').innerHTML = ''; switchMatchTab('md', 'events');
+            document.getElementById('mdRound').innerText = info.length > 0 ? info.join(' - ') : t('مباراة قادمة'); document.getElementById('mdT1Name').innerText = m.team1 || '--'; document.getElementById('mdT2Name').innerText = m.team2 || '--'; document.getElementById('mdLogo1').innerHTML = teamsDataGlobal[m.team1]?.logo ? `<img src="${teamsDataGlobal[m.team1].logo}">` : `<i class="fa-solid fa-shield"></i>`; document.getElementById('mdLogo2').innerHTML = teamsDataGlobal[m.team2]?.logo ? `<img src="${teamsDataGlobal[m.team2].logo}">` : `<i class="fa-solid fa-shield"></i>`; document.getElementById('mdScore').innerText = `VS`; document.getElementById('mdTabs').style.display = 'none'; document.getElementById('md-content-stats').style.display = 'none'; document.getElementById('mdTimelineList').innerHTML = `<div style="text-align:center; padding: 20px;"><i class="fa-regular fa-clock" style="font-size:30px; color:var(--primary); margin-bottom:15px; display:block;"></i><strong style="font-size:14px; color:var(--text);">${t('لم تبدأ')}</strong><br><br><span style="color:var(--muted); font-size:12px;">${t('الساعة')} <span style="font-family:Arial">${m.time} | ${m.date}</span></span><br><span style="color:var(--muted); font-size:12px;"><i class="fa-solid fa-location-dot"></i> ${t('الملعب')}: ${t(m.stadium || 'لم يحدد')}</span></div>`; document.getElementById('mdMotmCtr').innerHTML = ''; switchMatchTab('md', 'events');
             if(m.referee1 || m.referee2 || m.referee3 || m.referee4) { document.getElementById('mdReferees').style.display = 'flex'; document.getElementById('mdRef1Txt').innerHTML = getRefHtml(m.referee1); document.getElementById('mdRef2Txt').innerHTML = getRefHtml(m.referee2); if(m.referee3) { document.getElementById('mdRef3Wrap').style.display = 'flex'; document.getElementById('mdRef3Txt').innerHTML = getRefHtml(m.referee3); } else { document.getElementById('mdRef3Wrap').style.display = 'none'; } if(m.referee4) { document.getElementById('mdRef4Wrap').style.display = 'flex'; document.getElementById('mdRef4Txt').innerHTML = getRefHtml(m.referee4); } else { document.getElementById('mdRef4Wrap').style.display = 'none'; } } else { document.getElementById('mdReferees').style.display = 'none'; }
             document.getElementById('mdTeam1Container').onclick = function() { window.openTeam(m.team1); }; document.getElementById('mdTeam2Container').onclick = function() { window.openTeam(m.team2); }; let btnSq = document.getElementById('mdSquadBtn'); if(btnSq) btnSq.style.display = 'none'; 
             try{ history.pushState({ modal: 'matchDetailsModal' }, "", "#scheduled"); }catch(e){} document.getElementById('matchDetailsModal').style.display = 'block';
@@ -1230,8 +1054,8 @@
                             </div>
                         </div>
                         <div class="mp-right">
-                            <div class="mp-stat"><span class="mp-stat-val" style="color:var(--primary); font-family:Arial,sans-serif;">${s.goals||0}</span><span class="mp-stat-label">⚽</span></div>
-                            <div class="mp-stat"><span class="mp-stat-val" style="color:#facc15; font-family:Arial,sans-serif;">${s.motm||0}</span><span class="mp-stat-label">🌟</span></div>
+                            <div class="mp-stat"><span class="mp-stat-val" style="color:var(--primary); font-family:Arial;">${s.goals||0}</span><span class="mp-stat-label">⚽</span></div>
+                            <div class="mp-stat"><span class="mp-stat-val" style="color:#facc15; font-family:Arial;">${s.motm||0}</span><span class="mp-stat-label">🌟</span></div>
                         </div>
                     </div>`; 
                 } 
@@ -1332,6 +1156,156 @@
                 try { history.pushState({ page: 'live' }, "", "#live"); } catch(e) {} document.querySelectorAll('.page').forEach(p => p.classList.remove('active')); document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active')); document.getElementById('page-live').classList.add('active'); document.querySelectorAll('.nav-item')[0].classList.add('active'); 
             }
         });
+
+        // قواميس اللغات الأصلية كاملة بدون أي نقص في مفاتيح الترجمة
+        let currentLang = 'ar';
+        const dictKU = {
+            'المباشر': 'ڕاستەوخۆ', 'المباريات': 'یارییەکان', 'المجموعات': 'کۆمەڵەکان', 'الفرق': 'تیمەکان', 'إحصائيات': 'ئامارەکان', 'الإعلام': 'ڕاگەیاندن',
+            'الأحداث': 'ڕووداوەکان', 'الإحصائيات': 'ئامارەکان', 'التعليقات': 'لێدوانەکان',
+            'المجدولة': 'خشتەی یارییەکان', 'المنتظرة': 'چاوەڕوانکراو', 'المنتهية': 'کۆتایی هاتووە', 'شجرة البطولة': 'خشتەی پاڵەوانێتی',
+            'الاستحواذ': 'تۆپ کۆنترۆڵکردن', 'التسديدات': 'لێدانەکان', 'الركنيات': 'کۆڕنەرەکان', 'الفاولات': 'فاوڵەکان',
+            'الهدافين': 'گۆڵکاران', 'الصناعة': 'ئەسیست', 'النجوم': 'ئەستێرەکان', 'الإنذارات': 'کارتەکان',
+            'إحصائيات الفرق': 'ئاماری تیمەکان', 'صناع اللعب': 'دروستکەرانی یاری', 'نجوم المباريات': 'ئەستێرەکانی یاری', 'السجل التأديبي': 'تۆماری سزاکان',
+            'لاعب الجولة': 'یاریزانی هەفتە', 'تشكيلة الجولة': 'پێکهاتەی هەفتە',
+            'الفريق': 'تیم', 'لعب': 'یاری', 'له': 'گۆڵی کراو', 'عليه': 'لێکراو', 'الفرق': 'جیاوازی', 'نقاط': 'خاڵەکان',
+            'اللاعب': 'یاریزان', 'المركز': 'شوێن', 'صورة': 'وێنە',
+            'مجموعة': 'کۆمەڵەی', 'الجولة الأولى': 'گەڕی یەکەم', 'الجولة الثانية': 'گەڕی دووەم', 'الجولة الثالثة': 'گەڕی سێیەم', 'الجولة الرابعة': 'گەڕی چوارەم', 'الجولة الخامسة': 'گەڕی پێنجەم',
+            'دور الـ 16': 'قۆناغی شانزە', 'ربع النهائي': 'قۆناغی هەشت', 'نصف النهائي': 'پێش کۆتایی', 'تحديد المركز الثالث': 'دیاریکردنی پلەی سێیەم', 'النهائي': 'یاری کۆتایی',
+            'لم تبدأ': 'دەستی پێ نەکردووە', 'الشوط الأول': 'گێمی یەکەم', 'استراحة': 'پشوو', 'الشوط الثاني': 'گێمی دووەم', 'إضافي أول': 'زیادکراوی یەکەم', 'إضافي ثاني': 'زیادکراوی دووەم', 'ركلات ترجيح': 'پەناڵتی', 'انتهت': 'کۆتایی هات', 'انتظار': 'چاوەڕوان', 'مباشر': 'ڕاستەوخۆ',
+            'هدف': 'گۆڵ', 'عكسي': 'بەهەڵە', 'أسيست': 'ئەسیست', 'بطاقة صفراء': 'کارتی زەرد', 'بطاقة حمراء': 'کارتی سوور', 'تبديل': 'گۆڕانکاری',
+            'حارس مرمى': 'گۆڵپارێز', 'قلب دفاع': 'بەرگریکار', 'مدافع أيسر': 'بەرگریکاری چەپ', 'مدافع أيمن': 'بەرگریکاری ڕاست', 'ارتكاز دفاعي': 'ناوەڕاستی بەرگری', 'وسط محور': 'ناوەڕاست', 'صانع ألعاب': 'دروستکەری یاری', 'وسط أيسر': 'ناوەڕاستی چەپ', 'وسط أيمن': 'ناوەڕاستی ڕاست', 'جناح أيسر': 'باڵی چەپ', 'جناح أيمن': 'باڵی ڕاست', 'مهاجم': 'هێرشبەر',
+            'مدرب': 'ڕاهێنەر', 'مساعد': 'یاریدەدەر',
+            'مباريات': 'یارییەکان', 'أهداف': 'گۆڵەکان', 'صناعة': 'ئەسیست', 'نجومية': 'ئەستێرە', 'إنذار': 'ئاگادارکردنەوە', 'طرد': 'دەرکردن', 'كلين شيت': 'گۆڵی خاوێن',
+            'توقع النتيجة': 'پێشبینی ئەنجام', 'تعادل': 'یەکسانبوون', 'لا توجد مباريات مباشرة الآن': 'ئێستا یاری ڕاستەوخۆ نییە', 'ترقبوا انطلاق المباريات القادمة': 'چاوەڕێی یارییەکانی داهاتوو بن',
+            'ساحة': 'ناوەڕاست', 'رابع': 'چوارەم', 'نجم الفريق:': 'ئەستێرەی تیم:', 'اليوم': 'ئەمڕۆ', 'غداً': 'سبەی', 'الساعة': 'کاتژمێر', 'الملعب': 'یاریگا', 'لم يحدد': 'دیاری نەکراوە', 'لم يحدد بعد': 'دیاری نەکراوە',
+            'مواجهة بدون موعد': 'ڕووبەڕووبوونەوە بێ کات', 'مباراة منتهية': 'یاری کۆتایی هات', 'نتيجة مباراة': 'ئەنجامی یاری', 'مباراة قادمة': 'یاری داهاتوو',
+            'التفاصيل والبوستر': 'وردەکاری و پۆستەر', 'التفاصيل': 'وردەکارییەکان', 'التشكيلة': 'پێکهاتە', 'بوستر': 'پۆستەر', 'حفظ الصورة': 'پاشەکەوتکردنی وێنە', 'حفظ المجموعات': 'پاشەکەوتکردنی کۆمەڵەکان',
+            'إرسال': 'ناردن', 'عاجل': 'بەپەلە', 'لا توجد منشورات حاليا': 'هیچ بڵاوکراوەیەک نییە', 'مباريات الحسم': 'یارییە یەکلاکەرەوەکان', 'نتائج المجموعات': 'ئەنجامی کۆمەڵەکان',
+            'حساب المشجع': 'هەژماری هاندەر', 'الاسم الكامل...': 'ناوی تەواو...', 'البريد الإلكتروني...': 'ئیمەیڵ...', 'حفظ ودخول': 'چوونەژوورەوە', 'إلغاء': 'هەڵوەشاندنەوە', 'اكتب تعليقك هنا...': 'لێدوانەکەت بنووسە...', 'جاري تحميل التعليقات...': 'لێدوانەکان باردەکرێن...', 'لا توجد تعليقات حتى الآن. كن أول من يعلق!': 'تا ئێستا هیچ لێدوانێک نییە!', 'اكتب تعليقا...': 'لێدوانێک بنووسە...',
+            'عدد المباريات': 'ژمارەی یارییەکان', 'نجم الفريق': 'ئەستێرەی تیم', 'نجم': 'ئەستێرەی', 'لا توجد أحداث مسجلة': 'هیچ ڕووداوێک تۆمار نەکراوە', 'رجل المباراة': 'رجل المباراة', 'رجل المباراة (MOTM)': 'رجل المباراة (MOTM)'
+        };
+        const dictEN = {
+            'المباشر': 'Live', 'المباريات': 'Matches', 'المجموعات': 'Groups', 'الفرق': 'Teams', 'إحصائيات': 'Stats', 'الإعلام': 'Media',
+            'الأحداث': 'Events', 'الإحصائيات': 'Stats', 'التعليقات': 'Comments',
+            'المجدولة': 'Scheduled', 'المنتظرة': 'Upcoming', 'المنتهية': 'Finished', 'شجرة البطولة': 'Bracket',
+            'الاستحواذ': 'Possession', 'التسديدات': 'Shots', 'الركنيات': 'Corners', 'الفاولات': 'Fouls',
+            'الهدافين': 'Top Scorers', 'الصناعة': 'Assists', 'النجوم': 'Stars', 'الإنذارات': 'Cards',
+            'إحصائيات الفرق': 'Team Stats', 'صناع اللعب': 'Playmakers', 'نجوم المباريات': 'Match Stars', 'السجل التأديبي': 'Disciplinary',
+            'لاعب الجولة': 'Player of the Week', 'تشكيلة الجولة': 'Team of the Week',
+            'الفريق': 'Team', 'لعب': 'P', 'له': 'GF', 'عليه': 'GA', 'الفرق': 'GD', 'نقاط': 'Pts',
+            'اللاعب': 'Player', 'المركز': 'Pos', 'صورة': 'Pic',
+            'مجموعة': 'Group ', 'الجولة الأولى': 'Round 1', 'الجولة الثانية': 'Round 2', 'الجولة الثالثة': 'Round 3', 'الجولة الرابعة': 'Round 4', 'الجولة الخامسة': 'Round 5',
+            'دور الـ 16': 'Round of 16', 'ربع النهائي': 'Quarter-Final', 'نصف النهائي': 'Semi-Final', 'تحديد المركز الثالث': 'Third Place', 'النهائي': 'Final',
+            'لم تبدأ': 'Not Started', 'الشوط الأول': 'First Half', 'استراحة': 'Half Time', 'الشوط الثاني': 'Second Half', 'إضافي أول': 'Extra Time 1', 'إضافي ثاني': 'Extra Time 2', 'ركلات ترجيح': 'Penalties', 'انتهت': 'Ended', 'انتظار': 'Waiting', 'مباشر': 'LIVE',
+            'هدف': 'Goal', 'عكسي': 'Own Goal', 'أسيست': 'Assist', 'بطاقة صفراء': 'Yellow Card', 'بطاقة حمراء': 'Red Card', 'تبديل': 'Sub',
+            'حارس مرمى': 'GK', 'قلب دفاع': 'CB', 'مدافع أيسر': 'LB', 'مدافع أيمن': 'RB', 'ارتكاز دفاعي': 'CDM', 'وسط محور': 'CM', 'صانع ألعاب': 'CAM', 'وسط أيسر': 'LM', 'وسط أيمن': 'RM', 'جناح أيسر': 'LW', 'جناح أيمن': 'RW', 'مهاجم': 'ST',
+            'مدرب': 'Coach', 'مساعد': 'Assistant',
+            'مباريات': 'Matches', 'أهداف': 'Goals', 'صناعة': 'Assists', 'نجومية': 'MOTM', 'إنذار': 'Yellow', 'طرد': 'Red', 'كلين شيت': 'Clean Sheet',
+            'توقع النتيجة': 'Predict Result', 'تعادل': 'Draw', 'لا توجد مباريات مباشرة الآن': 'No live matches now', 'ترقبوا انطلاق المباريات القادمة': 'Stay tuned for matches',
+            'ساحة': 'Ref', 'رابع': '4th', 'نجم الفريق:': 'Star:', 'اليوم': 'Today', 'غداً': 'Tomorrow', 'الساعة': 'Time', 'الملعب': 'Stadium', 'لم يحدد': 'TBD', 'لم يحدد بعد': 'TBD',
+            'مواجهة بدون موعد': 'Match w/o Date', 'مباراة منتهية': 'Finished Match', 'نتيجة مباراة': 'Match Result', 'مباراة قادمة': 'Upcoming Match',
+            'التفاصيل والبوستر': 'Details & Poster', 'التفاصيل': 'Details', 'التشكيلة': 'Lineup', 'بوستر': 'Poster', 'حفظ الصورة': 'Save Image', 'حفظ المجموعات': 'Save Groups',
+            'إرسال': 'Send', 'عاجل': 'Urgent', 'لا توجد منشورات حاليا': 'No posts available', 'مباريات الحسم': 'Knockouts', 'نتائج المجموعات': 'Group Results',
+            'حساب المشجع': 'Fan Account', 'الاسم الكامل...': 'Full Name...', 'البريد الإلكتروني...': 'Email...', 'حفظ ودخول': 'Login', 'إلغاء': 'Cancel', 'اكتب تعليقك هنا...': 'Write a comment...', 'جاري تحميل التعليقات...': 'Loading comments...', 'لا توجد تعليقات حتى الآن. كن أول من يعلق!': 'No comments yet. Be the first!', 'اكتب تعليقا...': 'Write a comment...',
+            'عدد المباريات': 'Matches count', 'نجم الفريق': 'Team Star', 'نجم': 'Star', 'لا توجد أحداث مسجلة': 'No events recorded', 'رجل المباراة': 'MOTM', 'رجل المباراة (MOTM)': 'Man of the Match'
+        };
+
+        function t(arText) {
+            if (!arText) return '';
+            if (currentLang === 'ar') return arText;
+            let d = currentLang === 'ku' ? dictKU : dictEN;
+            if (d[arText]) return d[d[arText] ? arText : arText]; 
+            let keys = Object.keys(d).sort((a,b) => b.length - a.length);
+            let out = arText;
+            keys.forEach(k => { if (out.includes(k)) { out = out.split(k).join(d[k]); } });
+            return out;
+        }
+
+        function toggleLang() {
+            if(currentLang === 'ar') currentLang = 'ku';
+            else if(currentLang === 'ku') currentLang = 'en';
+            else currentLang = 'ar';
+            let btnTxt = 'KU'; if(currentLang === 'ku') btnTxt = 'EN'; if(currentLang === 'en') btnTxt = 'عربي';
+            document.getElementById('langBtn').innerText = btnTxt;
+            updateStaticTexts();
+        }
+
+        function updateStaticTexts() {
+            document.querySelectorAll('[data-trn]').forEach(el => { el.innerText = t(el.getAttribute('data-trn')); });
+            renderNav();
+            if(typeof renderSchedule === 'function') renderSchedule();
+            if(typeof renderBracket === 'function') renderBracket();
+        }
+
+        function renderNav() {
+            const nav = document.querySelector('.nav'); if(!nav) return;
+            const items = [
+                { id: 'live', icon: 'fa-tv', text: 'المباشر' },
+                { id: 'matches', icon: 'fa-regular fa-futbol', text: 'المباريات' },
+                { id: 'groups', icon: 'fa-solid fa-list-ol', text: 'المجموعات' },
+                { id: 'teams', icon: 'fa-solid fa-shield-halved', text: 'الفرق' },
+                { id: 'stats', icon: 'fa-regular fa-chart-bar', text: 'إحصائيات' },
+                { id: 'gallery', icon: 'fa-solid fa-images', text: 'الإعلام' }
+            ];
+            let activeId = 'live'; if(window.location.hash) { let h = window.location.hash.substring(1); if(items.find(i => i.id === h)) activeId = h; }
+            nav.innerHTML = items.map(item => `
+                <div class="nav-item ${item.id === activeId ? 'active' : ''}" onclick="nav('${item.id}', this)">
+                    <div style="position:relative; display:inline-block; width: 100%;">
+                        <i class="fa-solid ${item.icon} nav-icon"></i>
+                        ${item.id === 'live' ? '<i id="navLiveDot" class="fa-solid fa-circle" style="display:none; position:absolute; top:-2px; right:calc(50% - 15px); color:#ef4444; font-size:8px; animation: pulse 1.5s infinite; text-shadow: 0 0 5px #ef4444;"></i>' : ''}
+                    </div>
+                    <span data-trn="${item.text}">${t(item.text)}</span>
+                </div>
+            `).join('');
+            if(typeof window.triggerLiveVisibilityUpdate === 'function') window.triggerLiveVisibilityUpdate();
+        }
+
+        function openSubTab(tabId, btn) {
+            let container = btn.parentElement.nextElementSibling;
+            while(container && !container.classList.contains('sub-tab-content')) {
+                if(container.id === tabId) break;
+                container = container.nextElementSibling;
+            }
+            btn.parentElement.querySelectorAll('.sub-tab-btn').forEach(b => { b.classList.remove('active'); });
+            btn.classList.add('active');
+            
+            if(tabId.startsWith('stats-')) {
+                document.querySelectorAll('#page-stats .sub-tab-content').forEach(t => t.style.display = 'none');
+                document.getElementById(tabId).style.display = 'block';
+            } else {
+                document.querySelectorAll('#page-matches .sub-tab-content').forEach(t => t.style.display = 'none');
+                document.getElementById(tabId).style.display = 'block';
+            }
+        }
+
+        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+
+        function switchMatchTab(context, tab) {
+            if(context === 'live') {
+                ['events', 'stats', 'chat'].forEach(id => {
+                    let btn = document.getElementById('btnLive' + capitalize(id));
+                    let content = document.getElementById('live-content-' + id);
+                    if(btn) btn.classList.remove('active'); if(content) content.style.display = 'none';
+                });
+                let actBtn = document.getElementById('btnLive' + capitalize(tab));
+                let actContent = document.getElementById('live-content-' + tab);
+                if(actBtn) actBtn.classList.add('active'); if(actContent) actContent.style.display = 'block';
+                if(tab === 'chat') { let chatCont = document.getElementById('liveChatMessages'); if(chatCont) chatCont.scrollTop = chatCont.scrollHeight; }
+            } else if (context === 'md') {
+                ['events', 'stats', 'comments'].forEach(id => {
+                    let btn = document.getElementById('btnMd' + capitalize(id));
+                    let content = document.getElementById('md-content-' + id);
+                    if(btn) btn.classList.remove('active'); if(content) content.style.display = 'none';
+                });
+                let actBtn = document.getElementById('btnMd' + capitalize(tab));
+                let actContent = document.getElementById('md-content-' + tab);
+                if(actBtn) actBtn.classList.add('active'); if(actContent) actContent.style.display = 'block';
+            }
+        }
+        function capitalize(str) { return str.charAt(0).toUpperCase() + str.slice(1); }
+        function openAuthModal() { document.getElementById('regNameInput').value = localStorage.getItem('chatUserName') || ''; document.getElementById('regEmailInput').value = localStorage.getItem('chatUserEmail') || ''; document.getElementById('authModal').style.display = 'block'; }
+        function requireAuth(callback) { let name = localStorage.getItem('chatUserName'); let email = localStorage.getItem('chatUserEmail'); if(!name || !email) { document.getElementById('authModal').style.display = 'block'; window.pendingAuthCallback = callback; } else { callback(); } }
+        function registerUser() { let name = document.getElementById('regNameInput').value.trim(); let email = document.getElementById('regEmailInput').value.trim(); if(!name || !email || !email.includes('@')) return alert(t('الرجاء كتابة الاسم والبريد الإلكتروني بشكل صحيح')); localStorage.setItem('chatUserName', name); localStorage.setItem('chatUserEmail', email); closeModal('authModal'); if(typeof window.pendingAuthCallback === 'function') { window.pendingAuthCallback(); window.pendingAuthCallback = null; } else { alert(t('تم حفظ الحساب بنجاح!')); } }
     </script>
 </body>
 </html>
