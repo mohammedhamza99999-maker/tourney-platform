@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
@@ -7,7 +6,7 @@
     <link rel="manifest" href="manifest.json">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>بطولة دوائر خانقين</title>
+    <title>نظام البطولات</title>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
     <meta name="theme-color" content="#3b82f6">
     
@@ -402,16 +401,34 @@
 </head>
 <body onload="updateStaticTexts()">
     <script>
-        // نظام الجدار الناري وحماية الدخول - Firewall
+        // نظام الجدار الناري وحماية الدخول وبحث البطولة
         const urlParamsSec = new URLSearchParams(window.location.search);
         let idCheck = urlParamsSec.get('id');
         if (!idCheck) {
             document.body.innerHTML = `
-                <div style="display:flex; justify-content:center; align-items:center; height:100vh; background:#0a0e12; color:#fff; flex-direction:column; font-family:'Cairo', sans-serif;">
-                    <i class="fa-solid fa-shield-halved" style="font-size:60px; color:#ef4444; margin-bottom:20px;"></i>
-                    <h2 style="margin:0 0 10px 0;">نظام الحماية نشط</h2>
-                    <p style="color:#8d939e; text-align:center; max-width:80%; line-height:1.6;">عذراً، الرابط غير مكتمل. يرجى الحصول على الرابط الرسمي الخاص ببطولتك من المنظم.</p>
-                </div>`;
+                <div style="display:flex; justify-content:center; align-items:center; min-height:100vh; background: radial-gradient(circle at top, #1a222b 0%, #0e1318 100%); color:#fff; flex-direction:column; font-family:'Cairo', sans-serif; padding: 20px; box-sizing: border-box;">
+                    <i class="fa-solid fa-trophy" style="font-size:70px; color:#3b82f6; margin-bottom:20px; filter: drop-shadow(0 0 15px rgba(59,130,246,0.5));"></i>
+                    <h2 style="margin:0 0 10px 0; font-weight:900; font-size:24px;">نظام البطولات الذكي</h2>
+                    <p style="color:#8d939e; text-align:center; max-width:90%; line-height:1.6; font-size:14px; margin-bottom:30px;">الرجاء إدخال معرف البطولة (ID) الخاص بك للوصول إلى صفحة الجمهور.</p>
+                    <div style="width:100%; max-width:350px; display:flex; flex-direction:column; gap:12px;">
+                        <input type="text" id="tourneyIdInput" placeholder="أدخل معرف البطولة هنا..." style="width:100%; padding:16px; border-radius:12px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:#fff; font-family:'Cairo'; text-align:center; font-size:16px; font-weight:bold; box-sizing:border-box; outline:none; transition: 0.3s;" onfocus="this.style.borderColor='#3b82f6'" onblur="this.style.borderColor='rgba(255,255,255,0.1)'">
+                        <button onclick="goToTournament()" style="background:#3b82f6; color:#fff; width:100%; padding:16px; border-radius:12px; border:none; font-family:'Cairo'; font-weight:900; font-size:16px; cursor:pointer; transition:0.3s; box-shadow:0 4px 15px rgba(59,130,246,0.4);"><i class="fa-solid fa-magnifying-glass"></i> دخول للبطولة</button>
+                    </div>
+                </div>
+                <script>
+                    function goToTournament() {
+                        const val = document.getElementById('tourneyIdInput').value.trim();
+                        if(val) {
+                            window.location.href = '?id=' + encodeURIComponent(val);
+                        } else {
+                            alert('الرجاء إدخال معرف البطولة أولاً');
+                        }
+                    }
+                    document.getElementById('tourneyIdInput').addEventListener('keypress', function(e) {
+                        if (e.key === 'Enter') goToTournament();
+                    });
+                <\/script>
+            `;
             throw new Error("Access Blocked: Missing Tournament ID.");
         }
     </script>
@@ -421,7 +438,7 @@
 
     <div class="app">
         <div class="header">
-            <h1 id="displayTourneyName" class="header-title" data-trn="بطولة دوائر خانقين">تحميل...</h1>
+            <h1 id="displayTourneyName" class="header-title" data-trn="جاري التحميل...">جاري التحميل...</h1>
             <div class="header-tools">
                 <button id="langBtn" class="lang-btn" onclick="toggleLang()">KU</button>
                 <a href="#" onclick="openAuthModal(); return false;" class="btn-tool"><i class="fa-solid fa-user"></i></a>
@@ -587,7 +604,17 @@
         </div>
 
         <div class="footer">
-            <div style="margin-bottom:10px; font-weight:bold; font-size:13px; color:var(--text);">بطولة دوائر خانقين • 2026</div><div style="font-weight:bold; color:var(--primary); font-size:12px;"><i class="fa-solid fa-code"></i> اعداد وتطوير محمد حمزة</div>
+            <div id="footerTourneyName" style="margin-bottom:10px; font-weight:bold; font-size:13px; color:var(--text);">جاري التحميل...</div>
+            <div style="font-weight:bold; color:var(--primary); font-size:12px; margin-bottom: 20px;"><i class="fa-solid fa-code"></i> اعداد وتطوير محمد حمزة</div>
+            
+            <div style="background:rgba(255,255,255,0.03); padding:15px; border-radius:12px; border:1px solid rgba(255,255,255,0.05); margin-bottom: 20px; max-width: 300px; margin-left: auto; margin-right: auto;">
+                <div style="font-size:11px; margin-bottom:10px; color:var(--muted); font-weight:bold;">هل تبحث عن بطولة أخرى؟</div>
+                <div style="display:flex; gap:5px;">
+                    <input type="text" id="footerTourneyIdInput" placeholder="أدخل معرف البطولة (ID)" style="flex:1; padding:10px; border-radius:8px; background:rgba(0,0,0,0.5); border:1px solid var(--border); color:#fff; font-family:'Cairo'; font-size:12px; text-align:center; outline:none;" onkeypress="if(event.key === 'Enter') switchTournament()">
+                    <button onclick="switchTournament()" style="background:var(--primary); color:#fff; border:none; padding:0 15px; border-radius:8px; font-weight:bold; cursor:pointer; transition:0.3s;"><i class="fa-solid fa-arrow-left"></i></button>
+                </div>
+            </div>
+
             <div class="footer-social"><a href="https://www.facebook.com/share/1AnD5a4oY1/" target="_blank"><i class="fab fa-facebook"></i></a><a href="https://www.instagram.com/moe_hz9" target="_blank"><i class="fab fa-instagram"></i></a><a href="https://wa.me/9647717007839" target="_blank"><i class="fab fa-whatsapp"></i></a></div>
         </div>
 
@@ -740,7 +767,7 @@
         if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
         const db = firebase.database();
 
-        let visualName = localStorage.getItem('visualName') || "بطولة دوائر خانقين"; document.getElementById('displayTourneyName').innerText = visualName;
+        let visualName = localStorage.getItem('visualName') || "نظام البطولات"; document.getElementById('displayTourneyName').innerText = visualName;
         window.openImageViewer = function(src) { if(!src) return; document.getElementById('fullSizeImg').src = src; document.getElementById('imageViewerModal').style.display = 'flex'; try{ history.pushState({ modal: 'imageViewerModal' }, "", "#image"); }catch(e){} }; window.closeImageViewer = function() { document.getElementById('imageViewerModal').style.display = 'none'; };
         
         function shareAsImage(elementId) { 
@@ -776,6 +803,11 @@
 
         db.ref('analytics/visits').push({ time: Date.now() });
 
+        function switchTournament() {
+            let val = document.getElementById('footerTourneyIdInput').value.trim();
+            if(val) window.location.href = '?id=' + encodeURIComponent(val);
+        }
+
         function renderAdminComparison(settingsData) {
             let data = settingsData?.activeComparison; let container = document.getElementById('adminPushedComparisonDisplay'); if(!container) return;
             if(data && data.active && teamsDataGlobal && teamsDataGlobal[data.t1] && teamsDataGlobal[data.t2]) {
@@ -796,7 +828,7 @@
             } else { container.style.display = 'none'; }
         }
 
-        let dbPath = urlParamsSec.get('id'); // جلب المسار للمتغيرات السفلية
+        let dbPath = urlParamsSec.get('id'); 
         let globalSettings = {};
         db.ref(`tournaments/${dbPath}/settings`).on('value', snap => {
             let s = snap.val() || {}; globalSettings = s; window.testModeActive = s.testMode === true; window.triggerLiveVisibilityUpdate();
@@ -826,8 +858,13 @@
             
             renderAdminComparison(globalSettings);
             
-            if(s.tourneyName) {
-                document.getElementById('displayTourneyName').innerText = t(s.tourneyName);
+            if(s.tournamentName) {
+                let tName = t(s.tournamentName);
+                document.getElementById('displayTourneyName').innerText = tName;
+                document.title = tName;
+                localStorage.setItem('visualName', s.tournamentName);
+                let footerEl = document.getElementById('footerTourneyName');
+                if(footerEl) footerEl.innerText = tName + ' • ' + new Date().getFullYear();
             }
         });
 
