@@ -701,9 +701,13 @@
             </div>`; 
         }
         
-        function updateVisualName() { try { localStorage.setItem('visualName', document.getElementById('tourneyName').value); } catch(e){} alert("تم التغيير!"); }
-        try { if(localStorage.getItem('visualName')) document.getElementById('tourneyName').value = localStorage.getItem('visualName'); } catch(e){}
-
+        function updateVisualName() { 
+    let newName = document.getElementById('tourneyName').value;
+    db.ref(`tournaments/${dbPath}/settings`).update({ tournamentName: newName }).then(() => {
+        try { localStorage.setItem('visualName', newName); } catch(e){} 
+        alert("تم حفظ اسم البطولة وسيظهر للجمهور فوراً! ✅"); 
+    }).catch(e => alert("حدث خطأ أثناء الحفظ!"));
+}
         function updateAppSettings() { const tm = document.getElementById('testModeSelect').value === 'true'; db.ref(`tournaments/${dbPath}/settings`).update({ testMode: tm }); }
         function saveTourneySystem() { const sys = document.getElementById('tourneySystemType').value; db.ref(`tournaments/${dbPath}/settings`).update({ systemType: sys }).then(() => alert("تم حفظ النظام!")); }
 
@@ -1463,7 +1467,8 @@
             db.ref(`tournaments/${dbPath}/settings`).on('value', snap => {
                 let s = snap.val() || {}; testModeActive = s.testMode === true; let tmEl = document.getElementById('testModeSelect'); if(tmEl) tmEl.value = testModeActive ? 'true' : 'false';
                 document.getElementById('testModeBanner').style.display = testModeActive ? 'block' : 'none'; if(s.systemType && document.getElementById('tourneySystemType')) document.getElementById('tourneySystemType').value = s.systemType;
-                window.currentActiveLiveBg = s.active_liveBg; window.currentActiveAdBg = s.active_adBg;
+                window.currentActiveLiveBg = s.active_liveBg; window.currentActiveAdBg = s.active_adBg;4
+                if(s.tournamentName && document.getElementById('tourneyName')) document.getElementById('tourneyName').value = s.tournamentName;
                 if(document.getElementById('adText')) document.getElementById('adText').value = s.adText || ''; if(document.getElementById('adLink')) document.getElementById('adLink').value = s.adLink || '';
                 if(document.getElementById('newsText')) document.getElementById('newsText').value = s.newsText || '';
                 if(document.getElementById('newsLink')) document.getElementById('newsLink').value = s.newsLink || '';
