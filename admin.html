@@ -8,6 +8,7 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-messaging.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jsrsasign/10.9.0/jsrsasign-all-min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
@@ -655,9 +656,31 @@
         }
 
         async function sendManualPush(title, message) {
-            console.log("النظام جاهز لاستقبال الكود الجديد:", title, message);
-            let msgBox = document.getElementById('autoSaveMsg1');
-            if(msgBox) { msgBox.innerText = "تم تجهيز النظام للإشعارات الجديدة!"; msgBox.classList.add('show'); setTimeout(()=>msgBox.classList.remove('show'), 2000); }
+    if(testModeActive) return alert("وضع التجربة مفعل: الإشعارات معطلة ولن تصل للجمهور.");
+
+    let msgBox = document.getElementById('autoSaveMsg1');
+    if(msgBox) { 
+        msgBox.innerText = "جاري إرسال الإشعار للجمهور..."; 
+        msgBox.classList.add('show'); 
+    }
+
+    // إرسال الإشعار لطابور البطولة ليتم التقاطه من الـ Cloud Functions
+    db.ref(`tournaments/${dbPath}/notifications_queue`).push({
+        title: title,
+        body: message,
+        timestamp: firebase.database.ServerValue.TIMESTAMP
+    }).then(() => {
+        if(msgBox) {
+            msgBox.innerText = "تم إرسال الإشعار بنجاح! 🔔";
+            setTimeout(()=> msgBox.classList.remove('show'), 3000);
+        }
+        // مسح الحقول بعد الإرسال
+        document.getElementById('manualPushTitle').value = '';
+        document.getElementById('manualPushMsg').value = '';
+    }).catch(err => {
+        alert("حدث خطأ أثناء الإرسال: " + err.message);
+    });
+}
         }
 
         window.sendCustomPreMatchPush = function(id) {
