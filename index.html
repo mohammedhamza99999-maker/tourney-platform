@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
@@ -12,6 +13,7 @@
     
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-messaging.js"></script>
     
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
@@ -457,6 +459,7 @@
         <div class="header">
             <h1 id="displayTourneyName" class="header-title" data-trn="جاري التحميل...">جاري التحميل...</h1>
             <div class="header-tools">
+                <button id="bellBtn" class="btn-tool" onclick="subscribeToNotifications()" style="color: #facc15;" title="تفعيل الإشعارات"><i class="fa-solid fa-bell"></i></button>
                 <button id="langBtn" class="lang-btn" onclick="toggleLang()">KU</button>
                 <a href="#" onclick="openAuthModal(); return false;" class="btn-tool"><i class="fa-solid fa-user"></i></a>
             </div>
@@ -1429,7 +1432,41 @@ window.addEventListener('popstate', function(event) {
     }
 });
 
+
+// تهيئة الإشعارات لتطبيق الجمهور
+const messaging = firebase.messaging();
+
+// دالة الاشتراك عبر زر الجرس
+function subscribeToNotifications() {
+    if (!dbPath) return alert("الرجاء الدخول لبطولة أولاً");
+    
+    messaging.requestPermission().then(() => {
+        return messaging.getToken({ vapidKey: "BEcwGTMEI7y7O5sDeyFAzsmoHoQqYi0uYbJdKBoBJZlv9GZWaJGAnHP0jlG4R_xVT12XA45H00sTsOe_J_Abz70" });
+    }).then((token) => {
+        if(dbPath) {
+            db.ref(`tournaments/${dbPath}/fcm_tokens/${token}`).set(true).then(() => {
+                let bell = document.getElementById('bellBtn');
+                if(bell) {
+                    bell.innerHTML = '<i class="fa-solid fa-bell-slash"></i>';
+                    bell.style.color = '#10b981';
+                    bell.onclick = () => alert("أنت مشترك بالفعل في إشعارات هذه البطولة!");
+                }
+                triggerNotification("تم الاشتراك 🔔", "ستصلك الآن إشعارات هذه البطولة بنجاح");
+            });
+        }
+    }).catch((err) => {
+        console.log("تم رفض الإشعارات أو حدث خطأ:", err);
+        alert("يرجى السماح للإشعارات من إعدادات المتصفح (اضغط على القفل بجانب الرابط).");
+    });
+}
+
+// استقبال الإشعارات عندما يكون المستخدم فاتحاً للتطبيق
+messaging.onMessage((payload) => {
+    triggerNotification(payload.notification.title, payload.notification.body);
+});
+
 nav('live', document.querySelectorAll('.nav-item')[0]);
+
     </script>
 </body>
 </html>
