@@ -672,21 +672,6 @@
             }
         }
 
-            // إرسال الإشعار لطابور البطولة ليتم التقاطه من الـ Cloud Functions
-            db.ref(`tournaments/${dbPath}/notifications_queue`).push({
-                title: title,
-                body: message,
-                timestamp: firebase.database.ServerValue.TIMESTAMP
-            }).then(() => {
-                if(msgBox) {
-                    msgBox.innerText = "تم إرسال الإشعار بنجاح! 🔔";
-                    setTimeout(()=> msgBox.classList.remove('show'), 3000);
-                }
-            }).catch(err => {
-                alert("حدث خطأ أثناء الإرسال: " + err.message);
-            });
-        }
-
         window.sendCustomPreMatchPush = function(id) {
             let m = allData.schedule[id];
             if(!m) return;
@@ -832,7 +817,8 @@
         function autoSaveMatchStats() { clearTimeout(autoSaveTimeout); autoSaveTimeout = setTimeout(() => { isInternalUpdate = true; db.ref(`tournaments/${dbPath}/live_match/stats`).update({ shots1: document.getElementById('shots1').value, shots2: document.getElementById('shots2').value, corners1: document.getElementById('corners1').value, corners2: document.getElementById('corners2').value, fouls1: document.getElementById('fouls1').value, fouls2: document.getElementById('fouls2').value }).then(() => { isInternalUpdate = false; }); }, 300); }
 
         function updateTimerManually() { let m = parseInt(document.getElementById('tMinutes').value) || 0; db.ref(`tournaments/${dbPath}/live_match/timer`).once('value').then(snap => { let t = snap.val() || {}; let isRun = t.isRunning || false; db.ref(`tournaments/${dbPath}/live_match/timer`).set({ isRunning: isRun, startTime: isRun ? Date.now() : 0, savedSeconds: m * 60 }); }); }
-        function startTimer() { db.ref(`tournaments/${dbPath}/live_match/timer`).once('value').then(snap => { let t = snap.val() || {}; if(t.isRunning) return; let sec = t.savedSeconds !== undefined ? t.savedSeconds : (t.baseMinute * 60 || 0); db.ref(`tournaments/${dbPath}/live_match/timer`).set({ isRunning: true, startTime: Date.now(), savedSeconds: sec });\n                if(sec === 0) { sendManualPush("انطلاق المباراة! ⚽", `بدأت الآن مباراة ${document.getElementById("t1Name").value || "الفريق الأول"} ضد ${document.getElementById("t2Name").value || "الفريق الثاني"}`); } }); }
+        function startTimer() { db.ref(`tournaments/${dbPath}/live_match/timer`).once('value').then(snap => { let t = snap.val() || {}; if(t.isRunning) return; let sec = t.savedSeconds !== undefined ? t.savedSeconds : (t.baseMinute * 60 || 0); db.ref(`tournaments/${dbPath}/live_match/timer`).set({ isRunning: true, startTime: Date.now(), savedSeconds: sec });
+                if(sec === 0) { sendManualPush("انطلاق المباراة! ⚽", `بدأت الآن مباراة ${document.getElementById("t1Name").value || "الفريق الأول"} ضد ${document.getElementById("t2Name").value || "الفريق الثاني"}`); } }); }
         function pauseTimer() { db.ref(`tournaments/${dbPath}/live_match/timer`).once('value').then(snap => { let t = snap.val() || {}; if(t.isRunning) { let elapsed = Math.floor((Date.now() - (t.startTime || Date.now())) / 1000); let sec = t.savedSeconds !== undefined ? t.savedSeconds : (t.baseMinute * 60 || 0); let newSaved = sec + elapsed; db.ref(`tournaments/${dbPath}/live_match/timer`).set({ isRunning: false, savedSeconds: newSaved, startTime: 0 }); document.getElementById('tMinutes').value = Math.floor(newSaved / 60); } }); }
         function resetTimer() { if(confirm("تصفير العداد؟")) { db.ref(`tournaments/${dbPath}/live_match/timer`).set({ isRunning: false, savedSeconds: 0, startTime: 0 }); document.getElementById('tMinutes').value = 0; posSec1=0; posSec2=0; posActiveTeam=0; setPossession(0); } }
 
@@ -884,7 +870,8 @@
                 sendManualPush("🟨 بطاقة صفراء!", `إنذار للاعب ${pName}`);
                 if (yellowCount >= 1) { alert(`تنبيه: هذه البطاقة الصفراء الثانية للاعب ${pName}، سيتم طرده تلقائياً! 🟥`); setTimeout(() => addAutoEvent('red', '🟥'), 500); }
             }
-            if(type === 'red') sendManualPush("🟥 بطاقة حمراء!", `طرد للاعب ${pName}`);\n            if(type === 'assists') sendManualPush("🅰️ أسيست!", `صناعة هدف من اللاعب ${pName} (${tName})`);
+            if(type === 'red') sendManualPush("🟥 بطاقة حمراء!", `طرد للاعب ${pName}`);
+            if(type === 'assists') sendManualPush("🅰️ أسيست!", `صناعة هدف من اللاعب ${pName} (${tName})`);
             
             const currentEvents = document.getElementById('mEvents').value; const newEvent = `${icon} ${min}' ${pName} (${tName})`; document.getElementById('mEvents').value = currentEvents ? currentEvents + '\n' + newEvent : newEvent; db.ref(`tournaments/${dbPath}/live_match/events`).set(document.getElementById('mEvents').value); db.ref(`tournaments/${dbPath}/teams/${tName}/players/${pName}/${type}`).transaction(c => (c||0)+1); autoSaveMatchDetails();
         }
