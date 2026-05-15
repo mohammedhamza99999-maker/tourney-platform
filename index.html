@@ -1498,20 +1498,58 @@ window.addEventListener('popstate', function(event) {
             });
         }
 
-    messaging.onMessage((payload) => {
-            if (Notification.permission === 'granted') {
+    // --- Notifications Logic ---
+        const messaging = firebase.messaging();
+
+        // 1. تسجيل الـ Service Worker بشكل صريح لدعم مسارات GitHub Pages
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('./firebase-messaging-sw.js')
+            .then(function(registration) {
+                // إجبار فايربيس على استخدام هذا الملف بالمسار الصحيح
+                messaging.useServiceWorker(registration);
+            }).catch(function(err) {
+                console.error('خطأ في تسجيل Service Worker:', err);
+            });
+        }
+
+        window.subscribeToNotifications = function() {
+            if (!dbPath) return alert("الرجاء الدخول لبطولة أولاً");
+            
+            messaging.requestPermission().then(() => {
+                return messaging.getToken({ vapidKey: "BEcwGTMEI7y7O5sDeyFAzsmoHoQqYi0uYbJdKBoBJZlv9GZWaJGAnHP0jlG4R_xVT12XA45H00sTsOe_J_Abz70" });
+            }).then((token) => {
+                if(dbPath) {
+                    db.ref(`tournaments/${dbPath}/fcm_tokens/${token}`).set(true).then(() => {
+                        let bell = document.getElementById('bellBtn');
+                        if(bell) {
+                            bell.innerHTML = '<i class="fa-solid fa-bell-slash"></i>';
+                            bell.style.color = '#10b981';
+                            bell.onclick = () => alert("أنت مشترك بالفعل في إشعارات هذه البطولة!");
+                        }
+                        triggerNotification("تم الاشتراك 🔔", "ستصلك الآن إشعارات هذه البطولة بنجاح");
+                    });
+                }
+            }).catch((err) => {
+                console.error("FCM Error:", err);
+                alert("يرجى السماح للإشعارات من إعدادات المتصفح (اضغط على القفل بجانب الرابط أعلى المتصفح واجعله مسموح).");
+            });
+        }
+
+        messaging.onMessage((payload) => {
+            // 1. إظهار الإشعار المخصص داخل التطبيق (حتى لا ينزعج المستخدم بـ Pop-up خارجي وهو يتصفح)
+            triggerNotification(payload.notification.title, payload.notification.body);
+            
+            // 2. إظهار إشعار النظام إذا كان مدعوماً
+            if (Notification.permission === 'granted' && navigator.serviceWorker.controller) {
                 navigator.serviceWorker.ready.then((registration) => {
                     registration.showNotification(payload.notification.title, {
                         body: payload.notification.body,
-                        icon: '/logo.png',
-                        badge: '/logo.png', // أيقونة صغيرة تظهر في شريط الإشعارات
-                        vibrate: [200, 100, 200], // تفعيل الاهتزاز
-                        requireInteraction: true // بقاء الإشعار حتى يغلقه المستخدم
+                        icon: './logo.png',
+                        badge: './logo.png',
+                        vibrate: [300, 100, 300],
+                        requireInteraction: true
                     });
                 });
-            } else {
-                // الفولباك (الإشعار الداخلي للتطبيق)
-                triggerNotification(payload.notification.title, payload.notification.body);
             }
         });
 
