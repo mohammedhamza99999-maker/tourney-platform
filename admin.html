@@ -656,31 +656,27 @@
         }
 
         async function sendManualPush(title, message) {
-    if(testModeActive) return alert("وضع التجربة مفعل: الإشعارات معطلة ولن تصل للجمهور.");
+            if(testModeActive) return alert("وضع التجربة مفعل: الإشعارات معطلة ولن تصل للجمهور.");
 
-    let msgBox = document.getElementById('autoSaveMsg1');
-    if(msgBox) { 
-        msgBox.innerText = "جاري إرسال الإشعار للجمهور..."; 
-        msgBox.classList.add('show'); 
-    }
+            let msgBox = document.getElementById('autoSaveMsg1');
+            if(msgBox) { 
+                msgBox.innerText = "جاري إرسال الإشعار للجمهور..."; 
+                msgBox.classList.add('show'); 
+            }
 
-    // إرسال الإشعار لطابور البطولة ليتم التقاطه من الـ Cloud Functions
-    db.ref(`tournaments/${dbPath}/notifications_queue`).push({
-        title: title,
-        body: message,
-        timestamp: firebase.database.ServerValue.TIMESTAMP
-    }).then(() => {
-        if(msgBox) {
-            msgBox.innerText = "تم إرسال الإشعار بنجاح! 🔔";
-            setTimeout(()=> msgBox.classList.remove('show'), 3000);
-        }
-        // مسح الحقول بعد الإرسال
-        document.getElementById('manualPushTitle').value = '';
-        document.getElementById('manualPushMsg').value = '';
-    }).catch(err => {
-        alert("حدث خطأ أثناء الإرسال: " + err.message);
-    });
-}
+            // إرسال الإشعار لطابور البطولة ليتم التقاطه من الـ Cloud Functions
+            db.ref(`tournaments/${dbPath}/notifications_queue`).push({
+                title: title,
+                body: message,
+                timestamp: firebase.database.ServerValue.TIMESTAMP
+            }).then(() => {
+                if(msgBox) {
+                    msgBox.innerText = "تم إرسال الإشعار بنجاح! 🔔";
+                    setTimeout(()=> msgBox.classList.remove('show'), 3000);
+                }
+            }).catch(err => {
+                alert("حدث خطأ أثناء الإرسال: " + err.message);
+            });
         }
 
         window.sendCustomPreMatchPush = function(id) {
