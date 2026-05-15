@@ -10,249 +10,15 @@
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
     <meta name="theme-color" content="#3b82f6">
     
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js">
-// --- Notification Logic ---
-const messaging = firebase.messaging();
-
-function subscribeToNotifications() {
-    if (!dbPath) return alert("الرجاء الدخول لبطولة أولاً");
-    
-    messaging.requestPermission().then(() => {
-        return messaging.getToken({ vapidKey: "BEcwGTMEI7y7O5sDeyFAzsmoHoQqYi0uYbJdKBoBJZlv9GZWaJGAnHP0jlG4R_xVT12XA45H00sTsOe_J_Abz70" });
-    }).then((token) => {
-        if(dbPath) {
-            db.ref(`tournaments/${dbPath}/fcm_tokens/${token}`).set(true).then(() => {
-                let bell = document.getElementById('bellBtn');
-                if(bell) {
-                    bell.innerHTML = '<i class="fa-solid fa-bell-slash"></i>';
-                    bell.style.color = '#10b981';
-                    bell.onclick = () => alert("أنت مشترك بالفعل في إشعارات هذه البطولة!");
-                }
-                triggerNotification("تم الاشتراك 🔔", "ستصلك الآن إشعارات هذه البطولة بنجاح");
-            });
-        }
-    }).catch((err) => {
-        console.error("FCM Error:", err);
-        alert("يرجى السماح للإشعارات من إعدادات المتصفح.");
-    });
-}
-
-messaging.onMessage((payload) => {
-    if (Notification.permission === 'granted') {
-        new Notification(payload.notification.title, {
-            body: payload.notification.body,
-            icon: '/logo.png'
-        });
-    } else {
-        triggerNotification(payload.notification.title, payload.notification.body);
-    }
-});
-// ---------------------------
-
-</script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js">
-// --- Notification Logic ---
-const messaging = firebase.messaging();
-
-function subscribeToNotifications() {
-    if (!dbPath) return alert("الرجاء الدخول لبطولة أولاً");
-    
-    messaging.requestPermission().then(() => {
-        return messaging.getToken({ vapidKey: "BEcwGTMEI7y7O5sDeyFAzsmoHoQqYi0uYbJdKBoBJZlv9GZWaJGAnHP0jlG4R_xVT12XA45H00sTsOe_J_Abz70" });
-    }).then((token) => {
-        if(dbPath) {
-            db.ref(`tournaments/${dbPath}/fcm_tokens/${token}`).set(true).then(() => {
-                let bell = document.getElementById('bellBtn');
-                if(bell) {
-                    bell.innerHTML = '<i class="fa-solid fa-bell-slash"></i>';
-                    bell.style.color = '#10b981';
-                    bell.onclick = () => alert("أنت مشترك بالفعل في إشعارات هذه البطولة!");
-                }
-                triggerNotification("تم الاشتراك 🔔", "ستصلك الآن إشعارات هذه البطولة بنجاح");
-            });
-        }
-    }).catch((err) => {
-        console.error("FCM Error:", err);
-        alert("يرجى السماح للإشعارات من إعدادات المتصفح.");
-    });
-}
-
-messaging.onMessage((payload) => {
-    if (Notification.permission === 'granted') {
-        new Notification(payload.notification.title, {
-            body: payload.notification.body,
-            icon: '/logo.png'
-        });
-    } else {
-        triggerNotification(payload.notification.title, payload.notification.body);
-    }
-});
-// ---------------------------
-
-</script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-messaging.js">
-// --- Notification Logic ---
-const messaging = firebase.messaging();
-
-function subscribeToNotifications() {
-    if (!dbPath) return alert("الرجاء الدخول لبطولة أولاً");
-    
-    messaging.requestPermission().then(() => {
-        return messaging.getToken({ vapidKey: "BEcwGTMEI7y7O5sDeyFAzsmoHoQqYi0uYbJdKBoBJZlv9GZWaJGAnHP0jlG4R_xVT12XA45H00sTsOe_J_Abz70" });
-    }).then((token) => {
-        if(dbPath) {
-            db.ref(`tournaments/${dbPath}/fcm_tokens/${token}`).set(true).then(() => {
-                let bell = document.getElementById('bellBtn');
-                if(bell) {
-                    bell.innerHTML = '<i class="fa-solid fa-bell-slash"></i>';
-                    bell.style.color = '#10b981';
-                    bell.onclick = () => alert("أنت مشترك بالفعل في إشعارات هذه البطولة!");
-                }
-                triggerNotification("تم الاشتراك 🔔", "ستصلك الآن إشعارات هذه البطولة بنجاح");
-            });
-        }
-    }).catch((err) => {
-        console.error("FCM Error:", err);
-        alert("يرجى السماح للإشعارات من إعدادات المتصفح.");
-    });
-}
-
-messaging.onMessage((payload) => {
-    if (Notification.permission === 'granted') {
-        new Notification(payload.notification.title, {
-            body: payload.notification.body,
-            icon: '/logo.png'
-        });
-    } else {
-        triggerNotification(payload.notification.title, payload.notification.body);
-    }
-});
-// ---------------------------
-
-</script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-messaging.js"></script>
     
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js">
-// --- Notification Logic ---
-const messaging = firebase.messaging();
-
-function subscribeToNotifications() {
-    if (!dbPath) return alert("الرجاء الدخول لبطولة أولاً");
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     
-    messaging.requestPermission().then(() => {
-        return messaging.getToken({ vapidKey: "BEcwGTMEI7y7O5sDeyFAzsmoHoQqYi0uYbJdKBoBJZlv9GZWaJGAnHP0jlG4R_xVT12XA45H00sTsOe_J_Abz70" });
-    }).then((token) => {
-        if(dbPath) {
-            db.ref(`tournaments/${dbPath}/fcm_tokens/${token}`).set(true).then(() => {
-                let bell = document.getElementById('bellBtn');
-                if(bell) {
-                    bell.innerHTML = '<i class="fa-solid fa-bell-slash"></i>';
-                    bell.style.color = '#10b981';
-                    bell.onclick = () => alert("أنت مشترك بالفعل في إشعارات هذه البطولة!");
-                }
-                triggerNotification("تم الاشتراك 🔔", "ستصلك الآن إشعارات هذه البطولة بنجاح");
-            });
-        }
-    }).catch((err) => {
-        console.error("FCM Error:", err);
-        alert("يرجى السماح للإشعارات من إعدادات المتصفح.");
-    });
-}
-
-messaging.onMessage((payload) => {
-    if (Notification.permission === 'granted') {
-        new Notification(payload.notification.title, {
-            body: payload.notification.body,
-            icon: '/logo.png'
-        });
-    } else {
-        triggerNotification(payload.notification.title, payload.notification.body);
-    }
-});
-// ---------------------------
-
-</script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js">
-// --- Notification Logic ---
-const messaging = firebase.messaging();
-
-function subscribeToNotifications() {
-    if (!dbPath) return alert("الرجاء الدخول لبطولة أولاً");
-    
-    messaging.requestPermission().then(() => {
-        return messaging.getToken({ vapidKey: "BEcwGTMEI7y7O5sDeyFAzsmoHoQqYi0uYbJdKBoBJZlv9GZWaJGAnHP0jlG4R_xVT12XA45H00sTsOe_J_Abz70" });
-    }).then((token) => {
-        if(dbPath) {
-            db.ref(`tournaments/${dbPath}/fcm_tokens/${token}`).set(true).then(() => {
-                let bell = document.getElementById('bellBtn');
-                if(bell) {
-                    bell.innerHTML = '<i class="fa-solid fa-bell-slash"></i>';
-                    bell.style.color = '#10b981';
-                    bell.onclick = () => alert("أنت مشترك بالفعل في إشعارات هذه البطولة!");
-                }
-                triggerNotification("تم الاشتراك 🔔", "ستصلك الآن إشعارات هذه البطولة بنجاح");
-            });
-        }
-    }).catch((err) => {
-        console.error("FCM Error:", err);
-        alert("يرجى السماح للإشعارات من إعدادات المتصفح.");
-    });
-}
-
-messaging.onMessage((payload) => {
-    if (Notification.permission === 'granted') {
-        new Notification(payload.notification.title, {
-            body: payload.notification.body,
-            icon: '/logo.png'
-        });
-    } else {
-        triggerNotification(payload.notification.title, payload.notification.body);
-    }
-});
-// ---------------------------
-
-</script>
-    
-    <script async defer crossorigin="anonymous" src="https://connect.facebook.net/ar_AR/sdk.js#xfbml=1&version=v18.0" nonce="QWEasdzxc">
-// --- Notification Logic ---
-const messaging = firebase.messaging();
-
-function subscribeToNotifications() {
-    if (!dbPath) return alert("الرجاء الدخول لبطولة أولاً");
-    
-    messaging.requestPermission().then(() => {
-        return messaging.getToken({ vapidKey: "BEcwGTMEI7y7O5sDeyFAzsmoHoQqYi0uYbJdKBoBJZlv9GZWaJGAnHP0jlG4R_xVT12XA45H00sTsOe_J_Abz70" });
-    }).then((token) => {
-        if(dbPath) {
-            db.ref(`tournaments/${dbPath}/fcm_tokens/${token}`).set(true).then(() => {
-                let bell = document.getElementById('bellBtn');
-                if(bell) {
-                    bell.innerHTML = '<i class="fa-solid fa-bell-slash"></i>';
-                    bell.style.color = '#10b981';
-                    bell.onclick = () => alert("أنت مشترك بالفعل في إشعارات هذه البطولة!");
-                }
-                triggerNotification("تم الاشتراك 🔔", "ستصلك الآن إشعارات هذه البطولة بنجاح");
-            });
-        }
-    }).catch((err) => {
-        console.error("FCM Error:", err);
-        alert("يرجى السماح للإشعارات من إعدادات المتصفح.");
-    });
-}
-
-messaging.onMessage((payload) => {
-    if (Notification.permission === 'granted') {
-        new Notification(payload.notification.title, {
-            body: payload.notification.body,
-            icon: '/logo.png'
-        });
-    } else {
-        triggerNotification(payload.notification.title, payload.notification.body);
-    }
-});
-// ---------------------------
-
-</script>
+    <script async defer crossorigin="anonymous" src="https://connect.facebook.net/ar_AR/sdk.js#xfbml=1&version=v18.0" nonce="QWEasdzxc"></script>
 
     <style>
         :root { --bg: #0e1318; --card: #1a222b; --input-bg: rgba(0,0,0,0.4); --primary: #3b82f6; --accent: #ffffff; --text: #ffffff; --muted: #8d939e; --border: #2a2b31; --live: #ffffff; }
@@ -469,6 +235,47 @@ messaging.onMessage((payload) => {
 
     </style>
     <script>
+
+// --- ميزة حفظ البطولة (Persistence) ---
+function checkSavedTournament() {
+    const urlParams = new URLSearchParams(window.location.search);
+    let idFromUrl = urlParams.get('id');
+    let idFromStorage = localStorage.getItem('savedTourneyId');
+
+    if (idFromUrl) {
+        // إذا دخل بـ ID جديد، نظهر له زر "حفظ هذه البطولة"
+        showSaveButton(idFromUrl);
+        return idFromUrl;
+    } else if (idFromStorage) {
+        // إذا ماكو ID بالرابط بس اكو واحد محفوظ، نحوله عليه
+        window.location.href = window.location.pathname + '?id=' + idFromStorage;
+        return idFromStorage;
+    }
+    return null;
+}
+
+function showSaveButton(id) {
+    // نتحقق إذا كانت البطولة محفوظة أصلاً
+    if (localStorage.getItem('savedTourneyId') === id) return;
+
+    const header = document.querySelector('.header-tools');
+    if (header && !document.getElementById('saveTourneyBtn')) {
+        const btn = document.createElement('button');
+        btn.id = 'saveTourneyBtn';
+        btn.className = 'btn-tool';
+        btn.style.color = '#4ade80'; // لون أخضر للحفظ
+        btn.innerHTML = '<i class="fa-solid fa-star"></i>';
+        btn.title = "حفظ هذه البطولة كافتراضية";
+        btn.onclick = function() {
+            localStorage.setItem('savedTourneyId', id);
+            alert("تم حفظ هذه البطولة كبطولة افتراضية! ✅");
+            this.style.display = 'none';
+        };
+        header.prepend(btn);
+    }
+}
+// ------------------------------------
+
         let currentLang = 'ar';
         const dictKU = {
             'المباشر': 'ڕاستەوخۆ', 'المباريات': 'یارییەکان', 'المجموعات': 'کۆمەڵەکان', 'الفرق': 'تیمەکان', 'إحصائيات': 'ئامارەکان', 'الإعلام': 'ڕاگەیاندن',
@@ -647,49 +454,51 @@ messaging.onMessage((payload) => {
             closeModal('authModal');
             if(typeof window.pendingAuthCallback === 'function') { window.pendingAuthCallback(); window.pendingAuthCallback = null; } else { alert(t('تم حفظ الحساب بنجاح!')); }
         }
-    
-// --- Notification Logic ---
-const messaging = firebase.messaging();
-
-function subscribeToNotifications() {
-    if (!dbPath) return alert("الرجاء الدخول لبطولة أولاً");
-    
-    messaging.requestPermission().then(() => {
-        return messaging.getToken({ vapidKey: "BEcwGTMEI7y7O5sDeyFAzsmoHoQqYi0uYbJdKBoBJZlv9GZWaJGAnHP0jlG4R_xVT12XA45H00sTsOe_J_Abz70" });
-    }).then((token) => {
-        if(dbPath) {
-            db.ref(`tournaments/${dbPath}/fcm_tokens/${token}`).set(true).then(() => {
-                let bell = document.getElementById('bellBtn');
-                if(bell) {
-                    bell.innerHTML = '<i class="fa-solid fa-bell-slash"></i>';
-                    bell.style.color = '#10b981';
-                    bell.onclick = () => alert("أنت مشترك بالفعل في إشعارات هذه البطولة!");
-                }
-                triggerNotification("تم الاشتراك 🔔", "ستصلك الآن إشعارات هذه البطولة بنجاح");
-            });
-        }
-    }).catch((err) => {
-        console.error("FCM Error:", err);
-        alert("يرجى السماح للإشعارات من إعدادات المتصفح.");
-    });
-}
-
-messaging.onMessage((payload) => {
-    if (Notification.permission === 'granted') {
-        new Notification(payload.notification.title, {
-            body: payload.notification.body,
-            icon: '/logo.png'
-        });
-    } else {
-        triggerNotification(payload.notification.title, payload.notification.body);
-    }
-});
-// ---------------------------
-
-</script>
+    </script>
 </head>
 <body onload="updateStaticTexts()">
     <script>
+
+// --- ميزة حفظ البطولة (Persistence) ---
+function checkSavedTournament() {
+    const urlParams = new URLSearchParams(window.location.search);
+    let idFromUrl = urlParams.get('id');
+    let idFromStorage = localStorage.getItem('savedTourneyId');
+
+    if (idFromUrl) {
+        // إذا دخل بـ ID جديد، نظهر له زر "حفظ هذه البطولة"
+        showSaveButton(idFromUrl);
+        return idFromUrl;
+    } else if (idFromStorage) {
+        // إذا ماكو ID بالرابط بس اكو واحد محفوظ، نحوله عليه
+        window.location.href = window.location.pathname + '?id=' + idFromStorage;
+        return idFromStorage;
+    }
+    return null;
+}
+
+function showSaveButton(id) {
+    // نتحقق إذا كانت البطولة محفوظة أصلاً
+    if (localStorage.getItem('savedTourneyId') === id) return;
+
+    const header = document.querySelector('.header-tools');
+    if (header && !document.getElementById('saveTourneyBtn')) {
+        const btn = document.createElement('button');
+        btn.id = 'saveTourneyBtn';
+        btn.className = 'btn-tool';
+        btn.style.color = '#4ade80'; // لون أخضر للحفظ
+        btn.innerHTML = '<i class="fa-solid fa-star"></i>';
+        btn.title = "حفظ هذه البطولة كافتراضية";
+        btn.onclick = function() {
+            localStorage.setItem('savedTourneyId', id);
+            alert("تم حفظ هذه البطولة كبطولة افتراضية! ✅");
+            this.style.display = 'none';
+        };
+        header.prepend(btn);
+    }
+}
+// ------------------------------------
+
         const urlParamsSec = new URLSearchParams(window.location.search);
         let idCheck = urlParamsSec.get('id');
 
@@ -721,46 +530,7 @@ messaging.onMessage((payload) => {
             `;
             throw new Error("Access Blocked: Missing Tournament ID.");
         }
-    
-// --- Notification Logic ---
-const messaging = firebase.messaging();
-
-function subscribeToNotifications() {
-    if (!dbPath) return alert("الرجاء الدخول لبطولة أولاً");
-    
-    messaging.requestPermission().then(() => {
-        return messaging.getToken({ vapidKey: "BEcwGTMEI7y7O5sDeyFAzsmoHoQqYi0uYbJdKBoBJZlv9GZWaJGAnHP0jlG4R_xVT12XA45H00sTsOe_J_Abz70" });
-    }).then((token) => {
-        if(dbPath) {
-            db.ref(`tournaments/${dbPath}/fcm_tokens/${token}`).set(true).then(() => {
-                let bell = document.getElementById('bellBtn');
-                if(bell) {
-                    bell.innerHTML = '<i class="fa-solid fa-bell-slash"></i>';
-                    bell.style.color = '#10b981';
-                    bell.onclick = () => alert("أنت مشترك بالفعل في إشعارات هذه البطولة!");
-                }
-                triggerNotification("تم الاشتراك 🔔", "ستصلك الآن إشعارات هذه البطولة بنجاح");
-            });
-        }
-    }).catch((err) => {
-        console.error("FCM Error:", err);
-        alert("يرجى السماح للإشعارات من إعدادات المتصفح.");
-    });
-}
-
-messaging.onMessage((payload) => {
-    if (Notification.permission === 'granted') {
-        new Notification(payload.notification.title, {
-            body: payload.notification.body,
-            icon: '/logo.png'
-        });
-    } else {
-        triggerNotification(payload.notification.title, payload.notification.body);
-    }
-});
-// ---------------------------
-
-</script>
+    </script>
 
     <audio id="crowdSound" src="https://assets.mixkit.co/active_storage/sfx/2000/2000-preview.mp3" preload="auto"></audio>
     <div id="osNotification" class="os-notification"><div style="font-size:24px; color:var(--primary);"><i class="fa-solid fa-futbol"></i></div><div><strong id="notifTitle" style="font-size:14px; font-family:'Cairo';">تحديث</strong><div id="notifText" style="font-size:12px; color:var(--muted); margin-top:3px;"></div></div></div>
@@ -770,7 +540,6 @@ messaging.onMessage((payload) => {
         <div class="header">
             <h1 id="displayTourneyName" class="header-title" data-trn="جاري التحميل...">جاري التحميل...</h1>
             <div class="header-tools">
-                <button id="bellBtn" class="btn-tool" onclick="subscribeToNotifications()" style="color: #facc15; background: none; border: none; cursor: pointer;" title="تفعيل الإشعارات"><i class="fa-solid fa-bell"></i></button>
                 <button id="langBtn" class="lang-btn" onclick="toggleLang()">KU</button>
                 <a href="#" onclick="openAuthModal(); return false;" class="btn-tool"><i class="fa-solid fa-user"></i></a>
             </div>
@@ -1097,6 +866,47 @@ messaging.onMessage((payload) => {
     </div>
 
     <script>
+
+// --- ميزة حفظ البطولة (Persistence) ---
+function checkSavedTournament() {
+    const urlParams = new URLSearchParams(window.location.search);
+    let idFromUrl = urlParams.get('id');
+    let idFromStorage = localStorage.getItem('savedTourneyId');
+
+    if (idFromUrl) {
+        // إذا دخل بـ ID جديد، نظهر له زر "حفظ هذه البطولة"
+        showSaveButton(idFromUrl);
+        return idFromUrl;
+    } else if (idFromStorage) {
+        // إذا ماكو ID بالرابط بس اكو واحد محفوظ، نحوله عليه
+        window.location.href = window.location.pathname + '?id=' + idFromStorage;
+        return idFromStorage;
+    }
+    return null;
+}
+
+function showSaveButton(id) {
+    // نتحقق إذا كانت البطولة محفوظة أصلاً
+    if (localStorage.getItem('savedTourneyId') === id) return;
+
+    const header = document.querySelector('.header-tools');
+    if (header && !document.getElementById('saveTourneyBtn')) {
+        const btn = document.createElement('button');
+        btn.id = 'saveTourneyBtn';
+        btn.className = 'btn-tool';
+        btn.style.color = '#4ade80'; // لون أخضر للحفظ
+        btn.innerHTML = '<i class="fa-solid fa-star"></i>';
+        btn.title = "حفظ هذه البطولة كافتراضية";
+        btn.onclick = function() {
+            localStorage.setItem('savedTourneyId', id);
+            alert("تم حفظ هذه البطولة كبطولة افتراضية! ✅");
+            this.style.display = 'none';
+        };
+        header.prepend(btn);
+    }
+}
+// ------------------------------------
+
         // 1. إعدادات قاعدة البيانات (لا تغيرها)
 const firebaseConfig = {
     apiKey: "AIzaSyCfaXlGarmxWH8HkxDqdvOAtTqJaF0LXvg",
@@ -1744,45 +1554,6 @@ window.addEventListener('popstate', function(event) {
 });
 
 nav('live', document.querySelectorAll('.nav-item')[0]);
-    
-// --- Notification Logic ---
-const messaging = firebase.messaging();
-
-function subscribeToNotifications() {
-    if (!dbPath) return alert("الرجاء الدخول لبطولة أولاً");
-    
-    messaging.requestPermission().then(() => {
-        return messaging.getToken({ vapidKey: "BEcwGTMEI7y7O5sDeyFAzsmoHoQqYi0uYbJdKBoBJZlv9GZWaJGAnHP0jlG4R_xVT12XA45H00sTsOe_J_Abz70" });
-    }).then((token) => {
-        if(dbPath) {
-            db.ref(`tournaments/${dbPath}/fcm_tokens/${token}`).set(true).then(() => {
-                let bell = document.getElementById('bellBtn');
-                if(bell) {
-                    bell.innerHTML = '<i class="fa-solid fa-bell-slash"></i>';
-                    bell.style.color = '#10b981';
-                    bell.onclick = () => alert("أنت مشترك بالفعل في إشعارات هذه البطولة!");
-                }
-                triggerNotification("تم الاشتراك 🔔", "ستصلك الآن إشعارات هذه البطولة بنجاح");
-            });
-        }
-    }).catch((err) => {
-        console.error("FCM Error:", err);
-        alert("يرجى السماح للإشعارات من إعدادات المتصفح.");
-    });
-}
-
-messaging.onMessage((payload) => {
-    if (Notification.permission === 'granted') {
-        new Notification(payload.notification.title, {
-            body: payload.notification.body,
-            icon: '/logo.png'
-        });
-    } else {
-        triggerNotification(payload.notification.title, payload.notification.body);
-    }
-});
-// ---------------------------
-
-</script>
+    </script>
 </body>
 </html>
