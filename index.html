@@ -1498,16 +1498,30 @@ window.addEventListener('popstate', function(event) {
             });
         }
 
-        messaging.onMessage((payload) => {
-            if (Notification.permission === 'granted') {
-                new Notification(payload.notification.title, {
-                    body: payload.notification.body,
-                    icon: '/logo.png'
-                });
-            } else {
-                triggerNotification(payload.notification.title, payload.notification.body);
-            }
+     messaging.onMessage((payload) => {
+    console.log("إشعار والموقع مفتوح: ", payload);
+    
+    // 1. تشغيل صوت الجمهور
+    try { 
+        let audio = document.getElementById('crowdSound');
+        if(audio) audio.play();
+    } catch(e) {}
+
+    // 2. إجبار الموقع على إظهار اللافتة الداخلية (الـ Banner)
+    triggerNotification(payload.notification.title, payload.notification.body);
+    
+    // 3. إجبار الموبايل على إظهار الإشعار والاهتزاز
+    if (Notification.permission === 'granted' && navigator.serviceWorker) {
+        navigator.serviceWorker.ready.then(function(registration) {
+            registration.showNotification(payload.notification.title, {
+                body: payload.notification.body,
+                icon: '/logo.png',
+                badge: '/logo.png',
+                vibrate: [200, 100, 200]
+            });
         });
+    }
+});
 
         nav('live', document.querySelectorAll('.nav-item')[0]);
     </script>
