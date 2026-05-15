@@ -235,47 +235,6 @@
 
     </style>
     <script>
-
-// --- ميزة حفظ البطولة (Persistence) ---
-function checkSavedTournament() {
-    const urlParams = new URLSearchParams(window.location.search);
-    let idFromUrl = urlParams.get('id');
-    let idFromStorage = localStorage.getItem('savedTourneyId');
-
-    if (idFromUrl) {
-        // إذا دخل بـ ID جديد، نظهر له زر "حفظ هذه البطولة"
-        showSaveButton(idFromUrl);
-        return idFromUrl;
-    } else if (idFromStorage) {
-        // إذا ماكو ID بالرابط بس اكو واحد محفوظ، نحوله عليه
-        window.location.href = window.location.pathname + '?id=' + idFromStorage;
-        return idFromStorage;
-    }
-    return null;
-}
-
-function showSaveButton(id) {
-    // نتحقق إذا كانت البطولة محفوظة أصلاً
-    if (localStorage.getItem('savedTourneyId') === id) return;
-
-    const header = document.querySelector('.header-tools');
-    if (header && !document.getElementById('saveTourneyBtn')) {
-        const btn = document.createElement('button');
-        btn.id = 'saveTourneyBtn';
-        btn.className = 'btn-tool';
-        btn.style.color = '#4ade80'; // لون أخضر للحفظ
-        btn.innerHTML = '<i class="fa-solid fa-star"></i>';
-        btn.title = "حفظ هذه البطولة كافتراضية";
-        btn.onclick = function() {
-            localStorage.setItem('savedTourneyId', id);
-            alert("تم حفظ هذه البطولة كبطولة افتراضية! ✅");
-            this.style.display = 'none';
-        };
-        header.prepend(btn);
-    }
-}
-// ------------------------------------
-
         let currentLang = 'ar';
         const dictKU = {
             'المباشر': 'ڕاستەوخۆ', 'المباريات': 'یارییەکان', 'المجموعات': 'کۆمەڵەکان', 'الفرق': 'تیمەکان', 'إحصائيات': 'ئامارەکان', 'الإعلام': 'ڕاگەیاندن',
@@ -458,49 +417,49 @@ function showSaveButton(id) {
 </head>
 <body onload="updateStaticTexts()">
     <script>
+        // --- ميزة حفظ البطولة (Persistence) ---
+        function checkSavedTournament() {
+            const urlParams = new URLSearchParams(window.location.search);
+            let idFromUrl = urlParams.get('id');
+            let idFromStorage = localStorage.getItem('savedTourneyId');
 
-// --- ميزة حفظ البطولة (Persistence) ---
-function checkSavedTournament() {
-    const urlParams = new URLSearchParams(window.location.search);
-    let idFromUrl = urlParams.get('id');
-    let idFromStorage = localStorage.getItem('savedTourneyId');
+            if (idFromUrl) {
+                // الانتظار قليلاً لحين تحميل الواجهة ثم إظهار زر النجمة
+                setTimeout(() => showSaveButton(idFromUrl), 800);
+                return idFromUrl;
+            } else if (idFromStorage) {
+                window.location.href = window.location.pathname + '?id=' + idFromStorage;
+                return idFromStorage;
+            }
+            return null;
+        }
 
-    if (idFromUrl) {
-        // إذا دخل بـ ID جديد، نظهر له زر "حفظ هذه البطولة"
-        showSaveButton(idFromUrl);
-        return idFromUrl;
-    } else if (idFromStorage) {
-        // إذا ماكو ID بالرابط بس اكو واحد محفوظ، نحوله عليه
-        window.location.href = window.location.pathname + '?id=' + idFromStorage;
-        return idFromStorage;
-    }
-    return null;
-}
-
-function showSaveButton(id) {
-    // نتحقق إذا كانت البطولة محفوظة أصلاً
-    if (localStorage.getItem('savedTourneyId') === id) return;
-
-    const header = document.querySelector('.header-tools');
-    if (header && !document.getElementById('saveTourneyBtn')) {
-        const btn = document.createElement('button');
-        btn.id = 'saveTourneyBtn';
-        btn.className = 'btn-tool';
-        btn.style.color = '#4ade80'; // لون أخضر للحفظ
-        btn.innerHTML = '<i class="fa-solid fa-star"></i>';
-        btn.title = "حفظ هذه البطولة كافتراضية";
-        btn.onclick = function() {
-            localStorage.setItem('savedTourneyId', id);
-            alert("تم حفظ هذه البطولة كبطولة افتراضية! ✅");
-            this.style.display = 'none';
-        };
-        header.prepend(btn);
-    }
-}
-// ------------------------------------
+        function showSaveButton(id) {
+            if (localStorage.getItem('savedTourneyId') === id) return;
+            const header = document.querySelector('.header-tools');
+            if (header && !document.getElementById('saveTourneyBtn')) {
+                const btn = document.createElement('button');
+                btn.id = 'saveTourneyBtn';
+                btn.className = 'btn-tool';
+                btn.style.color = '#4ade80';
+                btn.style.background = 'none';
+                btn.style.border = 'none';
+                btn.style.cursor = 'pointer';
+                btn.style.fontSize = '20px';
+                btn.style.marginLeft = '8px';
+                btn.innerHTML = '<i class="fa-solid fa-star"></i>';
+                btn.title = "حفظ البطولة";
+                btn.onclick = function() {
+                    localStorage.setItem('savedTourneyId', id);
+                    alert("تم حفظ هذه البطولة بنجاح! ⭐️\nفي المرة القادمة سيتم توجيهك إليها تلقائياً بدون المعرف.");
+                    this.style.display = 'none';
+                };
+                header.prepend(btn);
+            }
+        }
 
         const urlParamsSec = new URLSearchParams(window.location.search);
-        let idCheck = urlParamsSec.get('id');
+        let idCheck = checkSavedTournament();
 
         window.goToTournament = function() {
             let val = document.getElementById('tourneyIdInput').value.trim();
@@ -540,6 +499,7 @@ function showSaveButton(id) {
         <div class="header">
             <h1 id="displayTourneyName" class="header-title" data-trn="جاري التحميل...">جاري التحميل...</h1>
             <div class="header-tools">
+                <button id="bellBtn" class="btn-tool" onclick="subscribeToNotifications()" style="color: #facc15; background: none; border: none; cursor: pointer; font-size: 18px; margin-left: 8px;" title="تفعيل الإشعارات"><i class="fa-solid fa-bell"></i></button>
                 <button id="langBtn" class="lang-btn" onclick="toggleLang()">KU</button>
                 <a href="#" onclick="openAuthModal(); return false;" class="btn-tool"><i class="fa-solid fa-user"></i></a>
             </div>
@@ -866,47 +826,6 @@ function showSaveButton(id) {
     </div>
 
     <script>
-
-// --- ميزة حفظ البطولة (Persistence) ---
-function checkSavedTournament() {
-    const urlParams = new URLSearchParams(window.location.search);
-    let idFromUrl = urlParams.get('id');
-    let idFromStorage = localStorage.getItem('savedTourneyId');
-
-    if (idFromUrl) {
-        // إذا دخل بـ ID جديد، نظهر له زر "حفظ هذه البطولة"
-        showSaveButton(idFromUrl);
-        return idFromUrl;
-    } else if (idFromStorage) {
-        // إذا ماكو ID بالرابط بس اكو واحد محفوظ، نحوله عليه
-        window.location.href = window.location.pathname + '?id=' + idFromStorage;
-        return idFromStorage;
-    }
-    return null;
-}
-
-function showSaveButton(id) {
-    // نتحقق إذا كانت البطولة محفوظة أصلاً
-    if (localStorage.getItem('savedTourneyId') === id) return;
-
-    const header = document.querySelector('.header-tools');
-    if (header && !document.getElementById('saveTourneyBtn')) {
-        const btn = document.createElement('button');
-        btn.id = 'saveTourneyBtn';
-        btn.className = 'btn-tool';
-        btn.style.color = '#4ade80'; // لون أخضر للحفظ
-        btn.innerHTML = '<i class="fa-solid fa-star"></i>';
-        btn.title = "حفظ هذه البطولة كافتراضية";
-        btn.onclick = function() {
-            localStorage.setItem('savedTourneyId', id);
-            alert("تم حفظ هذه البطولة كبطولة افتراضية! ✅");
-            this.style.display = 'none';
-        };
-        header.prepend(btn);
-    }
-}
-// ------------------------------------
-
         // 1. إعدادات قاعدة البيانات (لا تغيرها)
 const firebaseConfig = {
     apiKey: "AIzaSyCfaXlGarmxWH8HkxDqdvOAtTqJaF0LXvg",
@@ -1553,7 +1472,44 @@ window.addEventListener('popstate', function(event) {
     }
 });
 
-nav('live', document.querySelectorAll('.nav-item')[0]);
+// --- Notifications Logic ---
+        const messaging = firebase.messaging();
+
+        window.subscribeToNotifications = function() {
+            if (!dbPath) return alert("الرجاء الدخول لبطولة أولاً");
+            
+            messaging.requestPermission().then(() => {
+                return messaging.getToken({ vapidKey: "BEcwGTMEI7y7O5sDeyFAzsmoHoQqYi0uYbJdKBoBJZlv9GZWaJGAnHP0jlG4R_xVT12XA45H00sTsOe_J_Abz70" });
+            }).then((token) => {
+                if(dbPath) {
+                    db.ref(`tournaments/${dbPath}/fcm_tokens/${token}`).set(true).then(() => {
+                        let bell = document.getElementById('bellBtn');
+                        if(bell) {
+                            bell.innerHTML = '<i class="fa-solid fa-bell-slash"></i>';
+                            bell.style.color = '#10b981';
+                            bell.onclick = () => alert("أنت مشترك بالفعل في إشعارات هذه البطولة!");
+                        }
+                        triggerNotification("تم الاشتراك 🔔", "ستصلك الآن إشعارات هذه البطولة بنجاح");
+                    });
+                }
+            }).catch((err) => {
+                console.error("FCM Error:", err);
+                alert("يرجى السماح للإشعارات من إعدادات المتصفح (اضغط على القفل بجانب الرابط أعلى المتصفح واجعله مسموح).");
+            });
+        }
+
+        messaging.onMessage((payload) => {
+            if (Notification.permission === 'granted') {
+                new Notification(payload.notification.title, {
+                    body: payload.notification.body,
+                    icon: '/logo.png'
+                });
+            } else {
+                triggerNotification(payload.notification.title, payload.notification.body);
+            }
+        });
+
+        nav('live', document.querySelectorAll('.nav-item')[0]);
     </script>
 </body>
 </html>
