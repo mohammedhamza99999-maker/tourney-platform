@@ -1476,53 +1476,60 @@ window.addEventListener('popstate', function(event) {
 // --- Notifications Logic ---
         const messaging = firebase.messaging();
 
-        // 1. تسجيل الـ Service Worker بشكل صريح لدعم مسارات GitHub Pages
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('./firebase-messaging-sw.js')
-            .then(function(registration) {
-                // إجبار فايربيس على استخدام هذا الملف بالمسار الصحيح
-                messaging.useServiceWorker(registration);
-            }).catch(function(err) {
-                console.error('خطأ في تسجيل Service Worker:', err);
-            });
-        }
-
-        window.subscribeToNotifications = function() {
+        window.subscribeToNotifications = async function() {
             if (!dbPath) return alert("الرجاء الدخول لبطولة أولاً");
             
-            messaging.requestPermission().then(() => {
-                return messaging.getToken({ vapidKey: "BEcwGTMEI7y7O5sDeyFAzsmoHoQqYi0uYbJdKBoBJZlv9GZWaJGAnHP0jlG4R_xVT12XA45H00sTsOe_J_Abz70" });
-            }).then((token) => {
-                if(dbPath) {
-                    db.ref(`tournaments/${dbPath}/fcm_tokens/${token}`).set(true).then(() => {
-                        let bell = document.getElementById('bellBtn');
-                        if(bell) {
-                            bell.innerHTML = '<i class="fa-solid fa-bell-slash"></i>';
-                            bell.style.color = '#10b981';
-                            bell.onclick = () => alert("أنت مشترك بالفعل في إشعارات هذه البطولة!");
-                        }
-                        triggerNotification("تم الاشتراك 🔔", "ستصلك الآن إشعارات هذه البطولة بنجاح");
-                    });
+            try {
+                // 1. طلب الصلاحية من المتصفح أولاً
+                const permission = await Notification.requestPermission();
+                if (permission !== 'granted') {
+                    return alert("تم رفض الإشعارات. يرجى السماح بها من إعدادات المتصفح (اضغط على القفل بجانب الرابط).");
                 }
-            }).catch((err) => {
-                console.error("FCM Error:", err);
-                alert("يرجى السماح للإشعارات من إعدادات المتصفح (اضغط على القفل بجانب الرابط أعلى المتصفح واجعله مسموح).");
-            });
-        }
 
+                // 2. تسجيل الـ Service Worker برمجياً عند الضغط
+                const registration = await navigator.serviceWorker.register('firebase-messaging-sw.js');
+                
+                // 3. جلب التوكن مع إجبار فايربيس على استخدام المسار الصحيح للملف
+                const token = await messaging.getToken({ 
+                    vapidKey: "BEcwGTMEI7y7O5sDeyFAzsmoHoQqYi0uYbJdKBoBJZlv9GZWaJGAnHP0jlG4R_xVT12XA45H00sTsOe_J_Abz70",
+                    serviceWorkerRegistration: registration
+                });
+
+                if (token) {
+                    // 4. الحفظ في قاعدة البيانات
+                    await db.ref(`tournaments/${dbPath}/fcm_tokens/${token}`).set(true);
+                    
+                    let bell = document.getElementById('bellBtn');
+                    if(bell) {
+                        bell.innerHTML = '<i class="fa-solid fa-bell-slash"></i>';
+                        bell.style.color = '#10b981';
+                        bell.onclick = () => alert("أنت مشترك بالفعل في إشعارات هذه البطولة!");
+                    }
+                    triggerNotification("تم الاشتراك 🔔", "ستصلك إشعارات هذه البطولة بنجاح");
+                }
+            } catch (err) {
+                console.error("FCM Error:", err);
+                alert("حدث خطأ يمنع تفعيل الإشعارات: " + err.message);
+            }
+        };
+
+        // 5. استقبال الإشعارات ورسمها على الشاشة
         messaging.onMessage((payload) => {
-            // 1. إظهار الإشعار المخصص داخل التطبيق (حتى لا ينزعج المستخدم بـ Pop-up خارجي وهو يتصفح)
-            triggerNotification(payload.notification.title, payload.notification.body);
+            const title = payload.notification ? payload.notification.title : "تحديث";
+            const body = payload.notification ? payload.notification.body : "";
             
-            // 2. إظهار إشعار النظام إذا كان مدعوماً
-            if (Notification.permission === 'granted' && navigator.serviceWorker.controller) {
+            // إظهار التنبيه الداخلي في التطبيق
+            triggerNotification(title, body);
+            
+            // إجبار المتصفح على رسم الإشعار المرئي (البانر)
+            if (Notification.permission === 'granted') {
                 navigator.serviceWorker.ready.then((registration) => {
-                    registration.showNotification(payload.notification.title, {
-                        body: payload.notification.body,
-                        icon: './logo.png',
-                        badge: './logo.png',
+                    registration.showNotification(title, {
+                        body: body,
+                        icon: 'logo.png', // تأكد من وجود صورة logo.png
+                        badge: 'logo.png',
                         vibrate: [300, 100, 300],
-                        requireInteraction: true
+                        requireInteraction: true // بقاء الإشعار حتى يغلقه المستخدم
                     });
                 });
             }
