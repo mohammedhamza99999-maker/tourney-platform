@@ -11,15 +11,20 @@ firebase.initializeApp({
 
 const messaging = firebase.messaging();
 
-// استقبال الإشعارات في الخلفية (عندما يكون التطبيق مغلقاً)
+// هذه الدالة تعمل بالخلفية والموبايل مقفول
 messaging.onBackgroundMessage(function(payload) {
   console.log("تم استقبال إشعار في الخلفية: ", payload);
   
   const notificationTitle = payload.notification.title;
   const notificationOptions = {
     body: payload.notification.body,
-    icon: '/logo.png' // تأكد أن صورة اللوكو موجودة بهذا المسار
+    icon: '/logo.png',         // الأيقونة الكبيرة للإشعار
+    badge: '/logo.png',        // الأيقونة الصغيرة التي تظهر في شريط الموبايل العلوي
+    dir: 'rtl',                // اتجاه النص من اليمين لليسار
+    vibrate: [300, 100, 300],  // نمط الاهتزاز لجذب الانتباه
+    requireInteraction: true   // إبقاء الإشعار على الشاشة حتى يلمسه المستخدم (اختياري)
   };
   
-  self.registration.showNotification(notificationTitle, notificationOptions);
+  // إجبار نظام التشغيل (أندرويد/ويندوز) على إظهار الإشعار
+  return self.registration.showNotification(notificationTitle, notificationOptions);
 });
