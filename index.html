@@ -1535,6 +1535,79 @@ window.addEventListener('popstate', function(event) {
             });
         }
 
+       // --- Notifications Logic ---
+        const messaging = firebase.messaging();
+
+        // 1. تسجيل الـ Service Worker بشكل صريح لدعم مسارات GitHub Pages
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('./firebase-messaging-sw.js')
+            .then(function(registration) {
+                // إجبار فايربيس على استخدام هذا الملف بالمسار الصحيح
+                messaging.useServiceWorker(registration);
+            }).catch(function(err) {
+                console.error('خطأ في تسجيل Service Worker:', err);
+            });
+        }
+
+        window.subscribeToNotifications = function() {
+            if (!dbPath) return alert("الرجاء الدخول لبطولة أولاً");
+            
+            messaging.requestPermission().then(() => {
+                return messaging.getToken({ vapidKey: "BEcwGTMEI7y7O5sDeyFAzsmoHoQqYi0uYbJdKBoBJZlv9GZWaJGAnHP0jlG4R_xVT12XA45H00sTsOe_J_Abz70" });
+            }).then((token) => {
+                if(dbPath) {
+                    db.ref(`tournaments/${dbPath}/fcm_tokens/${token}`).set(true).then(() => {
+                        let bell = document.getElementById('bellBtn');
+                        if(bell) {
+                            bell.innerHTML = '<i class="fa-solid fa-bell-slash"></i>';
+                            bell.style.color = '#10b981';
+                            bell.onclick = () => alert("أنت مشترك بالفعل في إشعارات هذه البطولة!");
+                        }
+                        triggerNotification("تم الاشتراك 🔔", "ستصلك الآن إشعارات هذه البطولة بنجاح");
+                    });
+                }
+            }).catch((err) => {
+                console.error("FCM Error:", err);
+                alert("يرجى السماح للإشعارات من إعدادات المتصفح (اضغط على القفل بجانب الرابط أعلى المتصفح واجعله مسموح).");
+            });
+        }
+
+       const messaging = firebase.messaging();
+
+        // 1. تسجيل الـ Service Worker بشكل صريح لدعم مسارات GitHub Pages
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('./firebase-messaging-sw.js')
+            .then(function(registration) {
+                // إجبار فايربيس على استخدام هذا الملف بالمسار الصحيح
+                messaging.useServiceWorker(registration);
+            }).catch(function(err) {
+                console.error('خطأ في تسجيل Service Worker:', err);
+            });
+        }
+
+        window.subscribeToNotifications = function() {
+            if (!dbPath) return alert("الرجاء الدخول لبطولة أولاً");
+            
+            messaging.requestPermission().then(() => {
+                return messaging.getToken({ vapidKey: "BEcwGTMEI7y7O5sDeyFAzsmoHoQqYi0uYbJdKBoBJZlv9GZWaJGAnHP0jlG4R_xVT12XA45H00sTsOe_J_Abz70" });
+            }).then((token) => {
+                if(dbPath) {
+                    db.ref(`tournaments/${dbPath}/fcm_tokens/${token}`).set(true).then(() => {
+                        let bell = document.getElementById('bellBtn');
+                        if(bell) {
+                            bell.innerHTML = '<i class="fa-solid fa-bell-slash"></i>';
+                            bell.style.color = '#10b981';
+                            bell.onclick = () => alert("أنت مشترك بالفعل في إشعارات هذه البطولة!");
+                        }
+                        triggerNotification("تم الاشتراك 🔔", "ستصلك الآن إشعارات هذه البطولة بنجاح");
+                    });
+                }
+            }).catch((err) => {
+                console.error("FCM Error:", err);
+                alert("يرجى السماح للإشعارات من إعدادات المتصفح (اضغط على القفل بجانب الرابط أعلى المتصفح واجعله مسموح).");
+            });
+        }
+
         messaging.onMessage((payload) => {
             // 1. إظهار الإشعار المخصص داخل التطبيق (حتى لا ينزعج المستخدم بـ Pop-up خارجي وهو يتصفح)
             triggerNotification(payload.notification.title, payload.notification.body);
@@ -1552,7 +1625,6 @@ window.addEventListener('popstate', function(event) {
                 });
             }
         });
-
         nav('live', document.querySelectorAll('.nav-item')[0]);
     </script>
 </body>
