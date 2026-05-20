@@ -1033,21 +1033,24 @@ generatePlayersGrid();
             });
         }
         
-        db.ref(`tournaments/${dbPath}/media_posts`).on('value', snap => {
-            let cont = document.getElementById('mediaGallery'); if(!cont) return; cont.innerHTML = '';
-            let d = snap.val();
-            if(d) {
-                Object.keys(d).reverse().forEach(k => {
-                    let post = d[k]; let previewHtml = '';
-                    if (post.type === 'fb') { previewHtml = `<div style="font-size:11px; color:#3b82f6;"><i class="fab fa-facebook"></i> منشور فيسبوك مدمج</div>`; } 
-                    else if (post.type === 'statement') { previewHtml = `<div class="statement-preview">${post.image ? `<img src="${post.image}">` : ''}<div class="statement-text-box"><i class="fa-solid fa-quote-right" style="color:var(--muted); font-size:10px; margin-left:5px;"></i>${post.text || 'بدون نص'}<i class="fa-solid fa-quote-left" style="color:var(--muted); font-size:10px; margin-right:5px;"></i></div></div>`; } 
-                    else { previewHtml = `<div style="display:flex; gap:10px;"><img src="${post.image||''}" style="width:40px;height:40px;object-fit:cover;border-radius:4px;"> <div style="font-size:11px; overflow:hidden;">${post.text||'صورة فقط'}</div></div>`; }
-                    let label = post.type === 'statement' ? '<span class="media-tag" style="background:#8b5cf6; padding:2px 4px; border-radius:4px; font-size:10px;">تصريح</span>' : (post.type === 'fb' ? '<span class="media-tag" style="background:#3b82f6; padding:2px 4px; border-radius:4px; font-size:10px;">مدمج</span>' : '<span class="media-tag" style="background:var(--muted); padding:2px 4px; border-radius:4px; font-size:10px; color:#000;">خبر عادي</span>');
-                    cont.innerHTML += `<div class="preview-item" style="border:1px solid #3f3f46; padding:12px; margin-bottom:8px; border-radius:8px; background:var(--input-bg);"><div class="preview-item-header" style="align-items:flex-start;"><div style="flex:1;">${label}<div style="margin-top:8px;">${previewHtml}</div></div><button class="del-btn" onclick="deleteItem('media_posts/${k}')"><i class="fa-solid fa-trash"></i></button></div></div>`;
-                });
-            } else { cont.innerHTML = '<div style="font-size:11px; color:var(--muted); text-align:center;">لا توجد منشورات إعلامية.</div>'; }
-        });
-
+   // هذا الكود مسؤول عن "جلب" البيانات من الفايربيس وعرضها في لوحة الإدارة
+db.ref(`tournaments/${dbPath}/media_posts`).on('value', snap => {
+    let list = document.getElementById('mediaAdminList'); // تأكد أن هذا الـ ID موجود في الـ HTML
+    if(!list) return; 
+    list.innerHTML = ''; 
+    let d = snap.val();
+    if(d) {
+        for(let key in d) {
+            let item = d[key];
+            // هذا الجزء هو المسؤول عن إظهار المنشور + زر الحذف
+            list.innerHTML += `
+            <div class="admin-post-item">
+                <p>${item.text}</p>
+                <button onclick="deleteItem('media_posts/${key}')">حذف</button>
+            </div>`;
+        }
+    }
+});
         async function addSponsor() {
             let name = document.getElementById('spName').value.trim();
             let link = document.getElementById('spLink').value.trim();
