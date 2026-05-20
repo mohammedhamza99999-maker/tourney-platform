@@ -830,37 +830,63 @@
             messaging.onMessage((payload) => { triggerNotification(payload.notification.title, payload.notification.body); });
         }
 
+        let fcmRegistrationPromise = null;
+        function getFcmServiceWorkerRegistration() {
+            if (!('serviceWorker' in navigator)) {
+                return Promise.reject(new Error('المتصفح لا يدعم Service Worker'));
+            }
+            if (!fcmRegistrationPromise) {
+                fcmRegistrationPromise = navigator.serviceWorker.register('./firebase-messaging-sw.js')
+                    .then((registration) => navigator.serviceWorker.ready.then(() => registration));
+            }
+            return fcmRegistrationPromise;
+        }
+
         window.setupNotifications = function() {
             if (!messaging) return alert("الإشعارات غير مدعومة على هذا المتصفح.");
+            if (!('Notification' in window)) return alert("هذا المتصفح لا يدعم الإشعارات.");
+
             Notification.requestPermission().then((permission) => {
-                if (permission === 'granted') {
-                    // 1. إضافة نقطة (./) لحل مشاكل مسارات Github Pages
-                    navigator.serviceWorker.register('./firebase-messaging-sw.js')
-                    .then((registration) => { 
-                        messaging.useServiceWorker(registration); 
-                        return messaging.getToken({ vapidKey: "BDhWsyYolzW9PMaSb3EMbbPvgBfamBINbLhzsovxaqCzhB8viUOJf-GceBfnjkK0cR4X0maOo3aHFcjNM-hv-ZA" }); 
-                    })
-                    .then((token) => { 
-                        if (token) {
-                            // 2. الكود الآمن لمنع مسح المشتركين القدامى
-                            db.ref('fcm_tokens').orderByChild('token').equalTo(token).once('value').then(snapshot => {
-                                if (!snapshot.exists()) {
-                                    db.ref('fcm_tokens').push({ token: token, tournament_id: dbPath, lastUpdated: Date.now() })
-                                    .then(() => alert(t("تم تفعيل الإشعارات بنجاح! 🔔")));
-                                } else {
-                                    alert(t("الإشعارات مفعلة لديك مسبقاً 🔔"));
-                                }
-                            });
-                        }
-                    })
-                    .catch((err) => {
-                        console.error("Error getting token", err);
-                        // 3. السر هنا: جعلنا النظام يطبع نوع الخطأ الفعلي بدلاً من نص عام!
-                        alert("حدث خطأ: " + err.message);
-                    });
-                } else { 
-                    alert("تم رفض إذن الإشعارات ❌."); 
+                if (permission !== 'granted') {
+                    alert("تم رفض إذن الإشعارات ❌.");
+                    return null;
                 }
+
+                return getFcmServiceWorkerRegistration()
+                    .then((registration) => {
+                        // مهم: لا نستخدم messaging.useServiceWorker هنا حتى لا يظهر خطأ
+                        // messaging/use-sw-after-get-token عند الضغط أكثر من مرة.
+                        return messaging.getToken({
+                            vapidKey: "BDhWsyYolzW9PMaSb3EMbbPvgBfamBINbLhzsovxaqCzhB8viUOJf-GceBfnjkK0cR4X0maOo3aHFcjNM-hv-ZA",
+                            serviceWorkerRegistration: registration
+                        });
+                    });
+            })
+            .then((token) => {
+                if (!token) return;
+
+                db.ref('fcm_tokens').orderByChild('token').equalTo(token).once('value').then(snapshot => {
+                    if (!snapshot.exists()) {
+                        db.ref('fcm_tokens').push({
+                            token: token,
+                            tournament_id: dbPath,
+                            lastUpdated: Date.now()
+                        }).then(() => alert(t("تم تفعيل الإشعارات بنجاح! 🔔")));
+                    } else {
+                        let updates = {};
+                        snapshot.forEach(child => {
+                            updates[child.key + '/tournament_id'] = dbPath;
+                            updates[child.key + '/lastUpdated'] = Date.now();
+                        });
+                        db.ref('fcm_tokens').update(updates).then(() => {
+                            alert(t("الإشعارات مفعلة لديك مسبقاً 🔔"));
+                        });
+                    }
+                });
+            })
+            .catch((err) => {
+                console.error("Error enabling notifications", err);
+                alert("حدث خطأ: " + (err && err.message ? err.message : err));
             });
         };
         const urlParams = new URLSearchParams(window.location.search); let dbPath = cleanTournamentId(urlParams.get('db') || localStorage.getItem('audienceDbPath') || "Khanaqin_Tournament_Official"); if (urlParams.get('db')) { localStorage.setItem('audienceDbPath', dbPath); }
