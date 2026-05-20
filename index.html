@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
@@ -844,7 +845,7 @@
                             // 2. الكود الآمن لمنع مسح المشتركين القدامى
                             db.ref('fcm_tokens').orderByChild('token').equalTo(token).once('value').then(snapshot => {
                                 if (!snapshot.exists()) {
-                                    db.ref('fcm_tokens').push({ token: token, lastUpdated: Date.now() })
+                                    db.ref('fcm_tokens').push({ token: token, tournament_id: dbPath, lastUpdated: Date.now() })
                                     .then(() => alert(t("تم تفعيل الإشعارات بنجاح! 🔔")));
                                 } else {
                                     alert(t("الإشعارات مفعلة لديك مسبقاً 🔔"));
@@ -862,8 +863,8 @@
                 }
             });
         };
-        const urlParams = new URLSearchParams(window.location.search); let dbPath = urlParams.get('db') || localStorage.getItem('audienceDbPath') || "Khanaqin_Tournament_Official"; if (urlParams.get('db')) { localStorage.setItem('audienceDbPath', dbPath); }
-        window.changeAudienceDB = function() { let newDb = prompt("أدخل معرف البطولة:", dbPath); if(newDb && newDb.trim() !== "") { let cleanDb = newDb.trim().replace(/\s+/g, '_'); localStorage.setItem('audienceDbPath', cleanDb); window.location.href = window.location.pathname + "?db=" + cleanDb; } };
+        const urlParams = new URLSearchParams(window.location.search); let dbPath = cleanTournamentId(urlParams.get('db') || localStorage.getItem('audienceDbPath') || "Khanaqin_Tournament_Official"); if (urlParams.get('db')) { localStorage.setItem('audienceDbPath', dbPath); }
+        window.changeAudienceDB = function() { let newDb = prompt("أدخل معرف البطولة:", dbPath); if(newDb && newDb.trim() !== "") { let cleanDb = cleanTournamentId(newDb); if(!cleanDb) return alert('معرف البطولة غير صالح'); localStorage.setItem('audienceDbPath', cleanDb); window.location.href = window.location.pathname + "?db=" + encodeURIComponent(cleanDb); } };
         let visualName = localStorage.getItem('visualName') || "بطولة دوائر خانقين"; document.getElementById('displayTourneyName').innerText = visualName;
         window.openImageViewer = function(src) { if(!src) return; document.getElementById('fullSizeImg').src = src; document.getElementById('imageViewerModal').style.display = 'flex'; try{ history.pushState({ modal: 'imageViewerModal' }, "", "#image"); }catch(e){} }; window.closeImageViewer = function() { document.getElementById('imageViewerModal').style.display = 'none'; };
         
@@ -886,6 +887,39 @@
         window.exportAllGroupsHorizontal = function() { const container = document.getElementById('groupsContainer'); container.classList.add('export-horizontal-mode'); triggerNotification('معالجة', '📸'); html2canvas(container, { backgroundColor: '#0a0e12', useCORS: true, scale: 2 }).then(canvas => { const link = document.createElement('a'); link.download = `All_Groups.png`; link.href = canvas.toDataURL('image/png'); link.click(); container.classList.remove('export-horizontal-mode'); }).catch(() => container.classList.remove('export-horizontal-mode')); }
         function triggerNotification(title, msg) { const notif = document.getElementById('osNotification'); document.getElementById('notifTitle').innerText = title; document.getElementById('notifText').innerText = msg; notif.classList.add('show'); setTimeout(() => { notif.classList.remove('show'); }, 4000); }
 
+
+        // جدار حماية خفيف لواجهة الجمهور: تنظيف معرف البطولة والنصوص القادمة من الجمهور
+        function cleanTournamentId(value) {
+            return String(value || '').trim().replace(/[^A-Za-z0-9_-]/g, '').slice(0, 80);
+        }
+        function cleanPublicText(value, maxLen) {
+            return String(value || '').replace(/[<>`]/g, '').trim().slice(0, maxLen || 120);
+        }
+        function safeHtml(value, maxLen) {
+            return String(value || '').trim().slice(0, maxLen || 160).replace(/[&<>"'`]/g, function(ch) {
+                return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;', '`': '&#96;' })[ch];
+            });
+        }
+        function safeImageSrc(src) {
+            const v = String(src || '').trim();
+            if (!v) return '';
+            if (/^(data:image\/|https?:\/\/|\.\/|\/)/i.test(v)) return v.replace(/"/g, '&quot;');
+            return '';
+        }
+        function appendSafeChatMessage(container, name, text, isSelf) {
+            const msgBox = document.createElement('div');
+            msgBox.className = 'chat-msg' + (isSelf ? ' self' : '');
+            msgBox.style.marginBottom = '5px';
+            const sender = document.createElement('div');
+            sender.className = 'chat-sender';
+            sender.textContent = cleanPublicText(name || 'مشجع', 40);
+            const body = document.createElement('div');
+            body.textContent = cleanPublicText(text || '', 150);
+            msgBox.appendChild(sender);
+            msgBox.appendChild(body);
+            container.appendChild(msgBox);
+        }
+
         window.testModeActive = false; window.currentMatchActive = false;
         window.triggerLiveVisibilityUpdate = function() {
             const liveCard = document.getElementById('liveMatchCard'); const testModePlaceholder = document.getElementById('testModePlaceholder'); const adLinkAnchor = document.getElementById('adLinkAnchor'); const noLiveBanner = document.getElementById('noLiveMatchBanner'); const navDot = document.getElementById('navLiveDot');
@@ -898,7 +932,7 @@
             }
         };
 
-        db.ref('analytics/visits').push({ time: Date.now() });
+        db.ref('analytics/visits').push({ time: Date.now(), tournament_id: dbPath }).catch(()=>{});
 
         function renderAdminComparison(settingsData) {
             let data = settingsData?.activeComparison; let container = document.getElementById('adminPushedComparisonDisplay'); if(!container) return;
@@ -1114,6 +1148,51 @@ for(let k in data) {
         }
 
         let teamsDataGlobal = {};
+        let transfersDataGlobal = {};
+
+        function buildTransferCard(item) {
+            const player = safeHtml(item.player || 'لاعب', 80);
+            const fromTeam = safeHtml(item.fromTeam || 'غير محدد', 80);
+            const toTeam = safeHtml(item.toTeam || 'غير محدد', 80);
+            const isOfficial = item.type === 'official';
+            const badgeText = isOfficial ? 'صفقة رسمية' : 'إشاعة انتقال';
+            const badgeColor = isOfficial ? '#10b981' : '#f59e0b';
+            const img = safeImageSrc(item.image || '');
+            const dateTxt = item.time ? new Date(item.time).toLocaleDateString('ar-IQ') : '';
+            const imageHtml = img ? `<img src="${img}" loading="lazy" style="width:68px;height:68px;border-radius:14px;object-fit:cover;border:1px solid rgba(255,255,255,0.12);flex-shrink:0;">` : `<div style="width:68px;height:68px;border-radius:14px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:${badgeColor};font-size:24px;"><i class="fa-solid fa-right-left"></i></div>`;
+            return `<div class="card" style="padding:12px; margin-bottom:0; display:flex; gap:12px; align-items:center; border-right:3px solid ${badgeColor}; background:linear-gradient(90deg, rgba(255,255,255,0.04), rgba(0,0,0,0.18));">
+                ${imageHtml}
+                <div style="flex:1; min-width:0;">
+                    <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:5px;">
+                        <b style="font-size:14px;color:var(--text);">${player}</b>
+                        <span style="background:${badgeColor}22; color:${badgeColor}; border:1px solid ${badgeColor}66; font-size:10px; font-weight:900; padding:2px 7px; border-radius:999px;">${badgeText}</span>
+                    </div>
+                    <div style="font-size:12px;color:var(--muted);line-height:1.7;">
+                        من <span style="color:#fff;font-weight:800;">${fromTeam}</span>
+                        إلى <span style="color:var(--primary);font-weight:900;">${toTeam}</span>
+                    </div>
+                    ${dateTxt ? `<div style="font-size:10px;color:var(--muted);margin-top:4px;font-family:Arial,sans-serif;">${dateTxt}</div>` : ''}
+                </div>
+            </div>`;
+        }
+
+        function renderTransfersFromCache() {
+            const containers = [document.getElementById('transfersContainerTeams'), document.getElementById('transfersContainerMedia')].filter(Boolean);
+            if (!containers.length) return;
+            const items = Object.keys(transfersDataGlobal || {}).map(k => ({ key: k, ...transfersDataGlobal[k] }))
+                .sort((a, b) => (b.time || 0) - (a.time || 0));
+            const html = items.length ? items.map(buildTransferCard).join('') : `<div class="card" style="padding:18px;text-align:center;color:var(--muted);font-size:12px;">
+                <i class="fa-solid fa-right-left" style="display:block;font-size:24px;margin-bottom:8px;color:var(--primary);"></i>
+                لا توجد انتقالات منشورة حالياً
+            </div>`;
+            containers.forEach(c => c.innerHTML = html);
+        }
+
+        db.ref(`tournaments/${dbPath}/transfers`).on('value', snap => {
+            transfersDataGlobal = snap.val() || {};
+            renderTransfersFromCache();
+        });
+
     db.ref(`tournaments/${dbPath}/teams`).on('value', snap => {
             teamsDataGlobal = snap.val() || {}; 
             const cont = document.getElementById('teamsContainer'); 
@@ -1234,11 +1313,11 @@ for(let k in data) {
 
         window.sendLiveChatMessage = function() {
             requireAuth(() => {
-                let name = localStorage.getItem('chatUserName'); let msg = document.getElementById('chatMsgInput').value.trim(); if(!msg) return;
+                let name = cleanPublicText(localStorage.getItem('chatUserName'), 40); let msg = cleanPublicText(document.getElementById('chatMsgInput').value, 100); if(!msg) return;
                 db.ref(`tournaments/${dbPath}/live_match/chat`).push({ name: name, msg: msg, time: Date.now() }); document.getElementById('chatMsgInput').value = '';
             });
         };
-        db.ref(`tournaments/${dbPath}/live_match/chat`).limitToLast(50).on('value', snap => { let cont = document.getElementById('liveChatMessages'); if(!cont) return; cont.innerHTML = ''; let myName = localStorage.getItem('chatUserName') || ''; let hasMsgs = false; snap.forEach(child => { hasMsgs = true; let d = child.val(); let isSelf = d.name === myName; cont.innerHTML += `<div class="chat-msg ${isSelf ? 'self' : ''}"><div class="chat-sender">${d.name}</div><div>${d.msg}</div></div>`; }); if(!hasMsgs) { cont.innerHTML = `<div style="text-align:center; color:var(--muted); font-size:12px; margin-top:20px;">${t('لا توجد تعليقات حتى الآن. كن أول من يعلق!')}</div>`; } else { cont.scrollTop = cont.scrollHeight; } });
+        db.ref(`tournaments/${dbPath}/live_match/chat`).limitToLast(50).on('value', snap => { let cont = document.getElementById('liveChatMessages'); if(!cont) return; cont.innerHTML = ''; let myName = localStorage.getItem('chatUserName') || ''; let hasMsgs = false; snap.forEach(child => { hasMsgs = true; let d = child.val() || {}; let isSelf = d.name === myName; appendSafeChatMessage(cont, d.name, d.msg, isSelf); }); if(!hasMsgs) { cont.innerHTML = `<div style="text-align:center; color:var(--muted); font-size:12px; margin-top:20px;">${t('لا توجد تعليقات حتى الآن. كن أول من يعلق!')}</div>`; } else { cont.scrollTop = cont.scrollHeight; } });
 
         db.ref(`tournaments/${dbPath}/groups`).on('value', snap => {
             const groups = snap.val() || {}; const cont = document.getElementById('groupsContainer'); cont.innerHTML = '';
@@ -1579,7 +1658,7 @@ for(let k in data) {
             switchMatchTab('md', 'events'); document.getElementById('mdTeam1Container').onclick = function() { window.openTeam(m.team1); }; document.getElementById('mdTeam2Container').onclick = function() { window.openTeam(m.team2); };
             let btnSq = document.getElementById('mdSquadBtn'); if(btnSq) { if((m.squad1 && Object.keys(m.squad1).length > 0) || (m.squad2 && Object.keys(m.squad2).length > 0)) { btnSq.style.display = 'block'; btnSq.onclick = function() { window.openSquads(m.team1, m.team2, m.squad1, m.squad2); }; } else { btnSq.style.display = 'none'; } }
             
-            db.ref(`tournaments/${dbPath}/saved_matches/${key}/comments`).on('value', snap => { let commentsHtml = ''; snap.forEach(child => { let c = child.val(); commentsHtml += `<div class="chat-msg" style="margin-bottom:5px;"><div class="chat-sender">${c.name}</div>${c.text}</div>`; }); document.getElementById('archiveCommentsList').innerHTML = commentsHtml || `<div style="font-size:11px; color:var(--muted); text-align:center;">${t('لا توجد تعليقات حتى الآن. كن أول من يعلق!')}</div>`; });
+            db.ref(`tournaments/${dbPath}/saved_matches/${key}/comments`).on('value', snap => { const cont = document.getElementById('archiveCommentsList'); if(!cont) return; cont.innerHTML = ''; let hasComments = false; snap.forEach(child => { hasComments = true; let c = child.val() || {}; appendSafeChatMessage(cont, c.name, c.text, false); }); if(!hasComments) cont.innerHTML = `<div style="font-size:11px; color:var(--muted); text-align:center;">${t('لا توجد تعليقات حتى الآن. كن أول من يعلق!')}</div>`; });
 
             try { history.pushState({ modal: 'matchDetailsModal' }, "", "#match"); }catch(e){}
             document.getElementById('matchDetailsModal').style.display = 'block';
@@ -1590,7 +1669,7 @@ for(let k in data) {
         window.closePlayerModal = function() { closeModal('playerModal'); if(history.state && history.state.modal) history.back(); };
         window.closeSquadsModal = function() { closeModal('squadsModal'); if(history.state && history.state.modal) history.back(); };
 
-        window.sendArchiveComment = function() { requireAuth(() => { let id = document.getElementById('currentArchiveMatchId').value; let name = localStorage.getItem('chatUserName'); let text = document.getElementById('arcCommentText').value.trim(); if(!text) return; db.ref(`tournaments/${dbPath}/saved_matches/${id}/comments`).push({ name: name, text: text, time: Date.now() }); document.getElementById('arcCommentText').value = ''; }); };
+        window.sendArchiveComment = function() { requireAuth(() => { let id = cleanTournamentId(document.getElementById('currentArchiveMatchId').value); let name = cleanPublicText(localStorage.getItem('chatUserName'), 40); let text = cleanPublicText(document.getElementById('arcCommentText').value, 150); if(!text) return; db.ref(`tournaments/${dbPath}/saved_matches/${id}/comments`).push({ name: name, text: text, time: Date.now() }); document.getElementById('arcCommentText').value = ''; }); };
 
         window.openScheduledMatch = function(key) {
             let m = scheduleGlobal[key]; if(!m) return; let info = []; if(m.group) info.push(t('مجموعة') + ' ' + m.group); if(m.round) info.push(t(m.round)); if(m.leg) info.push(t(m.leg));
@@ -1626,10 +1705,39 @@ window.nav = function(tabId, btn) {
     window.scrollTo(0,0);
 };        
 window.openTeamSubTab = function(tabId, btn) {
-            document.querySelectorAll('.team-sub-tab').forEach(t => t.style.display = 'none');
-            document.querySelectorAll('#teamModalContent .sub-tab-btn').forEach(b => { b.style.background = 'transparent'; b.style.color = 'var(--muted)'; });
-            document.getElementById(tabId).style.display = 'block';
-            btn.style.background = 'var(--primary)'; btn.style.color = '#fff';
+            const target = document.getElementById(tabId);
+            if (!target) return;
+
+            // تبويبات صفحة الفرق الرئيسية: الفرق / سوق الانتقالات
+            if (tabId === 'teams-list' || tabId === 'teams-transfers') {
+                document.querySelectorAll('#page-teams .team-sub-content').forEach(t => t.style.display = 'none');
+                document.querySelectorAll('#page-teams .sub-tab-btn').forEach(b => {
+                    b.style.background = 'transparent';
+                    b.style.color = 'var(--muted)';
+                });
+                target.style.display = 'block';
+                if (btn) {
+                    btn.style.background = 'var(--primary)';
+                    btn.style.color = '#000';
+                }
+                if (tabId === 'teams-transfers' && typeof renderTransfersFromCache === 'function') {
+                    renderTransfersFromCache();
+                }
+                return;
+            }
+
+            // تبويبات مودال الفريق: نظرة عامة / المباريات
+            const scope = target.closest('#teamModalContent') || document;
+            scope.querySelectorAll('.team-sub-tab').forEach(t => t.style.display = 'none');
+            scope.querySelectorAll('.sub-tab-btn').forEach(b => {
+                b.style.background = 'transparent';
+                b.style.color = 'var(--muted)';
+            });
+            target.style.display = 'block';
+            if (btn) {
+                btn.style.background = 'var(--primary)';
+                btn.style.color = '#fff';
+            }
         };
 
         window.renderTeamMatches = function(tName) {
