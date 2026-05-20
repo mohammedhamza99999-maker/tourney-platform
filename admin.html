@@ -762,6 +762,47 @@
         firebase.initializeApp(firebaseConfig); 
         const db = firebase.database(); 
         const auth = firebase.auth();
+// دالة لتوليد حقول إدخال اللاعبين الـ 15 تلقائياً في الواجهة
+function generatePlayersGrid() {
+    const grid = document.getElementById('playersGridInputs');
+    if (!grid) return;
+    grid.innerHTML = '';
+    let html = '';
+    const positions = `
+        <option value="">المركز...</option>
+        <option value="GK">حارس مرمى</option>
+        <option value="CB">قلب دفاع</option>
+        <option value="LB">مدافع أيسر</option>
+        <option value="RB">مدافع أيمن</option>
+        <option value="CDM">ارتكاز دفاعي</option>
+        <option value="CM">وسط محور</option>
+        <option value="CAM">صانع ألعاب</option>
+        <option value="LM">وسط أيسر</option>
+        <option value="RM">وسط أيمن</option>
+        <option value="LW">جناح أيسر</option>
+        <option value="RW">جناح أيمن</option>
+        <option value="ST">مهاجم</option>
+    `;
+    for (let i = 1; i <= 15; i++) {
+        html += `
+        <div class="sub-panel" style="margin-bottom: 10px; padding: 10px; border: 1px solid #27272a; background: #0f0f11;">
+            <label>لاعب ${i}:</label>
+            <input type="text" id="p${i}" placeholder="اسم اللاعب الثلاثي..." style="margin-bottom:8px;">
+            <div class="flex-row" style="margin-bottom:0; display:flex; gap:10px; align-items:center;">
+                <select id="pPos${i}" style="margin:0; flex:2;">${positions}</select>
+                <label id="pLabel${i}" for="pImg${i}" style="margin:0; background:#27272a; border:1px solid #3f3f46; border-radius:8px; padding:10px; text-align:center; cursor:pointer; flex:1; display:flex; align-items:center; justify-content:center; gap:5px; color:var(--text); font-size:12px;">
+                    <i id="pIcon${i}" class="fa-solid fa-camera" style="color:var(--muted);"></i> صورة
+                </label>
+                <input type="file" id="pImg${i}" accept="image/*" style="display:none;" onchange="document.getElementById('pIcon${i}').className='fa-solid fa-check'; document.getElementById('pIcon${i}').style.color='var(--accent)';">
+            </div>
+        </div>
+        `;
+    }
+    grid.innerHTML = html;
+}
+
+// تشغيل الدالة فوراً لتجهيز العناصر في الـ DOM
+generatePlayersGrid();
 
         let dbPath = ""; 
         let testModeActive = false; let allData = {}; let adminClockInterval; let isInternalUpdate = false;
