@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
@@ -183,6 +184,19 @@
 
         let tempUid = "";
 
+        function cleanTournamentId(value) {
+            return String(value || '').trim().replace(/[^A-Za-z0-9_-]/g, '').slice(0, 80);
+        }
+
+        function makeDeviceFingerprint() {
+            if (window.crypto && crypto.getRandomValues) {
+                const bytes = new Uint8Array(18);
+                crypto.getRandomValues(bytes);
+                return 'DEVICE_' + Array.from(bytes).map(b => b.toString(36).padStart(2, '0')).join('').toUpperCase() + '_' + Date.now().toString(36).toUpperCase();
+            }
+            return "DEVICE_" + Math.random().toString(36).slice(2, 14).toUpperCase() + "_" + Date.now().toString(36).toUpperCase();
+        }
+
         async function handleLogin() {
             const email = document.getElementById('emailInput').value.trim();
             const pass = document.getElementById('passInput').value.trim();
@@ -219,7 +233,7 @@
 
                 // فحص تاريخ انتهاء الاشتراك
                 const today = new Date();
-                const expiry = new Date(userData.end_date);
+                const expiry = new Date(userData.end_date + 'T23:59:59');
                 if(expiry < today) {
                     alert("❌ انتهت مدة اشتراكك في المنصة. يرجى تجديد التفعيل من الإدارة.");
                     auth.signOut();
@@ -237,7 +251,7 @@
                     document.getElementById('activationSection').style.display = 'block';
                 } else if (userData.device_id === localFingerprint) {
                     // الجهاز موثق ومطابق، نحفظ مسار البطولة وندخله فوراً
-                    localStorage.setItem('activeDbPath', userData.tournament_id);
+                    localStorage.setItem('activeDbPath', cleanTournamentId(userData.tournament_id));
                     localStorage.setItem('visualName', userData.email.split('@')[0]); // اسم افتراضي للبطولة
                     window.location.href = "admin.html";
                 } else {
@@ -257,7 +271,7 @@
         async function handleActivation() {
             const code = document.getElementById('activationCode').value.trim().toUpperCase();
             const loader = document.getElementById('activationLoader');
-            if(!code) return alert("الرجاء إدخال كود التفعيل الممنوح لك");
+            if(!/^[A-Z0-9]{6,12}$/.test(code)) return alert("الرجاء إدخال كود تفعيل صحيح");
 
             loader.style.display = 'block';
 
@@ -268,10 +282,15 @@
 
                 if (codeData && codeData.status === 'active' && codeData.uid === tempUid) {
                     // توليد بصمة فريدة ومؤمنة للمتصفح الحالي
-                    const fingerprint = "DEVICE_" + Math.random().toString(36).substr(2, 9).toUpperCase() + "_" + Date.now().toString(36).toUpperCase();
+                    const fingerprint = makeDeviceFingerprint();
                     
-                    // قفل وتحديث البيانات بالفايربيس
-                    await db.ref(`saas_users/${tempUid}`).update({ device_id: fingerprint });
+                    // قفل وتحديث البيانات بالفايربيس عبر transaction حتى لا يتم ربط نفس الحساب بجهازين بنفس اللحظة
+                    const deviceTx = await db.ref(`saas_users/${tempUid}/device_id`).transaction(current => {
+                        return current ? undefined : fingerprint;
+                    });
+                    if(!deviceTx.committed) {
+                        throw new Error("هذا الحساب تم ربطه بجهاز آخر بالفعل.");
+                    }
                     await db.ref(`activation_codes/${code}`).update({ status: 'used', used_by: tempUid, used_at: Date.now() });
                     
                     // حفظ البصمة ومسار البطولة محلياً بالمتصفح
@@ -279,7 +298,7 @@
                     const userData = userSnap.val();
 
                     localStorage.setItem('secure_device_token', fingerprint);
-                    localStorage.setItem('activeDbPath', userData.tournament_id);
+                    localStorage.setItem('activeDbPath', cleanTournamentId(userData.tournament_id));
                     
                     alert("تم توثيق وربط هذا الجهاز بنجاح! 🎉 جاري تحويلك للوحة التحكم...");
                     window.location.href = "admin.html";
