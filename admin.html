@@ -8,6 +8,7 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-functions.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jsrsasign/10.9.0/jsrsasign-all-min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -1271,34 +1272,31 @@ generatePlayersGrid();
             }
         });
 
-        async function getFcmAccessToken() {
-            const header = { alg: 'RS256', typ: 'JWT' }; const now = Math.floor(Date.now() / 1000);
-            const claim = { iss: "firebase-adminsdk-fbsvc@kdcc-85139.iam.gserviceaccount.com", scope: "https://www.googleapis.com/auth/firebase.messaging", aud: "https://oauth2.googleapis.com/token", exp: now + 3600, iat: now };
-            const privateKey = "-----BEGIN PRIVATE KEY-----\nMIIEvwIBADANBgkqhkiG9w0BAQEFAASCBKkwggSlAgEAAoIBAQDAgKiGy8mX656h\nAA02+Hm6y30q2TwSPgpXbZ2ce9VHDp0jicMEsg3WxR+nkuVAyfXQwhjLTWQZxMih\nTLQD5krRtYmDXyXlkSUFJBJw5BYEJR7w72w3U+scn8iv0Uoz1uS0acLxvLCEeCgT\nznjWPukYxP+SmU5goImaC1lge164mnICSs0v/pvnB8Z8LSnd8GGjfqfPU/37cb1h\nvvyk5GKiJYalvj97wkGHaNK7XEXM5Myb1huwQym4QjyRCy64u/8aM9moHDzkdhWQ\nSk5KQ4nMSMfPpnq+YhaIusjbGm78NessrAfy0thRWLuK4ycZV2J6xRoNjTmOpLA3\n3PAP0nzVAgMBAAECggEAEMQj6XmeWUkAS+2BOSRzFb3bbPv2q3AT3oGBlLuEW+f9\n77Zz8djAM9B/bUzyAq6UZlZBapOXAFePUd0oYJ6SLamuDG8hEdmOa+A0aviyojHJ\nfBqeRkNc2uVfyVBlMhapXL1JaVyR0zfT5cW56I8aJjoiOFZ56RiSY4RRiIG2QkWq\nnb0Opg3bgrXHWz2d/LbQa2LtpePeOc6loMlMeBXzmCpT19HKdkCISLIJpnvc9H6I\n5TBFtd5AJHc0RlGNKHwevSRDuXTJAHj7JiLMjfcF0RpEjvn2T/dcJ/XiV6D6zV/E\nuu+6PBY0CuKxnOol9304E4c5ZahxoB7HDqRcBWQYAQKBgQDttNCi5MvYP2Wicm7l\nK8dvWrZZCfITUTMlb85fNYW4bqTKQ95uNz6O3hv2sYQ7DwKlushzodllijIk9ozA\n4naq4xQXEcFlZMGE7A7Dray/2JJQYy9/yF29Al2P3cm3FEPZwvl5ZnUIUpva/b8K\nvvYMX5cgPM3dendBMgMt5XYEVQKBgQDPUUJa80VZ9t6BR2mJqMub5T8FuDfut00m\naXd3KUvXrFSajzBDuKEvSZPLsJ2VZlxCVt1yreYtizMKnlvULnobSi9ULkgTAJpj\n1PD4jEhm60b8ew/yzTgCuh5UjIE53RECZs59g45sYXaH8lT0/dkDjMT8pW4f9JXh\nPDvy4g8WgQKBgQDdHbySOmiQgPCm+vHDRkUfhW9oRgMkCv2bznRXRm9cT7gE2rs3\nJTaRKXUzto99bIoW5jf+sEiM1s+saJgn+MFQVyliCEcxbVdCsV9OkOjIEMqR8qHF\nqPnhjyi/Yh14q2YuU9tDHZayJj4KqM2kTlyMyALJnyYU5w213LLuZ6uvfQKBgQCo\nRhwzGbdUrGJR8GIWqau9naZekjTeHXhBepKGmY61UhCJK9GhQVjZl40TkL8XbIv\nqmKVgOYyqIIs4rshCWP6ig2QU8v+2IC5LVmHbOD+A+FKO/Sur0Ycwa8laNk5bJkG\n8QKEhtjxQRucWfXLBCLahkU4jnvQtaao98pyMnW/AQKBgQCy3zOG6vuIspviq38s\nLyGzmjk+peZX1C4B5aM+Xq/QIxotNqorVwoEuF9LWB3m4esg4o+4dSNY8ULz+7cU\nVHP8zxUA9WO4t/azGnJnS3ZAgAnchKRJrBG61PxmoS1I0inE1q6aNZAKzzWFz5ar\n3kOPb8HxFDXPWLJgdHdRLmN6oQ==\n-----END PRIVATE KEY-----\n";
-            const jwt = KJUR.jws.JWS.sign(null, header, claim, privateKey);
-            const response = await fetch("https://oauth2.googleapis.com/token", { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: `grant_type=urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Ajwt-bearer&assertion=${jwt}` });
-            const data = await response.json(); return data.access_token;
-        }
-
         async function sendManualPush(title, message) {
-            if(typeof testModeActive !== 'undefined' && testModeActive) { alert(`[تجربة]\n${title}\n${message}`); return; }
+            if(typeof testModeActive !== 'undefined' && testModeActive) { alert(`[تجربة]
+${title}
+${message}`); return; }
+            if(!dbPath) return alert("لم يتم تحديد البطولة بعد");
             try {
-                showSaveIndicator("جاري الإرسال...");
-                const accessToken = await getFcmAccessToken();
-                const tokensSnap = await db.ref('fcm_tokens').once('value'); const tokens = tokensSnap.val();
-                if(!tokens) { hideSaveIndicator(); return alert("لا يوجد مشتركين حالياً"); }
-                let count = 0; let deadTokens = 0;
-                for(let id in tokens) {
-                    const payload = { message: { token: tokens[id].token, notification: { title: title, body: message }, webpush: { fcm_options: { link: "https://mohammedhamza99999-maker.github.io/kdc/" } } } };
-                    try {
-                        let response = await fetch("https://fcm.googleapis.com/v1/projects/kdcc-85139/messages:send", { method: "POST", headers: { "Authorization": `Bearer ${accessToken}`, "Content-Type": "application/json" }, body: JSON.stringify(payload) });
-                        let result = await response.json();
-                        if (result.error) { if (result.error.status === 'UNREGISTERED' || result.error.status === 'INVALID_ARGUMENT' || result.error.status === 'NOT_FOUND') { await db.ref('fcm_tokens/' + id).remove(); deadTokens++; } } else { count++; }
-                    } catch (e) { console.error(e); }
-                }
+                showSaveIndicator("جاري إرسال الإشعار...");
+                const publicInput = document.getElementById('publicAppUrl');
+                const publicLink = publicInput && publicInput.value ? publicInput.value : (window.location.origin + window.location.pathname.replace('admin.html', 'index.html') + '?db=' + encodeURIComponent(dbPath));
+                const sendPush = firebase.functions().httpsCallable('sendTournamentPush');
+                const res = await sendPush({
+                    title: String(title || '').slice(0, 80),
+                    message: String(message || '').slice(0, 220),
+                    tournament_id: dbPath,
+                    link: publicLink
+                });
                 hideSaveIndicator();
-                alert(`تم الإرسال لـ ${count} مشترك`);
-            } catch (error) { alert("حدث خطأ أثناء الاتصال بجوجل"); }
+                const data = res.data || {};
+                alert(`تم الإرسال لـ ${data.successCount || 0} مشترك` + (data.failureCount ? `
+فشل: ${data.failureCount}` : ''));
+            } catch (error) {
+                hideSaveIndicator();
+                console.error('Push error:', error);
+                alert("فشل إرسال الإشعار: " + (error.message || error));
+            }
         }
 
         window.sendCustomPreMatchPush = function(id) { let m = allData.schedule[id]; if(!m) return; let timeText = document.getElementById('remTime_' + id).value || 'قريباً'; let title = "مباراة قادمة"; let msg = `مباراة ${m.team1} ضد ${m.team2} - تبدأ ${timeText}`; sendManualPush(title, msg); }
