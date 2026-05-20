@@ -923,6 +923,10 @@
         let globalSettings = {};
         db.ref(`tournaments/${dbPath}/settings`).on('value', snap => {
             let s = snap.val() || {}; globalSettings = s; window.testModeActive = s.testMode === true; window.triggerLiveVisibilityUpdate();
+// تحديث اسم البطولة للجمهور فوراً من الفايربيس
+    let displayTitle = s.visualName || "بطولة دوائر خانقين";
+    document.getElementById('displayTourneyName').innerText = displayTitle;
+    document.title = displayTitle;
             let root = document.documentElement; let tTheme = s.theme || 'blue';
             if(tTheme === 'blue') { root.style.setProperty('--primary', '#3b82f6'); root.style.setProperty('--accent', '#4ade80'); } else if(tTheme === 'gold') { root.style.setProperty('--primary', '#d4af37'); root.style.setProperty('--accent', '#facc15'); } else if(tTheme === 'green') { root.style.setProperty('--primary', '#10b981'); root.style.setProperty('--accent', '#34d399'); } else if(tTheme === 'crimson') { root.style.setProperty('--primary', '#e11d48'); root.style.setProperty('--accent', '#fb7185'); } else if(tTheme === 'purple') { root.style.setProperty('--primary', '#8b5cf6'); root.style.setProperty('--accent', '#c084fc'); } else if(tTheme === 'orange') { root.style.setProperty('--primary', '#f97316'); root.style.setProperty('--accent', '#fbbf24'); } else if(tTheme === 'neon') { root.style.setProperty('--primary', '#39ff14'); root.style.setProperty('--accent', '#0ff'); root.style.setProperty('--bg', '#050505'); root.style.setProperty('--card', '#111'); } if(tTheme !== 'neon') { root.style.setProperty('--bg', '#0e1318'); root.style.setProperty('--card', '#1a222b'); }
             
@@ -1613,7 +1617,15 @@ for(let k in data) {
 
         window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); });
 
-        window.openTeamSubTab = function(tabId, btn) {
+window.nav = function(tabId, btn) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+    let targetPage = document.getElementById('page-' + tabId);
+    if(targetPage) targetPage.classList.add('active');
+    if(btn) btn.classList.add('active');
+    window.scrollTo(0,0);
+};        
+window.openTeamSubTab = function(tabId, btn) {
             document.querySelectorAll('.team-sub-tab').forEach(t => t.style.display = 'none');
             document.querySelectorAll('#teamModalContent .sub-tab-btn').forEach(b => { b.style.background = 'transparent'; b.style.color = 'var(--muted)'; });
             document.getElementById(tabId).style.display = 'block';
