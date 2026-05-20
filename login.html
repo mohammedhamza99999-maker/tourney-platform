@@ -17,67 +17,61 @@
             --card: #0a0a0a; /* لون الكارد غامق جداً */
             --border: #1f1f1f;
             --input-bg: #0f0f0f;
+            --muted: #666;
         }
 
         body {
             background-color: var(--bg);
-            background-image: 
-                radial-gradient(circle at 10% 20%, rgba(74, 222, 128, 0.05) 0%, transparent 20%),
-                radial-gradient(circle at 90% 80%, rgba(74, 222, 128, 0.05) 0%, transparent 20%);
-            color: #ffffff;
+            color: #fff;
             font-family: 'Cairo', sans-serif;
             margin: 0;
             display: flex;
-            align-items: center;
             justify-content: center;
+            align-items: center;
             min-height: 100vh;
             padding: 20px;
+            box-sizing: border-box;
         }
 
         .login-card {
             background: var(--card);
             border: 1px solid var(--border);
             border-radius: 20px;
-            padding: 40px 30px;
+            padding: 35px 25px;
             width: 100%;
-            max-width: 380px;
-            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.8);
+            max-width: 400px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.8);
             text-align: center;
         }
 
-        .logo-area {
+        .logo-icon {
             font-size: 45px;
             color: var(--primary);
             margin-bottom: 15px;
+            text-shadow: 0 0 15px rgba(74, 222, 128, 0.3);
         }
 
         h2 {
             font-weight: 900;
-            margin: 0;
+            margin: 0 0 5px 0;
             font-size: 22px;
-            color: #fff;
-            letter-spacing: -0.5px;
+            letter-spacing: 0.5px;
         }
 
-        p.desc {
-            color: #666;
+        p.subtitle {
+            color: var(--muted);
             font-size: 12px;
-            margin-top: 8px;
-            margin-bottom: 30px;
+            margin: 0 0 30px 0;
         }
 
-        .input-box {
-            margin-bottom: 18px;
-            text-align: right;
-        }
-
-        .input-box label {
-            display: block;
+        label {
             font-size: 11px;
             color: #888;
+            display: block;
+            text-align: right;
             margin-bottom: 6px;
+            margin-right: 5px;
             font-weight: bold;
-            padding-right: 4px;
         }
 
         input {
@@ -85,183 +79,217 @@
             padding: 14px;
             background: var(--input-bg);
             border: 1px solid var(--border);
-            border-radius: 10px;
-            color: #ffffff;
-            font-family: 'Cairo', sans-serif;
+            border-radius: 12px;
+            color: #fff;
+            font-family: 'Cairo';
+            margin-bottom: 20px;
             box-sizing: border-box;
-            transition: 0.3s;
-            outline: none;
             text-align: center;
             font-size: 14px;
+            transition: 0.3s ease;
         }
 
         input:focus {
             border-color: var(--primary);
-            background: #000;
+            outline: none;
+            box-shadow: 0 0 10px rgba(74, 222, 128, 0.1);
         }
 
         button {
             width: 100%;
-            padding: 15px;
+            padding: 14px;
             background: var(--primary);
             color: #000;
             border: none;
-            border-radius: 10px;
-            font-family: 'Cairo', sans-serif;
+            border-radius: 12px;
             font-weight: 900;
-            font-size: 15px;
             cursor: pointer;
-            transition: 0.3s;
-            margin-top: 10px;
+            font-family: 'Cairo';
+            font-size: 16px;
+            transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
         }
 
         button:hover {
-            filter: brightness(1.1);
+            background: #22c55e;
             transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(34, 197, 94, 0.3);
         }
 
-        /* التذييل باسمك ورقمك فقط */
-        .dev-footer {
-            margin-top: 35px;
-            padding-top: 20px;
-            border-top: 1px solid var(--border);
-        }
-
-        .dev-footer p {
-            margin: 0;
-            font-size: 10px;
-            color: #444;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        .dev-footer a {
-            color: #eee;
-            text-decoration: none;
-            font-size: 15px;
-            font-weight: 700;
-            display: block;
-            margin-top: 4px;
+        button:disabled {
+            background: #222 !important;
+            color: #555 !important;
+            cursor: not-allowed;
+            transform: none !important;
+            box-shadow: none !important;
         }
 
         .loader {
             display: none;
-            margin-top: 15px;
             font-size: 12px;
             color: var(--primary);
+            margin-top: 15px;
             font-weight: bold;
         }
-
-        #activationSection { display: none; }
     </style>
 </head>
 <body>
 
-    <div class="login-card">
-        <div class="logo-area">
-            <i class="fa-solid fa-lock"></i>
-        </div>
+    <div class="login-card" id="loginSection">
+        <div class="logo-icon"><i class="fa-solid fa-shield-halved"></i></div>
+        <h2>لوحة تحكم المنظمين</h2>
+        <p class="subtitle">سجل الدخول لإدارة بطولاتك وإحصائيات الملاعب</p>
+        
+        <label>البريد الإلكتروني المعتمد:</label>
+        <input type="email" id="emailInput" placeholder="example@mail.com" dir="ltr">
+        
+        <label>كلمة المرور:</label>
+        <input type="password" id="passInput" placeholder="••••••••" dir="ltr">
+        
+        <button id="loginBtn" onclick="handleLogin()"><i class="fa-solid fa-right-to-bracket"></i> دخول اللوحة</button>
+        <div class="loader" id="loginLoader"><i class="fa-solid fa-spinner fa-spin"></i> جاري التحقق من الحساب والأجهزة...</div>
+    </div>
 
-        <div id="loginSection">
-            <h2>دخول المنظمين</h2>
-            <p class="desc">نظام إدارة البطولات الذكي</p>
-
-            <div class="input-box">
-                <label>البريد الإلكتروني</label>
-                <input type="email" id="emailInput" placeholder="email@example.com" dir="ltr">
-            </div>
-
-            <div class="input-box">
-                <label>كلمة المرور</label>
-                <input type="password" id="passwordInput" placeholder="••••••••" dir="ltr">
-            </div>
-
-            <button onclick="handleLogin()">تسجيل الدخول</button>
-            <div id="loginLoader" class="loader">جاري التحقق...</div>
-        </div>
-
-        <div id="activationSection">
-            <h2>توثيق الجهاز</h2>
-            <p class="desc">أدخل كود التفعيل لمرة واحدة لربط حسابك بهذا الجهاز</p>
-
-            <div class="input-box">
-                <label>كود التفعيل</label>
-                <input type="text" id="activationCode" placeholder="--------" maxlength="8" dir="ltr" style="letter-spacing: 4px; font-weight: 900; text-transform: uppercase;">
-            </div>
-
-            <button onclick="handleActivation()">تفعيل الجهاز الآن</button>
-            <div id="activationLoader" class="loader">جاري التوثيق...</div>
-        </div>
-
-        <div class="dev-footer">
-            <p>DESIGNED BY</p>
-            <a href="tel:07717007839">محمد حمزة | 07717007839</a>
-        </div>
+    <div class="login-card" id="activationSection" style="display: none;">
+        <div class="logo-icon" style="color: #f59e0b;"><i class="fa-solid fa-mobile-screen-button"></i></div>
+        <h2>توثيق وتفعيل الجهاز</h2>
+        <p class="subtitle" style="color:#f59e0b;">تم رصد جهاز جديد! يرجى إدخال كود التفعيل الممنوح لك من الإدارة لقفل الحساب على هذا الجهاز.</p>
+        
+        <label>كود التفعيل المتكون من 8 رموز:</label>
+        <input type="text" id="activationCode" placeholder="ABC123XYZ" dir="ltr" style="letter-spacing: 2px; text-transform: uppercase; font-weight: 900; color: #f59e0b; border-color: #f59e0b66;">
+        
+        <button onclick="handleActivation()" style="background: #f59e0b;"><i class="fa-solid fa-lock"></i> ربط وتوثيق هذا الجهاز</button>
+        <div class="loader" id="activationLoader" style="color:#f59e0b;"><i class="fa-solid fa-spinner fa-spin"></i> جاري قفل الحساب على هذا الجهاز...</div>
     </div>
 
     <script>
+        // الإعدادات الجديدة والربط بمشروعك touner-88371
         const firebaseConfig = {
-            apiKey: "AIzaSyCfaXlGarmxWH8HkxDqdvOAtTqJaF0LXvg",
-            authDomain: "kdcsaas.firebaseapp.com",
-            projectId: "kdcsaas",
-            databaseURL: "https://kdcsaas-default-rtdb.firebaseio.com"
+            apiKey: "AIzaSyBtiuPzJYI98lgvkRSUKF30LkMkdv8COpQ",
+            authDomain: "touner-88371.firebaseapp.com",
+            databaseURL: "https://touner-88371-default-rtdb.firebaseio.com",
+            projectId: "touner-88371",
+            storageBucket: "touner-88371.firebasestorage.app",
+            messagingSenderId: "408830354970",
+            appId: "1:408830354970:web:566cbca4878a2e44ea53a3"
         };
-        firebase.initializeApp(firebaseConfig);
-        const auth = firebase.auth();
-        const db = firebase.database();
-        let tempUid = null;
 
-        auth.onAuthStateChanged((user) => {
-            if (user) verifySecurity(user.uid);
-        });
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+        const auth = firebase.auth();
+
+        let tempUid = "";
 
         async function handleLogin() {
             const email = document.getElementById('emailInput').value.trim();
-            const pass = document.getElementById('passwordInput').value.trim();
-            if(!email || !pass) return alert("أكمل البيانات");
-            document.getElementById('loginLoader').style.display = 'block';
-            try { await auth.signInWithEmailAndPassword(email, pass); } 
-            catch (e) { document.getElementById('loginLoader').style.display = 'none'; alert("خطأ في الدخول"); }
-        }
+            const pass = document.getElementById('passInput').value.trim();
+            const btn = document.getElementById('loginBtn');
+            const loader = document.getElementById('loginLoader');
 
-        async function verifySecurity(uid) {
-            const snap = await db.ref(`saas_users/${uid}`).once('value');
-            const userData = snap.val();
-            if (!userData || userData.status !== 'active') {
-                alert("الحساب معطل"); auth.signOut(); location.reload(); return;
-            }
-            
-            // تم التوحيد مع اسم البصمة في الأدمن
-            const localFingerprint = localStorage.getItem('tourney_device_id');
-            
-            if (!userData.device_id) {
-                tempUid = uid;
-                document.getElementById('loginSection').style.display = 'none';
-                document.getElementById('activationSection').style.display = 'block';
-            } else if (userData.device_id === localFingerprint) {
-                window.location.href = "admin.html";
-            } else {
-                alert("هذا الحساب مرتبط بجهاز آخر"); auth.signOut(); location.reload();
+            if(!email || !pass) return alert("الرجاء ملء جميع الحقول أولاً");
+
+            btn.disabled = true;
+            loader.style.display = "block";
+
+            try {
+                const userCredential = await auth.signInWithEmailAndPassword(email, pass);
+                const uid = userCredential.user.uid;
+
+                // جلب بيانات المنظم من عقدة الماستر أدمن saas_users
+                const userSnap = await db.ref(`saas_users/${uid}`).once('value');
+                const userData = userSnap.val();
+
+                if(!userData) {
+                    alert("خطأ: الحساب غير مدرج في نظام الاشتراكات التجاري.");
+                    auth.signOut();
+                    location.reload();
+                    return;
+                }
+
+                // فحص حالة الحساب (نشط أو موقوف)
+                if(userData.status === "suspended") {
+                    alert("❌ تم إيقاف حسابك مؤقتاً من قبل الإدارة العليا. يرجى مراجعة الدعم.");
+                    auth.signOut();
+                    location.reload();
+                    return;
+                }
+
+                // فحص تاريخ انتهاء الاشتراك
+                const today = new Date();
+                const expiry = new Date(userData.end_date);
+                if(expiry < today) {
+                    alert("❌ انتهت مدة اشتراكك في المنصة. يرجى تجديد التفعيل من الإدارة.");
+                    auth.signOut();
+                    location.reload();
+                    return;
+                }
+
+                // فحص القييد وحماية الأجهزة
+                const localFingerprint = localStorage.getItem('secure_device_token');
+
+                if(!userData.device_id) {
+                    // الجهاز غير مربوط بعد (أول دخول للعميل)
+                    tempUid = uid;
+                    document.getElementById('loginSection').style.display = 'none';
+                    document.getElementById('activationSection').style.display = 'block';
+                } else if (userData.device_id === localFingerprint) {
+                    // الجهاز موثق ومطابق، نحفظ مسار البطولة وندخله فوراً
+                    localStorage.setItem('activeDbPath', userData.tournament_id);
+                    localStorage.setItem('visualName', userData.email.split('@')[0]); // اسم افتراضي للبطولة
+                    window.location.href = "admin.html";
+                } else {
+                    // الحساب مسجل بجهاز شخص ثاني ومحمي من المشاركة
+                    alert("❌ عذراً! هذا الحساب مقيد بجهاز آخر ولا يمكن تشغيله من هذا المتصفح.");
+                    auth.signOut();
+                    location.reload();
+                }
+
+            } catch (error) {
+                alert("فشل تسجيل الدخول: " + error.message);
+                btn.disabled = false;
+                loader.style.display = "none";
             }
         }
 
         async function handleActivation() {
             const code = document.getElementById('activationCode').value.trim().toUpperCase();
-            if(!code) return alert("أدخل الكود");
-            document.getElementById('activationLoader').style.display = 'block';
-            const codeSnap = await db.ref(`activation_codes/${code}`).once('value');
-            if (codeSnap.val() && codeSnap.val().status === 'active') {
-                const fingerprint = "DEVICE_" + Math.random().toString(36).substr(2, 10);
-                await db.ref(`saas_users/${tempUid}`).update({ device_id: fingerprint });
-                await db.ref(`activation_codes/${code}`).update({ status: 'used', used_by: tempUid });
-                
-                // تم التوحيد هنا أيضاً
-                localStorage.setItem('tourney_device_id', fingerprint);
-                
-                window.location.href = "admin.html";
-            } else {
-                document.getElementById('activationLoader').style.display = 'none';
-                alert("الكود غير صالح");
+            const loader = document.getElementById('activationLoader');
+            if(!code) return alert("الرجاء إدخال كود التفعيل الممنوح لك");
+
+            loader.style.display = 'block';
+
+            try {
+                // الفحص والتوثيق من عقدة الأكواد
+                const codeSnap = await db.ref(`activation_codes/${code}`).once('value');
+                const codeData = codeSnap.val();
+
+                if (codeData && codeData.status === 'active' && codeData.uid === tempUid) {
+                    // توليد بصمة فريدة ومؤمنة للمتصفح الحالي
+                    const fingerprint = "DEVICE_" + Math.random().toString(36).substr(2, 9).toUpperCase() + "_" + Date.now().toString(36).toUpperCase();
+                    
+                    // قفل وتحديث البيانات بالفايربيس
+                    await db.ref(`saas_users/${tempUid}`).update({ device_id: fingerprint });
+                    await db.ref(`activation_codes/${code}`).update({ status: 'used', used_by: tempUid, used_at: Date.now() });
+                    
+                    // حفظ البصمة ومسار البطولة محلياً بالمتصفح
+                    const userSnap = await db.ref(`saas_users/${tempUid}`).once('value');
+                    const userData = userSnap.val();
+
+                    localStorage.setItem('secure_device_token', fingerprint);
+                    localStorage.setItem('activeDbPath', userData.tournament_id);
+                    
+                    alert("تم توثيق وربط هذا الجهاز بنجاح! 🎉 جاري تحويلك للوحة التحكم...");
+                    window.location.href = "admin.html";
+                } else {
+                    loader.style.display = 'none';
+                    alert("❌ الكود غير صحيح، أو غير مخصص لهذا الحساب، أو تم استخدامه مسبقاً.");
+                }
+            } catch (error) {
+                alert("حدث خطأ أثناء التفعيل: " + error.message);
+                loader.style.display = 'none';
             }
         }
     </script>
