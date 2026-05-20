@@ -762,75 +762,104 @@
         firebase.initializeApp(firebaseConfig); 
         const db = firebase.database(); 
         const auth = firebase.auth();
+// دالة لتوليد حقول إدخال اللاعبين الـ 15 تلقائياً في الواجهة
+function generatePlayersGrid() {
+    const grid = document.getElementById('playersGridInputs');
+    if (!grid) return;
+    grid.innerHTML = '';
+    let html = '';
+    const positions = `
+        <option value="">المركز...</option>
+        <option value="GK">حارس مرمى</option>
+        <option value="CB">قلب دفاع</option>
+        <option value="LB">مدافع أيسر</option>
+        <option value="RB">مدافع أيمن</option>
+        <option value="CDM">ارتكاز دفاعي</option>
+        <option value="CM">وسط محور</option>
+        <option value="CAM">صانع ألعاب</option>
+        <option value="LM">وسط أيسر</option>
+        <option value="RM">وسط أيمن</option>
+        <option value="LW">جناح أيسر</option>
+        <option value="RW">جناح أيمن</option>
+        <option value="ST">مهاجم</option>
+    `;
+    for (let i = 1; i <= 15; i++) {
+        html += `
+        <div class="sub-panel" style="margin-bottom: 10px; padding: 10px; border: 1px solid #27272a; background: #0f0f11;">
+            <label>لاعب ${i}:</label>
+            <input type="text" id="p${i}" placeholder="اسم اللاعب الثلاثي..." style="margin-bottom:8px;">
+            <div class="flex-row" style="margin-bottom:0; display:flex; gap:10px; align-items:center;">
+                <select id="pPos${i}" style="margin:0; flex:2;">${positions}</select>
+                <label id="pLabel${i}" for="pImg${i}" style="margin:0; background:#27272a; border:1px solid #3f3f46; border-radius:8px; padding:10px; text-align:center; cursor:pointer; flex:1; display:flex; align-items:center; justify-content:center; gap:5px; color:var(--text); font-size:12px;">
+                    <i id="pIcon${i}" class="fa-solid fa-camera" style="color:var(--muted);"></i> صورة
+                </label>
+                <input type="file" id="pImg${i}" accept="image/*" style="display:none;" onchange="document.getElementById('pIcon${i}').className='fa-solid fa-check'; document.getElementById('pIcon${i}').style.color='var(--accent)';">
+            </div>
+        </div>
+        `;
+    }
+    grid.innerHTML = html;
+}
 
-        // دالة لتوليد حقول إدخال اللاعبين الـ 15 تلقائياً في الواجهة
-        function generatePlayersGrid() {
-            const grid = document.getElementById('playersGridInputs');
-            if (!grid) return;
-            grid.innerHTML = '';
-            let html = '';
-            const positions = `
-                <option value="">المركز...</option>
-                <option value="GK">حارس مرمى</option>
-                <option value="CB">قلب دفاع</option>
-                <option value="LB">مدافع أيسر</option>
-                <option value="RB">مدافع أيمن</option>
-                <option value="CDM">ارتكاز دفاعي</option>
-                <option value="CM">وسط محور</option>
-                <option value="CAM">صانع ألعاب</option>
-                <option value="LM">وسط أيسر</option>
-                <option value="RM">وسط أيمن</option>
-                <option value="LW">جناح أيسر</option>
-                <option value="RW">جناح أيمن</option>
-                <option value="ST">مهاجم</option>
-            `;
-            for (let i = 1; i <= 15; i++) {
-                html += `
-                <div class="sub-panel" style="margin-bottom: 10px; padding: 10px; border: 1px solid #27272a; background: #0f0f11;">
-                    <label>لاعب ${i}:</label>
-                    <input type="text" id="p${i}" placeholder="اسم اللاعب الثلاثي..." style="margin-bottom:8px;">
-                    <div class="flex-row" style="margin-bottom:0; display:flex; gap:10px; align-items:center;">
-                        <select id="pPos${i}" style="margin:0; flex:2;">${positions}</select>
-                        <label id="pLabel${i}" for="pImg${i}" style="margin:0; background:#27272a; border:1px solid #3f3f46; border-radius:8px; padding:10px; text-align:center; cursor:pointer; flex:1; display:flex; align-items:center; justify-content:center; gap:5px; color:var(--text); font-size:12px;">
-                            <i id="pIcon${i}" class="fa-solid fa-camera" style="color:var(--muted);"></i> صورة
-                        </label>
-                        <input type="file" id="pImg${i}" accept="image/*" style="display:none;" onchange="document.getElementById('pIcon${i}').className='fa-solid fa-check'; document.getElementById('pIcon${i}').style.color='var(--accent)';">
-                    </div>
-                </div>
-                `;
-            }
-            grid.innerHTML = html;
-        }
-
-        generatePlayersGrid();
+// تشغيل الدالة فوراً لتجهيز العناصر في الـ DOM
+generatePlayersGrid();
 
         let dbPath = ""; 
         let testModeActive = false; let allData = {}; let adminClockInterval; let isInternalUpdate = false;
         let posActiveTeam = 0; let posSec1 = 0; let posSec2 = 0;
 
+        // -----------------------------------------------------------------
+        // جدار حماية إضافي للوحة الأدمن: اشتراك + جهاز مربوط + معرف بطولة آمن
+        // -----------------------------------------------------------------
+        function cleanTournamentId(value) {
+            return String(value || '').trim().replace(/[^A-Za-z0-9_-]/g, '').slice(0, 80);
+        }
+
+        function firewallValidateAdminUser(user, userData) {
+            if(!userData || userData.status !== "active") {
+                alert("❌ جدار الحماية: حسابك غير مفعل، موقوف مؤقتاً أو غير مدرج بالنظام!");
+                triggerForceLogout();
+                return false;
+            }
+
+            const expiry = new Date(userData.end_date + 'T23:59:59');
+            if(isNaN(expiry.getTime()) || expiry < new Date()) {
+                alert("❌ انتهت فترة الاشتراك التجاري المخصصة لبطولتك. يرجى التجديد.");
+                triggerForceLogout();
+                return false;
+            }
+
+            const localFingerprint = localStorage.getItem('secure_device_token') || '';
+            if(!userData.device_id || userData.device_id !== localFingerprint) {
+                alert("❌ جدار الحماية: هذا الحساب غير مربوط بهذا الجهاز. سجل الدخول وفعّل الجهاز من جديد.");
+                triggerForceLogout();
+                return false;
+            }
+
+            return true;
+        }
+
+        // -----------------------------------------------------------------
+        // 1. نظام الحماية (SaaS Firewall) - لا يمكن فتحه إلا لمنظم حقيقي
+        // -----------------------------------------------------------------
         auth.onAuthStateChanged(user => {
             if(user) {
                 db.ref(`saas_users/${user.uid}`).on('value', snap => {
                     const userData = snap.val();
-                    if(!userData || userData.status !== "active") {
-                        alert("❌ جدار الحماية: حسابك غير مفعل، موقوف مؤقتاً أو غير مدرج بالنظام!");
+                    if(!firewallValidateAdminUser(user, userData)) return;
+
+                    dbPath = cleanTournamentId(userData.tournament_id);
+                    if(!dbPath) {
+                        alert("❌ جدار الحماية: معرف البطولة غير صالح. راجع الماستر أدمن.");
                         triggerForceLogout();
                         return;
                     }
 
-                    const today = new Date();
-                    const expiry = new Date(userData.end_date);
-                    if(expiry < today) {
-                        alert("❌ انتهت فترة الاشتراك التجاري المخصصة لبطولتك. يرجى التجديد.");
-                        triggerForceLogout();
-                        return;
-                    }
-
-                    dbPath = userData.tournament_id;
                     localStorage.setItem('activeDbPath', dbPath);
+                    localStorage.setItem('visualName', userData.email ? userData.email.split('@')[0] : dbPath);
                     document.getElementById('tourneyTitle').innerText = "لوحة تحكم @" + dbPath;
                     
-                    let publicUrl = window.location.origin + window.location.pathname.replace('admin.html', 'index.html') + "?db=" + dbPath;
+                    let publicUrl = window.location.origin + window.location.pathname.replace('admin.html', 'index.html') + "?db=" + encodeURIComponent(dbPath);
                     let urlInput = document.getElementById('publicAppUrl');
                     if(urlInput) urlInput.value = publicUrl;
 
@@ -840,6 +869,9 @@
                         document.getElementById('mainAdminContainer').style.display = 'block';
                         initializeSystemListeners();
                     }
+                }, err => {
+                    alert("❌ جدار الحماية: لا توجد صلاحية لقراءة بيانات الاشتراك. تأكد من Firebase Rules.");
+                    triggerForceLogout();
                 });
             } else {
                 window.location.href = "login.html";
@@ -849,15 +881,16 @@
         function triggerForceLogout() { auth.signOut().then(() => { localStorage.removeItem('activeDbPath'); window.location.href = "login.html"; }); }
         function triggerSignOut() { if(confirm("هل أنت متأكد من تسجيل الخروج؟")) { triggerForceLogout(); } }
         function copyPublicAppUrl() { let input = document.getElementById('publicAppUrl'); input.select(); input.setSelectionRange(0, 99999); document.execCommand("copy"); alert("تم نسخ رابط تطبيق الجمهور الخاص بك بنجاح!"); }
+        // -----------------------------------------------------------------
 
         function openTab(tabId, btn) { document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active')); document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active')); document.getElementById(tabId).classList.add('active'); btn.classList.add('active'); }
         
         function updateVisualName() { 
-            let newName = document.getElementById('tourneyName').value; 
-            db.ref(`tournaments/${dbPath}/settings/visualName`).set(newName).then(() => {
-                alert("تم تغيير اسم البطولة بنجاح وسيظهر للجمهور فوراً");
-            }); 
-        }
+    let newName = document.getElementById('tourneyName').value; 
+    db.ref(`tournaments/${dbPath}/settings/visualName`).set(newName).then(() => {
+        alert("تم تغيير اسم البطولة بنجاح وسيظهر للجمهور فوراً");
+    }); 
+}
         try { if(localStorage.getItem('visualName')) document.getElementById('tourneyName').value = localStorage.getItem('visualName'); } catch(e){}
 
         function updateAppSettings() { const tm = document.getElementById('testModeSelect').value === 'true'; db.ref(`tournaments/${dbPath}/settings`).update({ testMode: tm }); }
@@ -918,6 +951,46 @@
             });
         }
 
+       db.ref(`tournaments/${dbPath}/breaking_news`).on('value', snap => {
+            let cont = document.getElementById('breakingNewsList');
+            if(!cont) return;
+            cont.innerHTML = '';
+            let data = snap.val();
+            if(data) {
+                let items = [];
+                for(let k in data) items.push({key: k, ...data[k]});
+                items.sort((a,b) => b.timestamp - a.timestamp);
+
+                items.forEach(item => {
+                    let badge = item.type === 'news' ? '<strong style="color:#ffffff;"><i class="fa-solid fa-newspaper"></i> خبر عادي:</strong>' : '<strong style="color:#ef4444;"><i class="fa-solid fa-bolt"></i> عاجل:</strong>';
+                    let isPaused = item.isPaused || false;
+                    let pauseIcon = isPaused ? 'fa-play' : 'fa-pause';
+                    let pauseColor = isPaused ? '#10b981' : '#f59e0b';
+                    let opacityStyle = isPaused ? 'opacity: 0.5;' : 'opacity: 1;';
+                    let pausedBadge = isPaused ? '<span style="background:#ef4444; color:#fff; font-size:10px; padding:2px 6px; border-radius:4px; margin-right:5px; display:inline-block; font-weight:bold;">متوقف مؤقتاً</span>' : '';
+
+                    cont.innerHTML += `
+                    <div class="preview-item" style="border:1px solid #3f3f46; border-radius:5px; padding:10px; margin-bottom:5px; background:#18181b; ${opacityStyle} transition: 0.2s;">
+                        <div class="preview-item-header">
+                            <div style="flex:1; padding-left:10px;">
+                                ${badge} 
+                                <span style="font-size:12px; color:#fff;">${item.text}</span>
+                                ${pausedBadge}
+                                ${item.link ? `<br><a href="${item.link}" target="_blank" style="color:var(--primary); font-size:11px;"><i class="fa-solid fa-link"></i> رابط الخبر</a>` : ''}
+                            </div>
+                            <div style="display:flex; gap:6px; align-items:center; flex-shrink:0;">
+                                <button class="edit-btn" style="color:${pauseColor}; border-color:${pauseColor}; padding:5px 10px; font-size:12px; margin:0;" onclick="toggleNewsPause('${item.key}', ${isPaused})"><i class="fa-solid ${pauseIcon}"></i></button>
+                                <button class="edit-btn" style="color:#fff; border-color:#3f3f46; padding:5px 10px; font-size:12px; margin:0;" onclick="toggleNewsType('${item.key}', '${item.type}')"><i class="fa-solid fa-sync"></i></button>
+                                <button class="del-btn" onclick="deleteItem('breaking_news/${item.key}')"><i class="fa-solid fa-trash"></i></button>
+                            </div>
+                        </div>
+                    </div>`;
+                });
+            } else {
+                cont.innerHTML = '<div style="font-size:11px; color:var(--muted); text-align:center; padding:10px;">لا توجد أخبار حالياً.</div>';
+            }
+        });
+
         function addHighlightVideo() {
             let title = document.getElementById('vidTitle').value.trim();
             let embed = document.getElementById('vidEmbed').value.trim();
@@ -933,6 +1006,17 @@
                 alert("تم إضافة الفيديو");
             });
         }
+        db.ref(`tournaments/${dbPath}/highlights`).on('value', snap => {
+            let cont = document.getElementById('highlightsList'); if(!cont) return; cont.innerHTML = '';
+            let d = snap.val();
+            if(d) {
+                let items = []; for(let k in d) items.push({key:k, ...d[k]});
+                items.sort((a,b) => b.timestamp - a.timestamp);
+                items.forEach(v => {
+                    cont.innerHTML += `<div class="preview-item" style="background:var(--input-bg); border-radius:8px; border:1px solid var(--border); margin-bottom:5px;"><div class="preview-item-header"><div><b style="color:var(--text); font-size:12px;">${v.title}</b></div><button class="del-btn" onclick="deleteItem('highlights/${v.key}')"><i class="fa-solid fa-trash"></i></button></div></div>`;
+                });
+            } else { cont.innerHTML = `<div style="text-align:center; color:var(--muted); font-size:11px; padding:10px;">لا يوجد ملخصات</div>`; }
+        });
 
         async function publishMedia(publishMode) {
             showSaveIndicator("جاري النشر...");
@@ -977,6 +1061,21 @@
                 alert("تم النشر بنجاح");
             });
         }
+        
+        db.ref(`tournaments/${dbPath}/media_posts`).on('value', snap => {
+            let cont = document.getElementById('mediaGallery'); if(!cont) return; cont.innerHTML = '';
+            let d = snap.val();
+            if(d) {
+                Object.keys(d).reverse().forEach(k => {
+                    let post = d[k]; let previewHtml = '';
+                    if (post.type === 'fb') { previewHtml = `<div style="font-size:11px; color:#3b82f6;"><i class="fab fa-facebook"></i> منشور فيسبوك مدمج</div>`; } 
+                    else if (post.type === 'statement') { previewHtml = `<div class="statement-preview">${post.image ? `<img src="${post.image}">` : ''}<div class="statement-text-box"><i class="fa-solid fa-quote-right" style="color:var(--muted); font-size:10px; margin-left:5px;"></i>${post.text || 'بدون نص'}<i class="fa-solid fa-quote-left" style="color:var(--muted); font-size:10px; margin-right:5px;"></i></div></div>`; } 
+                    else { previewHtml = `<div style="display:flex; gap:10px;"><img src="${post.image||''}" style="width:40px;height:40px;object-fit:cover;border-radius:4px;"> <div style="font-size:11px; overflow:hidden;">${post.text||'صورة فقط'}</div></div>`; }
+                    let label = post.type === 'statement' ? '<span class="media-tag" style="background:#8b5cf6; padding:2px 4px; border-radius:4px; font-size:10px;">تصريح</span>' : (post.type === 'fb' ? '<span class="media-tag" style="background:#3b82f6; padding:2px 4px; border-radius:4px; font-size:10px;">مدمج</span>' : '<span class="media-tag" style="background:var(--muted); padding:2px 4px; border-radius:4px; font-size:10px; color:#000;">خبر عادي</span>');
+                    cont.innerHTML += `<div class="preview-item" style="border:1px solid #3f3f46; padding:12px; margin-bottom:8px; border-radius:8px; background:var(--input-bg);"><div class="preview-item-header" style="align-items:flex-start;"><div style="flex:1;">${label}<div style="margin-top:8px;">${previewHtml}</div></div><button class="del-btn" onclick="deleteItem('media_posts/${k}')"><i class="fa-solid fa-trash"></i></button></div></div>`;
+                });
+            } else { cont.innerHTML = '<div style="font-size:11px; color:var(--muted); text-align:center;">لا توجد منشورات إعلامية.</div>'; }
+        });
 
         async function addSponsor() {
             let name = document.getElementById('spName').value.trim();
@@ -988,6 +1087,14 @@
                 document.getElementById('spName').value = ''; document.getElementById('spLink').value = ''; document.getElementById('spLogo').value = ''; alert('تمت إضافة الراعي');
             });
         }
+        db.ref(`tournaments/${dbPath}/sponsors`).on('value', snap => {
+            let cont = document.getElementById('sponsorsList'); if(!cont) return; cont.innerHTML = ''; let d = snap.val();
+            if(d) {
+                for(let k in d) {
+                    cont.innerHTML += `<div class="preview-item" style="border:1px solid var(--border); border-radius:8px; padding:10px; margin-bottom:5px;"><div class="preview-item-header"><div style="display:flex; align-items:center; gap:10px;"><img src="${d[k].logo}" style="width:30px; height:30px; object-fit:contain; background:#fff; border-radius:4px;"><span style="color:var(--text); font-size:12px; font-weight:bold;">${d[k].name}</span></div><button class="del-btn" onclick="deleteItem('sponsors/${k}')"><i class="fa-solid fa-trash"></i></button></div></div>`;
+                }
+            } else { cont.innerHTML = `<div style="font-size:11px; color:var(--muted); text-align:center; padding:10px;">لا يوجد رعاة</div>`; }
+        });
 
         async function addHallOfFame() {
             let year = document.getElementById('hofYear').value.trim();
@@ -1000,6 +1107,17 @@
                 document.getElementById('hofYear').value = ''; document.getElementById('hofChamp').value = ''; document.getElementById('hofRunner').value = ''; document.getElementById('hofLogo').value = ''; alert("تم الإضافة لسجل الأبطال");
             });
         }
+        db.ref(`tournaments/${dbPath}/hall_of_fame`).on('value', snap => {
+            let cont = document.getElementById('hofList'); if(!cont) return; cont.innerHTML = ''; let d = snap.val();
+            if(d) {
+                let items = []; for(let k in d) items.push({key:k, ...d[k]});
+                items.sort((a,b) => b.year - a.year);
+                items.forEach(h => {
+                    let img = h.logo ? `<img src="${h.logo}" style="width:35px;height:35px;object-fit:contain;">` : `<i class="fa-solid fa-trophy" style="color:#facc15;"></i>`;
+                    cont.innerHTML += `<div class="preview-item" style="border:1px solid #facc15; border-radius:8px; padding:10px; margin-bottom:5px; background:rgba(250,204,21,0.05);"><div class="preview-item-header"><div style="display:flex; align-items:center; gap:10px;">${img} <div><div style="color:#facc15; font-size:14px; font-weight:bold;">${h.year} - ${h.champion}</div><div style="font-size:10px; color:var(--muted);">الوصيف: ${h.runner_up||'--'}</div></div></div><button class="del-btn" onclick="deleteItem('hall_of_fame/${h.key}')"><i class="fa-solid fa-trash"></i></button></div></div>`;
+                });
+            } else { cont.innerHTML = `<div style="font-size:11px; color:var(--muted); text-align:center; padding:10px;">السجل فارغ</div>`; }
+        });
 
         async function startNewSeason() {
             let y = document.getElementById('seasonYear').value.trim();
@@ -1247,6 +1365,7 @@
             return html + '</div>';
         }
 
+        // دالة التهيئة عند فتح اللوحة بعد المصادقة
         function initializeSystemListeners() {
             db.ref('tournaments/' + dbPath).on('value', snap => {
                 if(isInternalUpdate) return;
@@ -1296,87 +1415,7 @@
                 renderDisciplinary();
             });
 
-            db.ref('analytics/visits').on('value', snap => { if(document.getElementById('visitCount')) document.getElementById('visitCount').innerText = snap.numChildren(); });
-
-            // 1. الإعلام
-            db.ref(`tournaments/${dbPath}/media_posts`).on('value', snap => {
-                let cont = document.getElementById('mediaGallery'); if(!cont) return; cont.innerHTML = '';
-                let d = snap.val();
-                if(d) {
-                    Object.keys(d).reverse().forEach(k => {
-                        let post = d[k]; let previewHtml = '';
-                        if (post.type === 'fb') { previewHtml = `<div style="font-size:11px; color:#3b82f6;"><i class="fab fa-facebook"></i> منشور فيسبوك مدمج</div>`; } 
-                        else if (post.type === 'statement') { previewHtml = `<div class="statement-preview">${post.image ? `<img src="${post.image}">` : ''}<div class="statement-text-box"><i class="fa-solid fa-quote-right" style="color:var(--muted); font-size:10px; margin-left:5px;"></i>${post.text || 'بدون نص'}<i class="fa-solid fa-quote-left" style="color:var(--muted); font-size:10px; margin-right:5px;"></i></div></div>`; } 
-                        else { previewHtml = `<div style="display:flex; gap:10px;"><img src="${post.image||''}" style="width:40px;height:40px;object-fit:cover;border-radius:4px;"> <div style="font-size:11px; overflow:hidden;">${post.text||'صورة فقط'}</div></div>`; }
-                        let label = post.type === 'statement' ? '<span class="media-tag" style="background:#8b5cf6; padding:2px 4px; border-radius:4px; font-size:10px;">تصريح</span>' : (post.type === 'fb' ? '<span class="media-tag" style="background:#3b82f6; padding:2px 4px; border-radius:4px; font-size:10px;">مدمج</span>' : '<span class="media-tag" style="background:var(--muted); padding:2px 4px; border-radius:4px; font-size:10px; color:#000;">خبر عادي</span>');
-                        cont.innerHTML += `<div class="preview-item" style="border:1px solid #3f3f46; padding:12px; margin-bottom:8px; border-radius:8px; background:var(--input-bg);"><div class="preview-item-header" style="align-items:flex-start;"><div style="flex:1;">${label}<div style="margin-top:8px;">${previewHtml}</div></div><button class="del-btn" onclick="deleteItem('media_posts/${k}')"><i class="fa-solid fa-trash"></i></button></div></div>`;
-                    });
-                } else { cont.innerHTML = '<div style="font-size:11px; color:var(--muted); text-align:center;">لا توجد منشورات إعلامية.</div>'; }
-            });
-
-            // 2. الأخبار العاجلة
-            db.ref(`tournaments/${dbPath}/breaking_news`).on('value', snap => {
-                let cont = document.getElementById('breakingNewsList'); if(!cont) return; cont.innerHTML = '';
-                let data = snap.val();
-                if(data) {
-                    let items = []; for(let k in data) items.push({key: k, ...data[k]});
-                    items.sort((a,b) => b.timestamp - a.timestamp);
-                    items.forEach(item => {
-                        let badge = item.type === 'news' ? '<strong style="color:#ffffff;"><i class="fa-solid fa-newspaper"></i> خبر عادي:</strong>' : '<strong style="color:#ef4444;"><i class="fa-solid fa-bolt"></i> عاجل:</strong>';
-                        let isPaused = item.isPaused || false;
-                        let pauseIcon = isPaused ? 'fa-play' : 'fa-pause';
-                        let pauseColor = isPaused ? '#10b981' : '#f59e0b';
-                        let opacityStyle = isPaused ? 'opacity: 0.5;' : 'opacity: 1;';
-                        let pausedBadge = isPaused ? '<span style="background:#ef4444; color:#fff; font-size:10px; padding:2px 6px; border-radius:4px; margin-right:5px; display:inline-block; font-weight:bold;">متوقف مؤقتاً</span>' : '';
-                        cont.innerHTML += `<div class="preview-item" style="border:1px solid #3f3f46; border-radius:5px; padding:10px; margin-bottom:5px; background:#18181b; ${opacityStyle} transition: 0.2s;"><div class="preview-item-header"><div style="flex:1; padding-left:10px;">${badge} <span style="font-size:12px; color:#fff;">${item.text}</span> ${pausedBadge} ${item.link ? `<br><a href="${item.link}" target="_blank" style="color:var(--primary); font-size:11px;"><i class="fa-solid fa-link"></i> رابط الخبر</a>` : ''}</div><div style="display:flex; gap:6px; align-items:center; flex-shrink:0;"><button class="edit-btn" style="color:${pauseColor}; border-color:${pauseColor}; padding:5px 10px; font-size:12px; margin:0;" onclick="toggleNewsPause('${item.key}', ${isPaused})"><i class="fa-solid ${pauseIcon}"></i></button><button class="edit-btn" style="color:#fff; border-color:#3f3f46; padding:5px 10px; font-size:12px; margin:0;" onclick="toggleNewsType('${item.key}', '${item.type}')"><i class="fa-solid fa-sync"></i></button><button class="del-btn" onclick="deleteItem('breaking_news/${item.key}')"><i class="fa-solid fa-trash"></i></button></div></div></div>`;
-                    });
-                } else { cont.innerHTML = '<div style="font-size:11px; color:var(--muted); text-align:center; padding:10px;">لا توجد أخبار حالياً.</div>'; }
-            });
-
-            // 3. ملخصات الفيديو
-            db.ref(`tournaments/${dbPath}/highlights`).on('value', snap => {
-                let cont = document.getElementById('highlightsList'); if(!cont) return; cont.innerHTML = '';
-                let d = snap.val();
-                if(d) {
-                    let items = []; for(let k in d) items.push({key:k, ...d[k]});
-                    items.sort((a,b) => b.timestamp - a.timestamp);
-                    items.forEach(v => { cont.innerHTML += `<div class="preview-item" style="background:var(--input-bg); border-radius:8px; border:1px solid var(--border); margin-bottom:5px;"><div class="preview-item-header"><div><b style="color:var(--text); font-size:12px;">${v.title}</b></div><button class="del-btn" onclick="deleteItem('highlights/${v.key}')"><i class="fa-solid fa-trash"></i></button></div></div>`; });
-                } else { cont.innerHTML = `<div style="text-align:center; color:var(--muted); font-size:11px; padding:10px;">لا يوجد ملخصات</div>`; }
-            });
-
-            // 4. الرعاة
-            db.ref(`tournaments/${dbPath}/sponsors`).on('value', snap => {
-                let cont = document.getElementById('sponsorsList'); if(!cont) return; cont.innerHTML = ''; let d = snap.val();
-                if(d) {
-                    for(let k in d) { cont.innerHTML += `<div class="preview-item" style="border:1px solid var(--border); border-radius:8px; padding:10px; margin-bottom:5px;"><div class="preview-item-header"><div style="display:flex; align-items:center; gap:10px;"><img src="${d[k].logo}" style="width:30px; height:30px; object-fit:contain; background:#fff; border-radius:4px;"><span style="color:var(--text); font-size:12px; font-weight:bold;">${d[k].name}</span></div><button class="del-btn" onclick="deleteItem('sponsors/${k}')"><i class="fa-solid fa-trash"></i></button></div></div>`; }
-                } else { cont.innerHTML = `<div style="font-size:11px; color:var(--muted); text-align:center; padding:10px;">لا يوجد رعاة</div>`; }
-            });
-
-            // 5. سجل الأبطال
-            db.ref(`tournaments/${dbPath}/hall_of_fame`).on('value', snap => {
-                let cont = document.getElementById('hofList'); if(!cont) return; cont.innerHTML = ''; let d = snap.val();
-                if(d) {
-                    let items = []; for(let k in d) items.push({key:k, ...d[k]});
-                    items.sort((a,b) => b.year - a.year);
-                    items.forEach(h => {
-                        let img = h.logo ? `<img src="${h.logo}" style="width:35px;height:35px;object-fit:contain;">` : `<i class="fa-solid fa-trophy" style="color:#facc15;"></i>`;
-                        cont.innerHTML += `<div class="preview-item" style="border:1px solid #facc15; border-radius:8px; padding:10px; margin-bottom:5px; background:rgba(250,204,21,0.05);"><div class="preview-item-header"><div style="display:flex; align-items:center; gap:10px;">${img} <div><div style="color:#facc15; font-size:14px; font-weight:bold;">${h.year} - ${h.champion}</div><div style="font-size:10px; color:var(--muted);">الوصيف: ${h.runner_up||'--'}</div></div></div><button class="del-btn" onclick="deleteItem('hall_of_fame/${h.key}')"><i class="fa-solid fa-trash"></i></button></div></div>`;
-                    });
-                } else { cont.innerHTML = `<div style="font-size:11px; color:var(--muted); text-align:center; padding:10px;">السجل فارغ</div>`; }
-            });
-
-            // 6. الانتقالات
-            db.ref(`tournaments/${dbPath}/transfers`).on('value', snap => {
-                let list = document.getElementById('transfersAdminList'); if(!list) return; list.innerHTML = ''; let d = snap.val();
-                if(d) {
-                    let items = []; for(let k in d) items.push({key: k, ...d[k]});
-                    items.sort((a,b) => b.time - a.time); 
-                    items.forEach(t => {
-                        let icon = t.type === 'official' ? '<span style="color:#10b981;">🤝 صفقة تمت</span>' : '<span style="color:#f59e0b;">🗣️ إشاعة</span>';
-                        list.innerHTML += `<div class="preview-item"><div class="preview-item-header"><div><b style="color:#fff;">${t.player}</b><br><span style="font-size:11px; color:var(--muted)">من ${t.fromTeam} إلى ${t.toTeam} | ${icon}</span></div><button class="del-btn" onclick="deleteItem('transfers/${t.key}')"><i class="fa-solid fa-trash"></i></button></div></div>`;
-                    });
-                } else { list.innerHTML = '<div style="font-size:11px; color:var(--muted); text-align:center; padding:10px;">لا توجد انتقالات</div>'; }
-            });
+            db.ref('analytics/visits').on('value', snap => { const vc = document.getElementById('visitCount'); if(vc) vc.innerText = snap.numChildren(); });
         }
 
         let autoSaveTimeout;
@@ -1696,7 +1735,7 @@
                 let opts = '<option value="">-- اختر --</option>';
                 if(allData.teams?.[tName]?.players) { for(let p in allData.teams[tName].players) opts += `<option value="${p}">${p}</option>`; }
                 ['gk', 'cb', 'lb', 'rb', 'cdm', 'cm', 'cam', 'lm', 'rm', 'lw', 'rw', 'st'].forEach(pos => { 
-                    html += `<div class="flex-row" style="margin-bottom:4px;"><select id="${prefix}_pos" style="flex:2; font-size:11px; margin:0;">${opts}</select><input type="number" id="${prefix}_r_pos" style="flex:1; font-size:11px; margin:0; padding:4px;" placeholder="تقييم" step="0.1" max="10" min="0"></div>`; 
+                    html += `<div class="flex-row" style="margin-bottom:4px;"><select id="${prefix}_${pos}" style="flex:2; font-size:11px; margin:0;">${opts}</select><input type="number" id="${prefix}_r_${pos}" style="flex:1; font-size:11px; margin:0; padding:4px;" placeholder="تقييم" step="0.1" max="10" min="0"></div>`; 
                 });
                 document.getElementById(containerId).innerHTML = html;
                 setTimeout(() => { ['gk', 'cb', 'lb', 'rb', 'cdm', 'cm', 'cam', 'lm', 'rm', 'lw', 'rw', 'st'].forEach(pos => { let el = document.getElementById(`${prefix}_${pos}`); let rEl = document.getElementById(`${prefix}_r_${pos}`); if(savedSq && savedSq[pos]) { let pData = savedSq[pos]; if(typeof pData === 'object') { el.value = pData.name || ''; rEl.value = pData.rating || ''; } else { el.value = pData; rEl.value = ''; } } }); }, 50);
@@ -2115,32 +2154,23 @@
             alert(type === 'official' ? "تم نقل اللاعب برمجياً بنجاح وإشعار الجمهور!" : "تم تسجيل الإشاعة بنجاح للجمهور!");
         };
 
-        // جدار الحماية للواجهة الأمامية (منع F12، كليك يمين، والاختصارات)
-        document.addEventListener('contextmenu', event => event.preventDefault());
-
-        document.onkeydown = function(e) {
-            // منع زر F12
-            if(e.keyCode == 123) {
-                return false;
+        db.ref(`tournaments/${dbPath}/transfers`).on('value', snap => {
+            let list = document.getElementById('transfersAdminList');
+            if(!list) return; list.innerHTML = '';
+            let d = snap.val();
+            if(d) {
+                let items = [];
+                for(let k in d) items.push({key: k, ...d[k]});
+                items.sort((a,b) => b.time - a.time); 
+                
+                items.forEach(t => {
+                    let icon = t.type === 'official' ? '<span style="color:#10b981;">🤝 صفقة تمت</span>' : '<span style="color:#f59e0b;">🗣️ إشاعة</span>';
+                    list.innerHTML += `<div class="preview-item"><div class="preview-item-header"><div><b style="color:#fff;">${t.player}</b><br><span style="font-size:11px; color:var(--muted)">من ${t.fromTeam} إلى ${t.toTeam} | ${icon}</span></div><button class="del-btn" onclick="deleteItem('transfers/${t.key}')"><i class="fa-solid fa-trash"></i></button></div></div>`;
+                });
+            } else { 
+                list.innerHTML = '<div style="font-size:11px; color:var(--muted); text-align:center; padding:10px;">لا توجد انتقالات</div>'; 
             }
-            // منع Ctrl+Shift+I (أدوات المطور)
-            if(e.ctrlKey && e.shiftKey && e.keyCode == 'I'.charCodeAt(0)) {
-                return false;
-            }
-            // منع Ctrl+Shift+C (تحديد العناصر)
-            if(e.ctrlKey && e.shiftKey && e.keyCode == 'C'.charCodeAt(0)) {
-                return false;
-            }
-            // منع Ctrl+Shift+J (الكونسول)
-            if(e.ctrlKey && e.shiftKey && e.keyCode == 'J'.charCodeAt(0)) {
-                return false;
-            }
-            // منع Ctrl+U (عرض مصدر الصفحة)
-            if(e.ctrlKey && e.keyCode == 'U'.charCodeAt(0)) {
-                return false;
-            }
-        };
-
+        });
     </script>
 </body>
 </html>
