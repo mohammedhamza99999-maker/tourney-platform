@@ -1206,6 +1206,73 @@
         .v17-match-admin {background:#111827;border:1px solid #374151;border-radius:10px;padding:10px;margin:8px 0;font-size:12px;}
         .v17-locked-pill {background:rgba(239,68,68,0.13);border:1px solid #ef4444;color:#fca5a5;border-radius:999px;padding:3px 8px;font-size:10px;font-weight:bold;}
 
+    
+        /* V20 - صندوق مشاركة تطبيق الجمهور */
+        .public-app-share-box {
+            background: linear-gradient(135deg, rgba(59,130,246,0.10), rgba(34,197,94,0.08));
+            border: 1px solid rgba(59,130,246,0.35);
+            border-radius: 14px;
+            padding: 16px;
+            margin-bottom: 18px;
+            box-shadow: 0 6px 18px rgba(0,0,0,0.22);
+        }
+        .public-app-share-box h3 {
+            margin: 0 0 8px;
+            color: #38bdf8;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .public-app-share-box p {
+            margin: 6px 0 12px;
+            color: var(--muted);
+            font-size: 12px;
+            line-height: 1.8;
+        }
+        .public-app-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 10px;
+        }
+        .public-app-row label {
+            color: #93c5fd;
+            font-size: 11px;
+            margin-bottom: 5px;
+        }
+        .public-app-row input,
+        .public-app-row textarea {
+            background: #050505;
+            color: #e5e7eb;
+            border: 1px dashed rgba(147,197,253,0.55);
+            direction: ltr;
+            text-align: left;
+            font-family: monospace;
+            font-size: 12px;
+            margin-bottom: 6px;
+        }
+        .public-app-row textarea {
+            direction: rtl;
+            text-align: right;
+            min-height: 120px;
+            line-height: 1.7;
+            font-family: 'Cairo', sans-serif;
+        }
+        .public-app-actions {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 8px;
+            margin-top: 8px;
+        }
+        .public-app-actions button {
+            margin: 0;
+            font-size: 12px;
+            padding: 10px;
+        }
+        @media (max-width: 520px) {
+            .public-app-actions { grid-template-columns: 1fr; }
+        }
+
     </style>
 </head>
 <body>
@@ -1224,6 +1291,44 @@
 
         <div id="testModeBanner" class="test-mode-banner"><i class="fa-solid fa-flask"></i> تنبيه: وضع التجربة مفعل. الإشعارات معطلة ولا تظهر للمتابعين.</div>
         
+        
+        <div class="public-app-share-box" id="publicAppShareBox">
+            <h3><i class="fa-brands fa-android"></i> مشاركة تطبيق الجمهور</h3>
+            <p>
+                من هنا تكدر ترسل للجمهور رابط تحميل تطبيق Android، أو ترسل لهم الرابط المباشر للبطولة.
+                مستخدمو Android يقدرون يحملون التطبيق ويدخلون معرف البطولة، ومستخدمو iPhone يفتحون الرابط المباشر من Safari.
+            </p>
+
+            <div class="public-app-grid">
+                <div class="public-app-row">
+                    <label>معرف البطولة الحالي:</label>
+                    <input type="text" id="shareTournamentId" readonly>
+                </div>
+
+                <div class="public-app-row">
+                    <label>رابط تحميل تطبيق Android:</label>
+                    <input type="text" id="shareAndroidAppUrl" readonly value="https://www.mediafire.com/file/bxp4f0jynohyyl8/app-debug.apk/file">
+                </div>
+
+                <div class="public-app-row">
+                    <label>رابط مباشر للجمهور Android / iPhone:</label>
+                    <input type="text" id="shareDirectPublicUrl" readonly>
+                </div>
+
+                <div class="public-app-row">
+                    <label>رسالة جاهزة ترسلها للجمهور:</label>
+                    <textarea id="shareReadyMessage" readonly></textarea>
+                </div>
+            </div>
+
+            <div class="public-app-actions">
+                <button onclick="copyAdminShareField('shareTournamentId')" style="background:#1d4ed8; color:#fff; border:none;"><i class="fa-solid fa-copy"></i> نسخ معرف البطولة</button>
+                <button onclick="copyAdminShareField('shareAndroidAppUrl')" style="background:#16a34a; color:#000; border:none;"><i class="fa-solid fa-download"></i> نسخ رابط التطبيق</button>
+                <button onclick="copyAdminShareField('shareDirectPublicUrl')" style="background:#0f172a; color:#fff; border:1px solid #38bdf8;"><i class="fa-solid fa-link"></i> نسخ الرابط المباشر</button>
+                <button onclick="copyAdminShareField('shareReadyMessage')" style="background:#facc15; color:#000; border:none;"><i class="fa-solid fa-message"></i> نسخ الرسالة الجاهزة</button>
+            </div>
+        </div>
+
         <div class="public-link-box">
             <h3 style="margin-top:0; color:var(--accent); font-size:15px;"><i class="fa-solid fa-share-nodes"></i> رابط تطبيق الجمهور لبطولتك</h3>
             <p style="font-size: 12px; color: var(--muted); margin: 0;">انسخ هذا الرابط وانشره للمتابعين لمشاهدة البطولة وتحديثاتها حياً:</p>
@@ -4240,6 +4345,87 @@ function attachAdminTransfersListener() {
     return false;
   };
 })();
+
+        // V20 - مشاركة تطبيق الجمهور من لوحة الأدمن
+        const PUBLIC_ANDROID_APP_DOWNLOAD_URL = "https://www.mediafire.com/file/bxp4f0jynohyyl8/app-debug.apk/file";
+        const PUBLIC_WEB_APP_BASE_URL = "https://tourney-app.online/index.html";
+
+        function getCurrentTournamentIdForShare() {
+            return String((typeof dbPath !== 'undefined' && dbPath) ? dbPath : '').trim();
+        }
+
+        function buildAdminPublicDirectUrl(tid) {
+            const cleanTid = String(tid || '').trim();
+            const sep = PUBLIC_WEB_APP_BASE_URL.includes('?') ? '&' : '?';
+            return cleanTid ? `${PUBLIC_WEB_APP_BASE_URL}${sep}db=${encodeURIComponent(cleanTid)}` : PUBLIC_WEB_APP_BASE_URL;
+        }
+
+        function updateAdminPublicAppShareBox() {
+            const tid = getCurrentTournamentIdForShare();
+            const directUrl = buildAdminPublicDirectUrl(tid);
+            const tournamentName = (document.getElementById('tourneyTitle')?.textContent || '').trim() || 'بطولتنا';
+
+            const tidEl = document.getElementById('shareTournamentId');
+            const appEl = document.getElementById('shareAndroidAppUrl');
+            const directEl = document.getElementById('shareDirectPublicUrl');
+            const msgEl = document.getElementById('shareReadyMessage');
+
+            if (tidEl) tidEl.value = tid || 'لم يتم تحديد معرف البطولة بعد';
+            if (appEl) appEl.value = PUBLIC_ANDROID_APP_DOWNLOAD_URL;
+            if (directEl) directEl.value = directUrl;
+
+            if (msgEl) {
+                msgEl.value =
+`📲 تطبيق الجمهور الخاص بالبطولة
+
+اسم البطولة: ${tournamentName}
+معرف البطولة: ${tid || 'اكتب معرف البطولة هنا'}
+
+لمستخدمي Android:
+حمل التطبيق من هذا الرابط:
+${PUBLIC_ANDROID_APP_DOWNLOAD_URL}
+
+بعد فتح التطبيق، اكتب معرف البطولة:
+${tid || 'اكتب معرف البطولة هنا'}
+
+لمستخدمي iPhone أو اللي ما يريدون يثبتون التطبيق:
+افتحوا الرابط المباشر:
+${directUrl}`;
+            }
+        }
+
+        function copyAdminShareField(id) {
+            updateAdminPublicAppShareBox();
+            const el = document.getElementById(id);
+            if (!el) return alert('لم أجد الحقل المطلوب نسخه.');
+            const text = el.value || el.textContent || '';
+            if (!text.trim()) return alert('لا يوجد نص للنسخ.');
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(text).then(() => alert('تم النسخ بنجاح ✅')).catch(() => fallbackCopyAdminShareText(text));
+            } else {
+                fallbackCopyAdminShareText(text);
+            }
+        }
+
+        function fallbackCopyAdminShareText(text) {
+            const temp = document.createElement('textarea');
+            temp.value = text;
+            temp.style.position = 'fixed';
+            temp.style.opacity = '0';
+            document.body.appendChild(temp);
+            temp.focus();
+            temp.select();
+            try {
+                document.execCommand('copy');
+                alert('تم النسخ بنجاح ✅');
+            } catch(e) {
+                alert('انسخ النص يدوياً:\n' + text);
+            }
+            document.body.removeChild(temp);
+        }
+
+        setInterval(updateAdminPublicAppShareBox, 1500);
+
 </script>
 
 </body>
