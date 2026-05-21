@@ -1543,30 +1543,9 @@
                 </div>
                 <div id="customGroupsAdminListV17" class="preview-box" style="border:none;padding:0;"></div>
             </div>
-            
-            <div class="panel">
-                <div style="font-size:12px; color:var(--accent); text-align:center; margin-bottom:15px; padding:10px; background:rgba(74,222,128,0.1); border-radius:8px; border:1px solid var(--accent);">يمكنك من هنا إدخال وتعديل نتائج أي فريق بالمجموعة يدوياً. اختر الفريق لتظهر أرقامه وعدلها كيفما تشاء.</div>
-                <div class="flex-row">
-                    <select id="gLetter" onchange="loadGroupTeamData()"><option value="A">مجموعة A</option><option value="B">مجموعة B</option><option value="C">مجموعة C</option><option value="D">مجموعة D</option></select>
-                    <select id="gTeam" onchange="loadGroupTeamData()"></select>
-                </div>
-                <div class="flex-row">
-                    <input type="number" id="gP" placeholder="لعب (0)">
-                    <input type="number" id="gGF" placeholder="له (0)">
-                    <input type="number" id="gGA" placeholder="عليه (0)">
-                </div>
-                <div class="flex-row">
-                    <input type="number" id="gGD" placeholder="+/- (0)">
-                    <input type="number" id="gPts" placeholder="النقاط (0)">
-                    <select id="gStatus" style="margin-bottom:10px;">
-                        <option value="">-- الحالة --</option>
-                        <option value="متأهل">متأهل</option>
-                        <option value="مغادر">مغادر</option>
-                    </select>
-                </div>
-                <button onclick="autoCalculateGroupQualifiers()" style="background:#8b5cf6; color:#fff; margin-bottom:10px; border:none;"><i class="fa-solid fa-calculator"></i> حساب المتأهلين تلقائياً</button>
-                <button onclick="updateGroup()"><i class="fa-solid fa-floppy-disk"></i> إرسال/تعديل الفريق للمجموعة</button>
-            </div>
+            <!-- V19: تم حذف لوحة المجموعات القديمة gLetter/gTeam/updateGroup.
+                 الإضافة والتسمية وإدارة فرق المجموعات تتم الآن فقط من لوحة "إدارة المجموعات المفتوحة" أعلاه. -->
+
             <div id="groupsPreview" class="preview-box" style="background:var(--card); border:none; padding:0;"></div>
         </div>
         
@@ -4251,5 +4230,17 @@ function attachAdminTransfersListener() {
 
 
 </script>
+
+<script>
+/* V19 guard: old groups add/edit UI was removed. Keep a safe wrapper so any cached old button will not write legacy group data. */
+(function(){
+  const oldUpdateGroupV19 = window.updateGroup;
+  window.updateGroup = function(){
+    alert('تم حذف دالة المجموعات القديمة. استخدم قسم "إدارة المجموعات المفتوحة" لإضافة المجموعات والفرق.');
+    return false;
+  };
+})();
+</script>
+
 </body>
 </html>
