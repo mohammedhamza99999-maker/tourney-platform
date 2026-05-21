@@ -962,6 +962,7 @@ generatePlayersGrid();
             if(user) {
                 db.ref(`saas_users/${user.uid}`).on('value', snap => {
                     const userData = snap.val();
+                    if (typeof updateUserPackageFallback === 'function') updateUserPackageFallback(userData);
                     if(!firewallValidateAdminUser(user, userData)) return;
 
                     dbPath = cleanTournamentId(userData.tournament_id);
@@ -1816,7 +1817,8 @@ ${message}`); return; }
         async function saveFullTeam() { 
             const tName = document.getElementById('dbTeamName').value.trim(); if (!tName) return alert("اكتب اسم الفريق"); showSaveIndicator("جاري الحفظ...");
             let existingPlayers = (allData && allData.teams && allData.teams[tName] && allData.teams[tName].players) ? { ...allData.teams[tName].players } : {};
-            let teamObj = { coach: document.getElementById('dbCoach').value || "", assistant: document.getElementById('dbAsst').value || "", players: existingPlayers }; 
+            // مهم: لا نحفظ لاعبين أكثر من حد الباقة. نأخذ الإحصائيات القديمة فقط للأسماء المدخلة ضمن الحد.
+            let teamObj = { coach: document.getElementById('dbCoach').value || "", assistant: document.getElementById('dbAsst').value || "", players: {} }; 
             teamObj.nickname = document.getElementById('dbNickname').value || "";
             teamObj.stadium = document.getElementById('dbStadium').value || "";
 
@@ -1826,7 +1828,7 @@ ${message}`); return; }
                 let pPos = document.getElementById('pPos'+i).value;
                 if (pName) { 
                     let pStats = {goals:0, assists:0, yellow:0, red:0, matches:0, motm:0, cs:0}; 
-                    if(allData && allData.teams && allData.teams[tName] && allData.teams[tName].players && allData.teams[tName].players[pName]) { pStats = allData.teams[tName].players[pName]; } 
+                    if(existingPlayers && existingPlayers[pName]) { pStats = existingPlayers[pName]; } 
                     pStats.position = pPos;
                     if(pFile) { try { pStats.photo = await compressImage(pFile); } catch(e){} } 
                     teamObj.players[pName] = pStats; 
@@ -2470,6 +2472,222 @@ function attachAdminTransfersListener() {
             }
         });
         }
+
+
+        // =========================================================
+        // v12 - قفل الباقات الحقيقي من ملف الماستر أدمن
+        // هذه الإضافة تجعل ملف الأدمن القديم يلتزم بتعديلات الماستر:
+        // 1) يقرأ settings/license.
+        // 2) يستعمل بيانات saas_users كنسخة احتياطية.
+        // 3) يخفي ويقفل الأزرار والدوال، مو بس يخفي التبويب.
+        // =========================================================
+        const MASTER_PACKAGE_TEMPLATES_V12 = {
+            seven: {
+                plan: 'seven', planLabel: 'سباعي', sportMode: 'seven', sportLabel: 'سباعي',
+                maxPlayersPerTeam: 15, lineupPlayers: 7, halfMinutes: 25, lockedPlayers: true,
+                features: {
+                    live:true, matches:true, groups:true, teams:true, stats:true, media:true,
+                    videos:true, transfers:false, finance:false, comments:true, predictions:true,
+                    notifications:true, h2h:true, referees:false, sponsors:false, hallOfFame:true,
+                    roundStars:true, offside:false, substitutions:false, advancedStats:false
+                }
+            },
+            eleven_full: {
+                plan: 'eleven_full', planLabel: '11 لاعب كامل', sportMode: 'football11', sportLabel: '11 لاعب كامل',
+                maxPlayersPerTeam: 30, lineupPlayers: 11, halfMinutes: 45, lockedPlayers: true,
+                features: {
+                    live:true, matches:true, groups:true, teams:true, stats:true, media:true,
+                    videos:true, transfers:true, finance:true, comments:true, predictions:true,
+                    notifications:true, h2h:true, referees:true, sponsors:true, hallOfFame:true,
+                    roundStars:true, offside:true, substitutions:true, advancedStats:true
+                }
+            }
+        };
+
+        let __saasLicenseFallbackV12 = null;
+
+        function cloneV12(obj) { return JSON.parse(JSON.stringify(obj || {})); }
+
+        function updateUserPackageFallback(userData) {
+            userData = userData || {};
+            const plan = userData.license_plan || userData.plan || '';
+            if (plan && MASTER_PACKAGE_TEMPLATES_V12[plan]) {
+                __saasLicenseFallbackV12 = cloneV12(MASTER_PACKAGE_TEMPLATES_V12[plan]);
+            } else {
+                __saasLicenseFallbackV12 = null;
+            }
+            if (__saasLicenseFallbackV12) {
+                if (userData.license_label) __saasLicenseFallbackV12.planLabel = userData.license_label;
+                if (userData.max_players_per_team) __saasLicenseFallbackV12.maxPlayersPerTeam = Number(userData.max_players_per_team);
+                if (userData.lineup_players) __saasLicenseFallbackV12.lineupPlayers = Number(userData.lineup_players);
+                if (userData.sport_mode) __saasLicenseFallbackV12.sportMode = userData.sport_mode;
+            }
+        }
+
+        function normalizeAdminLicense(raw) {
+            raw = raw && typeof raw === 'object' ? raw : null;
+            const plan = raw?.plan || __saasLicenseFallbackV12?.plan || 'seven';
+            const base = cloneV12(MASTER_PACKAGE_TEMPLATES_V12[plan] || __saasLicenseFallbackV12 || MASTER_PACKAGE_TEMPLATES_V12.seven);
+            const merged = Object.assign({}, base, raw || __saasLicenseFallbackV12 || {});
+            merged.features = Object.assign({}, base.features || {}, (raw && raw.features) || (__saasLicenseFallbackV12 && __saasLicenseFallbackV12.features) || {});
+            merged.plan = merged.plan || plan;
+            merged.planLabel = merged.planLabel || merged.label || merged.name || merged.plan || 'باقة الزبون';
+            merged.sportMode = merged.sportMode || base.sportMode || 'seven';
+            merged.sportLabel = merged.sportLabel || base.sportLabel || merged.sportMode;
+            merged.maxPlayersPerTeam = Math.max(5, Math.min(30, parseInt(merged.maxPlayersPerTeam || base.maxPlayersPerTeam || 15, 10) || 15));
+            merged.lineupPlayers = Math.max(5, Math.min(11, parseInt(merged.lineupPlayers || base.lineupPlayers || 7, 10) || 7));
+            merged.halfMinutes = parseInt(merged.halfMinutes || base.halfMinutes || 25, 10) || 25;
+            return merged;
+        }
+
+        function getMaxPlayersPerTeam() {
+            return Math.max(5, Math.min(30, parseInt(currentLicense?.maxPlayersPerTeam || 15, 10) || 15));
+        }
+
+        function isFeatureEnabled(key) {
+            if (!currentLicense || !currentLicense.features) return false;
+            return currentLicense.features[key] === true;
+        }
+
+        function featureLockMessage(key) {
+            const names = {
+                transfers:'سوق الانتقالات', finance:'المالية', media:'الإعلام', videos:'الفيديو',
+                comments:'التعليقات/الدردشة', notifications:'الإشعارات', h2h:'المواجهات H2H',
+                referees:'الحكام', sponsors:'الرعاة', hallOfFame:'سجل الأبطال', roundStars:'نجوم الجولة',
+                live:'المباشر', matches:'المباريات', groups:'المجموعات', teams:'الفرق'
+            };
+            alert('هذه الميزة غير مفعلة ضمن باقة هذا الزبون: ' + (names[key] || key));
+        }
+
+        function requireFeature(key) {
+            if (isFeatureEnabled(key)) return true;
+            featureLockMessage(key);
+            return false;
+        }
+
+        function attachMasterPackageListener() {
+            if (!dbPath || __packageListenerAttached) return;
+            __packageListenerAttached = true;
+            const ref = db.ref(`tournaments/${dbPath}/settings/license`);
+            ref.on('value', snap => {
+                currentLicense = normalizeAdminLicense(snap.val());
+                applyPackageToOldAdmin();
+            }, err => {
+                console.warn('تعذر قراءة باقة الزبون من الماستر:', err && err.message ? err.message : err);
+                currentLicense = normalizeAdminLicense(__saasLicenseFallbackV12);
+                applyPackageToOldAdmin();
+            });
+        }
+
+        function hidePanelByText(textParts, enabled) {
+            const parts = Array.isArray(textParts) ? textParts : [textParts];
+            document.querySelectorAll('.panel').forEach(panel => {
+                const txt = panel.textContent || '';
+                if (parts.every(p => txt.includes(p))) {
+                    panel.style.display = enabled ? '' : 'none';
+                    panel.setAttribute('data-package-hidden', enabled ? '0' : '1');
+                }
+            });
+        }
+
+        function setTabLock(tabId, featureKey) {
+            const enabled = isFeatureEnabled(featureKey);
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                const oc = btn.getAttribute('onclick') || '';
+                if (oc.includes(`'${tabId}'`) || oc.includes(`"${tabId}"`)) btn.style.display = enabled ? '' : 'none';
+            });
+            const tab = document.getElementById(tabId);
+            if (tab && !enabled) tab.classList.remove('active');
+        }
+
+        function applyPackageToOldAdmin() {
+            currentLicense = normalizeAdminLicense(currentLicense);
+            const badge = document.getElementById('adminPackageBadge');
+            if (badge) badge.style.display = 'block';
+            const setText = (id, value) => { const el = document.getElementById(id); if (el) el.textContent = value; };
+            setText('adminPackageName', currentLicense.planLabel || currentLicense.plan || 'غير محددة');
+            setText('adminPackageSport', currentLicense.sportLabel || currentLicense.sportMode || 'عام');
+            setText('adminPackageMaxPlayers', `${getMaxPlayersPerTeam()} لاعب / ${currentLicense.lineupPlayers || '-'} أساسي`);
+
+            if (document.getElementById('playersGridInputs')) generatePlayersGrid();
+
+            // قفل التبويبات الرئيسية
+            setTabLock('tab-live', 'live');
+            setTabLock('tab-teams', 'teams');
+            setTabLock('tab-groups', 'groups');
+            setTabLock('tab-schedule', 'matches');
+            setTabLock('tab-media', 'media');
+            setTabLock('tab-finance', 'finance');
+
+            // قفل لوحات داخلية داخل تبويبات ما زالت مفتوحة
+            hidePanelByText(['إدارة وسوق الانتقالات'], isFeatureEnabled('transfers'));
+            hidePanelByText(['فحص المواجهات المباشرة'], isFeatureEnabled('h2h'));
+            hidePanelByText(['سجل الأبطال'], isFeatureEnabled('hallOfFame'));
+            hidePanelByText(['لوحة الرعاة'], isFeatureEnabled('sponsors'));
+            hidePanelByText(['نجوم الجولة'], isFeatureEnabled('roundStars'));
+            hidePanelByText(['إدارة الحكام'], isFeatureEnabled('referees'));
+
+            // قفل أزرار الإشعارات والدردشة إذا مطفية
+            document.querySelectorAll('button').forEach(btn => {
+                const txt = (btn.textContent || '').trim();
+                const oc = btn.getAttribute('onclick') || '';
+                if ((txt.includes('تنبيه') || txt.includes('إشعار') || oc.includes('sendManualPush')) && !isFeatureEnabled('notifications')) btn.style.display = 'none';
+                if ((txt.includes('دردشة') || txt.includes('تعليق') || oc.includes('clearLiveChat')) && !isFeatureEnabled('comments')) btn.style.display = 'none';
+            });
+
+            // إذا التبويب الحالي انغلق، ارجع لأول تبويب مسموح
+            const active = document.querySelector('.tab-content.active');
+            if (!active || getComputedStyle(active).display === 'none') {
+                const firstBtn = Array.from(document.querySelectorAll('.tab-btn')).find(b => b.style.display !== 'none');
+                if (firstBtn) {
+                    const oc = firstBtn.getAttribute('onclick') || '';
+                    const m = oc.match(/openTab\(['\"]([^'\"]+)/);
+                    if (m) openTab(m[1], firstBtn);
+                }
+            }
+        }
+
+        function openTab(tabId, btn) {
+            const map = {
+                'tab-live':'live', 'tab-teams':'teams', 'tab-groups':'groups',
+                'tab-schedule':'matches', 'tab-media':'media', 'tab-finance':'finance'
+            };
+            const feature = map[tabId];
+            if (feature && !isFeatureEnabled(feature)) return featureLockMessage(feature);
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            const tab = document.getElementById(tabId);
+            if (tab) tab.classList.add('active');
+            if (btn) btn.classList.add('active');
+        }
+
+        // قفل الدوال نفسها حتى لو الزبون حاول يشغلها من console أو رابط داخلي
+        const __oldAddFinancialTransaction = window.addFinancialTransaction || addFinancialTransaction;
+        window.addFinancialTransaction = function() { if (!requireFeature('finance')) return; return __oldAddFinancialTransaction.apply(this, arguments); };
+
+        const __oldPublishMedia = window.publishMedia || publishMedia;
+        window.publishMedia = async function(mode) { if (!requireFeature('media')) return; if (mode === 'fb' && !requireFeature('videos')) return; return __oldPublishMedia.apply(this, arguments); };
+
+        const __oldExecuteTransferV12 = window.executeTransfer;
+        window.executeTransfer = async function() { if (!requireFeature('transfers')) return; return __oldExecuteTransferV12.apply(this, arguments); };
+
+        const __oldAddSponsor = window.addSponsor || addSponsor;
+        window.addSponsor = async function() { if (!requireFeature('sponsors')) return; return __oldAddSponsor.apply(this, arguments); };
+
+        const __oldSaveRoundStars = window.saveRoundStars || saveRoundStars;
+        window.saveRoundStars = async function() { if (!requireFeature('roundStars')) return; return __oldSaveRoundStars.apply(this, arguments); };
+
+        const __oldAddReferee = window.addReferee || addReferee;
+        window.addReferee = async function() { if (!requireFeature('referees')) return; return __oldAddReferee.apply(this, arguments); };
+
+        const __oldSendManualPush = window.sendManualPush || sendManualPush;
+        window.sendManualPush = async function() { if (!requireFeature('notifications')) return; return __oldSendManualPush.apply(this, arguments); };
+
+        const __oldClearLiveChat = window.clearLiveChat || clearLiveChat;
+        window.clearLiveChat = function() { if (!requireFeature('comments')) return; return __oldClearLiveChat.apply(this, arguments); };
+
+        // تطبيق القفل بعد تحميل الصفحة أيضاً، حتى لو الباقة وصلت قبل بناء بعض العناصر.
+        setTimeout(() => { try { applyPackageToOldAdmin(); } catch(e) {} }, 1200);
 
 
     </script>
