@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>إدارة البطولات - Tourney</title>
+    <title>إدارة البطولات - محمد حمزة</title>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
@@ -77,9 +77,9 @@
         .h2h-stat b { font-size:20px; font-family:Arial; }
         .h2h-stat span { font-size:10px; color:var(--muted); }
 
-        .package-badge-box { background: rgba(59,130,246,0.08); border: 1px solid rgba(59,130,246,0.35); color: var(--text); padding: 12px; border-radius: 12px; margin-bottom: 15px; font-size: 12px; line-height: 1.8; }
-        .package-badge-box b { color: var(--accent); }
-        .package-lock-note { color: var(--muted); font-size: 11px; margin-top: 5px; }
+        .package-admin-badge { background: rgba(212,175,55,0.08); border:1px solid rgba(212,175,55,0.55); color:#fff; border-radius:12px; padding:12px 14px; margin-bottom:15px; font-size:12px; line-height:1.8; display:none; }
+        .package-admin-badge b { color:#facc15; }
+
     </style>
 </head>
 <body>
@@ -96,21 +96,21 @@
             <button onclick="triggerSignOut()" style="width:auto; margin:0; background:rgba(239,68,68,0.1); border-color:#ef4444; color:#ef4444; padding:8px 15px;"><i class="fa-solid fa-right-from-bracket"></i> خروج</button>
         </div>
 
-        <div id="adminPackageBadge" class="package-badge-box" style="display:none;">
-            <i class="fa-solid fa-crown"></i>
-            <b>باقة الزبون:</b> <span id="adminPackageName">...</span>
-            <span style="margin:0 8px; color:var(--muted);">|</span>
-            <b>النوع:</b> <span id="adminPackageSport">...</span>
-            <span style="margin:0 8px; color:var(--muted);">|</span>
-            <b>عدد اللاعبين:</b> <span id="adminPackageMaxPlayers">...</span>
-            <div class="package-lock-note">يتم تحديد هذه الباقة من ملف الماستر أدمن فقط. هذه اللوحة تقرأ الإعداد وتطبقه تلقائياً.</div>
-        </div>
+        <div id="testModeBanner" class="test-mode-banner"><i class="fa-solid fa-flask"></i> تنبيه: وضع التجربة مفعل. الإشعارات معطلة ولا تظهر للمتابعين.</div>
         
         <div class="public-link-box">
             <h3 style="margin-top:0; color:var(--accent); font-size:15px;"><i class="fa-solid fa-share-nodes"></i> رابط تطبيق الجمهور لبطولتك</h3>
             <p style="font-size: 12px; color: var(--muted); margin: 0;">انسخ هذا الرابط وانشره للمتابعين لمشاهدة البطولة وتحديثاتها حياً:</p>
             <input type="text" id="publicAppUrl" readonly>
             <button onclick="copyPublicAppUrl()" style="background:var(--accent); color:#000; border:none; margin:0;"><i class="fa-solid fa-copy"></i> نسخ الرابط</button>
+        </div>
+
+        <div id="adminPackageBadge" class="package-admin-badge">
+            <i class="fa-solid fa-box"></i> باقة هذا الحساب: <b id="adminPackageName">---</b>
+            <span style="margin:0 8px; color:#777;">|</span>
+            النوع: <b id="adminPackageSport">---</b>
+            <span style="margin:0 8px; color:#777;">|</span>
+            اللاعبين: <b id="adminPackagePlayers">---</b>
         </div>
         
         <div class="tab-nav">
@@ -232,7 +232,9 @@
                         <button onclick="addOwnGoal()" style="margin:0; background:transparent; color:#ef4444; border:1px solid #ef4444;">هدف عكسي <i class="fa-solid fa-rotate-left"></i></button>
                         <button onclick="addAutoEvent('assists', '🅰️')" style="margin:0; background:#8b5cf6; color:#fff; border:none;">صناعة</button>
                         <button onclick="addAutoEvent('yellow', '🟨')" style="margin:0; background:#facc15; color:#000; border:none;">إنذار</button>
-                        <button onclick="addAutoEvent('red', '🟥')" style="margin:0; background:#ef4444; color:#fff; border:none; grid-column:span 2;">طرد</button>
+                        <button onclick="addAutoEvent('red', '🟥')" style="margin:0; background:#ef4444; color:#fff; border:none;">طرد</button>
+                        <button onclick="if(requireFeature('offside')) addAutoEvent('offsides', '🚩')" style="margin:0; background:#fb7185; color:#000; border:none;">أوفسايد</button>
+                        <button onclick="if(requireFeature('substitutions')) addAutoEvent('subs', '🔃')" style="margin:0; background:#3b82f6; color:#fff; border:none; grid-column:span 2;">تبديل</button>
                     </div>
                 </div>
                 <textarea id="mEvents" style="min-height: 80px; font-size:13px;" readonly placeholder="سجل الأحداث يظهر هنا..."></textarea>
@@ -776,101 +778,386 @@
         const db = firebase.database(); 
         const auth = firebase.auth();
 
-        // ---------------------------------------------------------
-        // ربط الباقة مع ملف الماستر أدمن
-        // الماستر يحفظ الباقة داخل: tournaments/{dbPath}/settings/license
-        // هذه النسخة القديمة تقرأها فقط وتطبق عدد اللاعبين وبعض إخفاء الأقسام.
-        // ---------------------------------------------------------
-        const ALL_FEATURES_DEFAULT_ON = {
-            live:true, matches:true, groups:true, teams:true, stats:true, media:true,
-            videos:true, transfers:true, finance:true, comments:true, predictions:true,
-            notifications:true, h2h:true, referees:true, sponsors:true, hallOfFame:true,
-            roundStars:true, offside:false, substitutions:false, advancedStats:false
-        };
-        let currentLicense = {
-            plan: 'legacy',
-            planLabel: 'النسخة القديمة',
-            sportMode: 'general',
-            sportLabel: 'عام',
-            maxPlayersPerTeam: 15,
-            lineupPlayers: 7,
-            halfMinutes: 25,
-            features: { ...ALL_FEATURES_DEFAULT_ON }
-        };
-        let __packageListenerAttached = false;
 
-        function normalizeAdminLicense(raw) {
-            raw = raw && typeof raw === 'object' ? raw : {};
-            const features = Object.assign({}, ALL_FEATURES_DEFAULT_ON, raw.features || {});
-            const maxPlayers = Math.max(5, Math.min(30, parseInt(raw.maxPlayersPerTeam || raw.maxPlayers || 15, 10) || 15));
-            const lineup = Math.max(5, Math.min(11, parseInt(raw.lineupPlayers || (raw.sportMode === 'football11' ? 11 : 7), 10) || 7));
-            return {
-                plan: raw.plan || 'legacy',
-                planLabel: raw.planLabel || raw.label || raw.name || 'باقة غير محددة',
-                sportMode: raw.sportMode || 'general',
-                sportLabel: raw.sportLabel || (raw.sportMode === 'football11' ? '11 لاعب' : raw.sportMode === 'seven' ? 'سباعي' : raw.sportMode === 'futsal' ? 'خماسي' : 'عام'),
-                maxPlayersPerTeam: maxPlayers,
-                lineupPlayers: lineup,
-                halfMinutes: parseInt(raw.halfMinutes || 25, 10) || 25,
-                features
-            };
+// =========================================================
+// v15 - ربط ملف الأدمن القديم بباقات الماستر الجديدة
+// المصدر الأساسي: saas_users/{uid}/license
+// يدعم: سباعي/11 × عادي/برو/برو ماكس، ويطبق الميزات على الأدمن والجمهور.
+// =========================================================
+const MASTER_TIERED_PACKAGE_TEMPLATES_V15 = {
+    "seven": {
+        "normal": {
+            "plan": "seven_normal",
+            "sportPackage": "seven",
+            "tier": "normal",
+            "tierLabel": "عادي",
+            "planLabel": "سباعي - عادي",
+            "sportMode": "seven",
+            "sportLabel": "سباعي",
+            "maxPlayersPerTeam": 15,
+            "lineupPlayers": 7,
+            "halfMinutes": 25,
+            "lockedPlayers": true,
+            "features": {
+                "live": true,
+                "matches": true,
+                "groups": true,
+                "teams": true,
+                "stats": true,
+                "media": false,
+                "videos": false,
+                "transfers": false,
+                "finance": false,
+                "comments": false,
+                "predictions": false,
+                "notifications": true,
+                "h2h": false,
+                "referees": false,
+                "sponsors": false,
+                "hallOfFame": false,
+                "roundStars": false,
+                "offside": false,
+                "substitutions": false,
+                "stoppageTime": false,
+                "advancedStats": false
+            }
+        },
+        "pro": {
+            "plan": "seven_pro",
+            "sportPackage": "seven",
+            "tier": "pro",
+            "tierLabel": "برو",
+            "planLabel": "سباعي - برو",
+            "sportMode": "seven",
+            "sportLabel": "سباعي",
+            "maxPlayersPerTeam": 15,
+            "lineupPlayers": 7,
+            "halfMinutes": 25,
+            "lockedPlayers": true,
+            "features": {
+                "live": true,
+                "matches": true,
+                "groups": true,
+                "teams": true,
+                "stats": true,
+                "media": true,
+                "videos": false,
+                "transfers": false,
+                "finance": false,
+                "comments": true,
+                "predictions": true,
+                "notifications": true,
+                "h2h": true,
+                "referees": false,
+                "sponsors": false,
+                "hallOfFame": true,
+                "roundStars": true,
+                "offside": false,
+                "substitutions": false,
+                "stoppageTime": false,
+                "advancedStats": false
+            }
+        },
+        "promax": {
+            "plan": "seven_promax",
+            "sportPackage": "seven",
+            "tier": "promax",
+            "tierLabel": "برو ماكس",
+            "planLabel": "سباعي - برو ماكس",
+            "sportMode": "seven",
+            "sportLabel": "سباعي",
+            "maxPlayersPerTeam": 15,
+            "lineupPlayers": 7,
+            "halfMinutes": 25,
+            "lockedPlayers": true,
+            "features": {
+                "live": true,
+                "matches": true,
+                "groups": true,
+                "teams": true,
+                "stats": true,
+                "media": true,
+                "videos": true,
+                "transfers": true,
+                "finance": true,
+                "comments": true,
+                "predictions": true,
+                "notifications": true,
+                "h2h": true,
+                "referees": true,
+                "sponsors": true,
+                "hallOfFame": true,
+                "roundStars": true,
+                "offside": false,
+                "substitutions": false,
+                "stoppageTime": false,
+                "advancedStats": true
+            }
         }
-
-        function getMaxPlayersPerTeam() {
-            return Math.max(5, Math.min(30, parseInt(currentLicense.maxPlayersPerTeam || 15, 10) || 15));
+    },
+    "eleven": {
+        "normal": {
+            "plan": "eleven_normal",
+            "sportPackage": "eleven",
+            "tier": "normal",
+            "tierLabel": "عادي",
+            "planLabel": "11 لاعب - عادي",
+            "sportMode": "football11",
+            "sportLabel": "11 لاعب",
+            "maxPlayersPerTeam": 30,
+            "lineupPlayers": 11,
+            "halfMinutes": 45,
+            "lockedPlayers": true,
+            "features": {
+                "live": true,
+                "matches": true,
+                "groups": true,
+                "teams": true,
+                "stats": true,
+                "media": false,
+                "videos": false,
+                "transfers": false,
+                "finance": false,
+                "comments": false,
+                "predictions": false,
+                "notifications": true,
+                "h2h": false,
+                "referees": true,
+                "sponsors": false,
+                "hallOfFame": false,
+                "roundStars": false,
+                "offside": true,
+                "substitutions": true,
+                "stoppageTime": true,
+                "advancedStats": true
+            }
+        },
+        "pro": {
+            "plan": "eleven_pro",
+            "sportPackage": "eleven",
+            "tier": "pro",
+            "tierLabel": "برو",
+            "planLabel": "11 لاعب - برو",
+            "sportMode": "football11",
+            "sportLabel": "11 لاعب",
+            "maxPlayersPerTeam": 30,
+            "lineupPlayers": 11,
+            "halfMinutes": 45,
+            "lockedPlayers": true,
+            "features": {
+                "live": true,
+                "matches": true,
+                "groups": true,
+                "teams": true,
+                "stats": true,
+                "media": true,
+                "videos": false,
+                "transfers": false,
+                "finance": false,
+                "comments": true,
+                "predictions": true,
+                "notifications": true,
+                "h2h": true,
+                "referees": true,
+                "sponsors": false,
+                "hallOfFame": true,
+                "roundStars": true,
+                "offside": true,
+                "substitutions": true,
+                "stoppageTime": true,
+                "advancedStats": true
+            }
+        },
+        "promax": {
+            "plan": "eleven_promax",
+            "sportPackage": "eleven",
+            "tier": "promax",
+            "tierLabel": "برو ماكس",
+            "planLabel": "11 لاعب - برو ماكس",
+            "sportMode": "football11",
+            "sportLabel": "11 لاعب",
+            "maxPlayersPerTeam": 30,
+            "lineupPlayers": 11,
+            "halfMinutes": 45,
+            "lockedPlayers": true,
+            "features": {
+                "live": true,
+                "matches": true,
+                "groups": true,
+                "teams": true,
+                "stats": true,
+                "media": true,
+                "videos": true,
+                "transfers": true,
+                "finance": true,
+                "comments": true,
+                "predictions": true,
+                "notifications": true,
+                "h2h": true,
+                "referees": true,
+                "sponsors": true,
+                "hallOfFame": true,
+                "roundStars": true,
+                "offside": true,
+                "substitutions": true,
+                "stoppageTime": true,
+                "advancedStats": true
+            }
         }
-
-        function isFeatureEnabled(key) {
-            if (!currentLicense || !currentLicense.features) return true;
-            return currentLicense.features[key] !== false;
+    }
+};
+let currentLicense = JSON.parse(JSON.stringify(MASTER_TIERED_PACKAGE_TEMPLATES_V15.seven.normal));
+function clonePackageV15(obj){ return JSON.parse(JSON.stringify(obj || {})); }
+function inferSportTierV15(userData, raw){
+    userData = userData || {}; raw = raw || {};
+    const rawPlan = String(raw.plan || userData.license_plan || '');
+    const sport = raw.sportPackage || userData.license_sport_package || (rawPlan.startsWith('eleven') || raw.sportMode === 'football11' || userData.sport_mode === 'football11' || Number(userData.lineup_players) === 11 ? 'eleven' : 'seven');
+    const tier = raw.tier || userData.license_tier || (rawPlan.includes('promax') ? 'promax' : rawPlan.includes('pro') ? 'pro' : 'normal');
+    return { sport: sport === 'eleven' ? 'eleven' : 'seven', tier: ['normal','pro','promax'].includes(tier) ? tier : 'normal' };
+}
+function normalizePackageFromUserV13(userData){
+    userData = userData || {};
+    const raw = userData.license && typeof userData.license === 'object' ? userData.license : {};
+    const st = inferSportTierV15(userData, raw);
+    const base = clonePackageV15(MASTER_TIERED_PACKAGE_TEMPLATES_V15[st.sport][st.tier]);
+    const merged = Object.assign({}, base, raw);
+    merged.features = Object.assign({}, base.features || {}, raw.features || {});
+    merged.sportPackage = st.sport;
+    merged.tier = st.tier;
+    merged.plan = `${st.sport}_${st.tier}`;
+    merged.planLabel = userData.license_label || raw.planLabel || merged.planLabel;
+    merged.sportMode = raw.sportMode || userData.sport_mode || merged.sportMode;
+    merged.maxPlayersPerTeam = Number(raw.maxPlayersPerTeam || userData.max_players_per_team || merged.maxPlayersPerTeam || base.maxPlayersPerTeam || 15);
+    merged.lineupPlayers = Number(raw.lineupPlayers || userData.lineup_players || merged.lineupPlayers || base.lineupPlayers || 7);
+    merged.halfMinutes = Number(raw.halfMinutes || userData.half_minutes || merged.halfMinutes || base.halfMinutes || 25);
+    if(st.sport === 'seven'){
+        merged.maxPlayersPerTeam = 15;
+        merged.lineupPlayers = 7;
+        merged.features.offside = false;
+        merged.features.substitutions = false;
+        merged.features.stoppageTime = false;
+    } else {
+        merged.maxPlayersPerTeam = 30;
+        merged.lineupPlayers = 11;
+        if(merged.features.offside === undefined) merged.features.offside = true;
+        if(merged.features.substitutions === undefined) merged.features.substitutions = true;
+        if(merged.features.stoppageTime === undefined) merged.features.stoppageTime = true;
+        if(merged.features.advancedStats === undefined) merged.features.advancedStats = true;
+    }
+    merged.maxPlayersPerTeam = Math.max(5, Math.min(30, merged.maxPlayersPerTeam));
+    merged.lineupPlayers = Math.max(5, Math.min(11, merged.lineupPlayers));
+    return merged;
+}
+function getMaxPlayersPerTeam(){ return Math.max(5, Math.min(30, Number(currentLicense?.maxPlayersPerTeam || 15))); }
+function isFeatureEnabled(key){ return !!(currentLicense && currentLicense.features && currentLicense.features[key] === true); }
+function packageAlert(key){ const names={transfers:'الانتقالات', finance:'المالية', media:'الإعلام', videos:'الفيديو', notifications:'الإشعارات', referees:'الحكام', sponsors:'الرعاة', h2h:'H2H', comments:'التعليقات', predictions:'التوقعات', offside:'الأوفسايد', substitutions:'التبديلات', stoppageTime:'الوقت الضائع', advancedStats:'الإحصائيات المتقدمة'}; alert('هذه الميزة غير مفعلة ضمن باقة هذا الزبون: ' + (names[key] || key)); }
+function requireFeature(key){ if(isFeatureEnabled(key)) return true; packageAlert(key); return false; }
+async function syncLicenseToTournamentV13(){
+    if(!dbPath || !currentLicense) return;
+    try { await db.ref(`tournaments/${dbPath}/settings/license`).set(currentLicense); }
+    catch(e){ console.warn('لم تتم مزامنة الباقة لمسار البطولة بسبب الصلاحيات:', e && e.message ? e.message : e); }
+}
+function setPackageDisplayVisibility(selector, visible){ document.querySelectorAll(selector).forEach(el => { el.style.display = visible ? '' : 'none'; }); }
+function installAdminExtraStatsV15(){
+    if(document.getElementById('advancedStatsPanelV15')) return;
+    const statsHeader = Array.from(document.querySelectorAll('h3')).find(h => (h.textContent || '').includes('إحصائيات المباراة'));
+    const panel = statsHeader ? statsHeader.closest('.sub-panel') : null;
+    if(!panel) return;
+    const make = (id, label, color, feature) => `
+        <div class="v15-stat-control" data-v15-feature="${feature}" style="flex:1; min-width:120px;">
+            <label style="color:${color};">${label}</label>
+            <div style="display:flex; justify-content:center; gap:5px; align-items:center;">
+                <button onclick="updateStat('${id}1', -1)" style="width:30px; padding:5px; margin:0;">-</button>
+                <input type="number" id="${id}1" value="0" readonly style="width:40px; text-align:center; margin:0; font-size:14px; font-weight:bold;">
+                <button onclick="updateStat('${id}1', 1)" style="width:30px; padding:5px; margin:0;">+</button>
+            </div>
+            <div style="height:5px"></div>
+            <div style="display:flex; justify-content:center; gap:5px; align-items:center;">
+                <button onclick="updateStat('${id}2', -1)" style="width:30px; padding:5px; margin:0;">-</button>
+                <input type="number" id="${id}2" value="0" readonly style="width:40px; text-align:center; margin:0; font-size:14px; font-weight:bold;">
+                <button onclick="updateStat('${id}2', 1)" style="width:30px; padding:5px; margin:0;">+</button>
+            </div>
+        </div>`;
+    const div = document.createElement('div');
+    div.id = 'advancedStatsPanelV15';
+    div.innerHTML = `
+        <hr style="border-color:var(--border); margin:15px 0;">
+        <h3 style="color:#38bdf8; font-size:14px; text-align:center; margin:0 0 10px;">إحصائيات إضافية حسب الباقة</h3>
+        <div class="flex-row" style="flex-wrap:wrap; gap:10px; text-align:center;">
+            ${make('sot','تسديدات على المرمى','#38bdf8','advancedStats')}
+            ${make('saves','تصديات','#22c55e','advancedStats')}
+            ${make('passes','تمريرات','#c084fc','advancedStats')}
+            ${make('attacks','هجمات خطرة','#f97316','advancedStats')}
+            ${make('offsides','أوفسايد','#fb7185','offside')}
+            ${make('subs','تبديلات','#60a5fa','substitutions')}
+            ${make('stoppage','وقت ضائع','#facc15','stoppageTime')}
+        </div>`;
+    panel.appendChild(div);
+}
+function updateExtraStatsValuesV15(stats){
+    stats = stats || {};
+    ['sot1','sot2','saves1','saves2','passes1','passes2','attacks1','attacks2','offsides1','offsides2','subs1','subs2','stoppage1','stoppage2'].forEach(id => {
+        const el = document.getElementById(id);
+        if(el && document.activeElement !== el) el.value = stats[id] || 0;
+    });
+}
+function collectMatchStatsV15(){
+    const baseIds = ['shots1','shots2','corners1','corners2','fouls1','fouls2','sot1','sot2','saves1','saves2','passes1','passes2','attacks1','attacks2','offsides1','offsides2','subs1','subs2','stoppage1','stoppage2'];
+    const out = {};
+    baseIds.forEach(id => { const el = document.getElementById(id); if(el) out[id] = el.value || 0; });
+    return out;
+}
+function applyPackageToAdminV13(){
+    installAdminExtraStatsV15();
+    const badge = document.getElementById('adminPackageBadge');
+    if(badge) badge.style.display = 'block';
+    const setText = (id, val) => { const el=document.getElementById(id); if(el) el.textContent = val; };
+    setText('adminPackageName', currentLicense.planLabel || currentLicense.plan || '---');
+    setText('adminPackageSport', currentLicense.sportLabel || currentLicense.sportMode || '---');
+    setText('adminPackagePlayers', `${getMaxPlayersPerTeam()} لاعب / ${currentLicense.lineupPlayers} أساسي`);
+    const tabMap = { 'tab-media':'media', 'tab-finance':'finance' };
+    Object.keys(tabMap).forEach(tabId => {
+        const feature = tabMap[tabId];
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            if((btn.getAttribute('onclick') || '').includes(tabId)) btn.style.display = isFeatureEnabled(feature) ? '' : 'none';
+        });
+        const tab = document.getElementById(tabId);
+        if(tab) tab.style.display = isFeatureEnabled(feature) ? '' : 'none';
+    });
+    document.querySelectorAll('.panel, .sub-panel').forEach(panel => {
+        const txt = panel.textContent || '';
+        if(txt.includes('إدارة وسوق الانتقالات')) panel.style.display = isFeatureEnabled('transfers') ? '' : 'none';
+        if(txt.includes('الرعاة') && txt.includes('إضافة')) panel.style.display = isFeatureEnabled('sponsors') ? '' : 'none';
+        if(txt.includes('الحكام') && txt.includes('اسم الحكم')) panel.style.display = isFeatureEnabled('referees') ? '' : 'none';
+    });
+    document.querySelectorAll('[data-v15-feature]').forEach(el => {
+        const feature = el.getAttribute('data-v15-feature');
+        el.style.display = isFeatureEnabled(feature) ? '' : 'none';
+    });
+    document.querySelectorAll('[onclick*="sendManualPush"]').forEach(el => { el.style.display = isFeatureEnabled('notifications') ? '' : 'none'; });
+    document.querySelectorAll('[onclick*="addAutoEvent(\'offsides\'"], [onclick*="addAutoEvent(\'subs\'"]').forEach(el => {
+        const txt = el.textContent || '';
+        if(txt.includes('أوفسايد')) el.style.display = isFeatureEnabled('offside') ? '' : 'none';
+        if(txt.includes('تبديل')) el.style.display = isFeatureEnabled('substitutions') ? '' : 'none';
+    });
+    if(document.getElementById('playersGridInputs')) generatePlayersGrid();
+}
+function installPackageGuardsV13(){
+    const guard = (name, feature) => {
+        const original = window[name];
+        if(typeof original === 'function' && !original.__packageGuardedV15){
+            const wrapped = function(...args){ if(!requireFeature(feature)) return; return original.apply(this,args); };
+            wrapped.__packageGuardedV15 = true;
+            window[name] = wrapped;
         }
+    };
+    guard('executeTransfer', 'transfers');
+    guard('addFinancialTransaction', 'finance');
+    guard('addReferee', 'referees');
+    guard('addSponsor', 'sponsors');
+}
 
-        function attachMasterPackageListener() {
-            if (!dbPath || __packageListenerAttached) return;
-            __packageListenerAttached = true;
-            db.ref(`tournaments/${dbPath}/settings/license`).on('value', snap => {
-                currentLicense = normalizeAdminLicense(snap.val());
-                applyPackageToOldAdmin();
-            }, err => {
-                console.warn('تعذر قراءة باقة الزبون من الماستر:', err && err.message ? err.message : err);
-                currentLicense = normalizeAdminLicense(null);
-                applyPackageToOldAdmin();
-            });
-        }
-
-        function applyPackageToOldAdmin() {
-            const badge = document.getElementById('adminPackageBadge');
-            if (badge) badge.style.display = 'block';
-            const setText = (id, value) => { const el = document.getElementById(id); if (el) el.textContent = value; };
-            setText('adminPackageName', currentLicense.planLabel || currentLicense.plan || 'غير محددة');
-            setText('adminPackageSport', currentLicense.sportLabel || currentLicense.sportMode || 'عام');
-            setText('adminPackageMaxPlayers', `${getMaxPlayersPerTeam()} لاعب / ${currentLicense.lineupPlayers || '-'} أساسي`);
-
-            // إعادة بناء حقول اللاعبين حسب الباقة: سباعي = 15، 11 كامل = 30
-            if (document.getElementById('playersGridInputs')) generatePlayersGrid();
-
-            // إخفاء بعض التبويبات حسب ميزات الباقة، بدون تغيير بنية النسخة القديمة.
-            const featureByTab = {
-                'tab-live': 'live',
-                'tab-teams': 'teams',
-                'tab-groups': 'groups',
-                'tab-schedule': 'matches',
-                'tab-media': 'media',
-                'tab-finance': 'finance'
-            };
-            document.querySelectorAll('.tab-btn').forEach(btn => {
-                const oc = btn.getAttribute('onclick') || '';
-                Object.keys(featureByTab).forEach(tabId => {
-                    if (oc.includes(`'${tabId}'`) || oc.includes(`"${tabId}"`)) {
-                        const enabled = isFeatureEnabled(featureByTab[tabId]);
-                        btn.style.display = enabled ? '' : 'none';
-                        const tab = document.getElementById(tabId);
-                        if (tab && !enabled) tab.classList.remove('active');
-                    }
-                });
-            });
-        }
-// دالة لتوليد حقول إدخال اللاعبين حسب باقة الزبون تلقائياً في الواجهة
+// دالة لتوليد حقول إدخال اللاعبين الـ 15 تلقائياً في الواجهة
 function generatePlayersGrid() {
     const grid = document.getElementById('playersGridInputs');
     if (!grid) return;
@@ -891,8 +1178,7 @@ function generatePlayersGrid() {
         <option value="RW">جناح أيمن</option>
         <option value="ST">مهاجم</option>
     `;
-    const playerLimit = getMaxPlayersPerTeam();
-    for (let i = 1; i <= playerLimit; i++) {
+    for (let i = 1; i <= getMaxPlayersPerTeam(); i++) {
         html += `
         <div class="sub-panel" style="margin-bottom: 10px; padding: 10px; border: 1px solid #27272a; background: #0f0f11;">
             <label>لاعب ${i}:</label>
@@ -912,13 +1198,6 @@ function generatePlayersGrid() {
 
 // تشغيل الدالة فوراً لتجهيز العناصر في الـ DOM
 generatePlayersGrid();
-        setTimeout(() => {
-            const barrier = document.getElementById('loadingBarrier');
-            if (barrier && barrier.style.display !== 'none') {
-                const h = barrier.querySelector('h3');
-                if (h) h.innerHTML = 'ما زالت عملية التحقق مستمرة... إذا بقيت الشاشة هكذا تأكد من تسجيل الدخول وربط الجهاز أو افتح login.html ثم ادخل من جديد.';
-            }
-        }, 18000);
 
         let dbPath = ""; 
         let testModeActive = false; let allData = {}; let adminClockInterval; let isInternalUpdate = false;
@@ -962,7 +1241,6 @@ generatePlayersGrid();
             if(user) {
                 db.ref(`saas_users/${user.uid}`).on('value', snap => {
                     const userData = snap.val();
-                    if (typeof updateUserPackageFallback === 'function') updateUserPackageFallback(userData);
                     if(!firewallValidateAdminUser(user, userData)) return;
 
                     dbPath = cleanTournamentId(userData.tournament_id);
@@ -972,12 +1250,13 @@ generatePlayersGrid();
                         return;
                     }
 
+                    // قراءة باقة هذا الحساب من ملف الماستر أدمن
+                    currentLicense = normalizePackageFromUserV13(userData);
                     localStorage.setItem('activeDbPath', dbPath);
-                    attachMasterPackageListener();
                     if(!localStorage.getItem('visualName')) localStorage.setItem('visualName', dbPath);
                     document.getElementById('tourneyTitle').innerText = "لوحة تحكم @" + dbPath;
                     
-                    let publicUrl = window.location.origin + window.location.pathname.replace(/[^\/]*$/, 'index.html') + "?db=" + encodeURIComponent(dbPath);
+                    let publicUrl = window.location.origin + window.location.pathname.replace('admin.html', 'index.html') + "?db=" + encodeURIComponent(dbPath);
                     let urlInput = document.getElementById('publicAppUrl');
                     if(urlInput) urlInput.value = publicUrl;
 
@@ -986,6 +1265,12 @@ generatePlayersGrid();
                         document.getElementById('loadingBarrier').style.display = 'none';
                         document.getElementById('mainAdminContainer').style.display = 'block';
                         initializeSystemListeners();
+                        applyPackageToAdminV13();
+                        installPackageGuardsV13();
+                        syncLicenseToTournamentV13();
+                    } else {
+                        applyPackageToAdminV13();
+                        installPackageGuardsV13();
                     }
                 }, err => {
                     alert("❌ جدار الحماية: لا توجد صلاحية لقراءة بيانات الاشتراك. تأكد من Firebase Rules.");
@@ -1001,7 +1286,7 @@ generatePlayersGrid();
         function copyPublicAppUrl() { let input = document.getElementById('publicAppUrl'); input.select(); input.setSelectionRange(0, 99999); document.execCommand("copy"); alert("تم نسخ رابط تطبيق الجمهور الخاص بك بنجاح!"); }
         // -----------------------------------------------------------------
 
-        function openTab(tabId, btn) { document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active')); document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active')); document.getElementById(tabId).classList.add('active'); btn.classList.add('active'); }
+        function openTab(tabId, btn) { const featureMap = {'tab-media':'media','tab-finance':'finance'}; if(featureMap[tabId] && !requireFeature(featureMap[tabId])) return; document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active')); document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active')); const tab=document.getElementById(tabId); if(tab) tab.classList.add('active'); if(btn) btn.classList.add('active'); }
         
         function updateVisualName() {
             const input = document.getElementById('tourneyName');
@@ -1360,7 +1645,7 @@ ${message}`); return; }
             try {
                 showSaveIndicator("جاري إرسال الإشعار...");
                 const publicInput = document.getElementById('publicAppUrl');
-                const publicLink = publicInput && publicInput.value ? publicInput.value : (window.location.origin + window.location.pathname.replace(/[^\/]*$/, 'index.html') + '?db=' + encodeURIComponent(dbPath));
+                const publicLink = publicInput && publicInput.value ? publicInput.value : (window.location.origin + window.location.pathname.replace('admin.html', 'index.html') + '?db=' + encodeURIComponent(dbPath));
                 const sendPush = firebase.functions().httpsCallable('sendTournamentPush');
                 const res = await sendPush({
                     title: String(title || '').slice(0, 80),
@@ -1642,7 +1927,7 @@ ${message}`); return; }
                 document.getElementById('posValue1').innerText = stats.possession1 + '%'; document.getElementById('posValue2').innerText = stats.possession2 + '%';
                 document.getElementById('shots1').value = stats.shots1 || 0; document.getElementById('shots2').value = stats.shots2 || 0;
                 document.getElementById('corners1').value = stats.corners1 || 0; document.getElementById('corners2').value = stats.corners2 || 0;
-                document.getElementById('fouls1').value = stats.fouls1 || 0; document.getElementById('fouls2').value = stats.fouls2 || 0;
+                document.getElementById('fouls1').value = stats.fouls1 || 0; document.getElementById('fouls2').value = stats.fouls2 || 0; updateExtraStatsValuesV15(stats);
 
                 let opts = '<option value="">اختر الفريق...</option>'; if(allData.teams) for(let t in allData.teams) opts += `<option value="${t}">${t}</option>`;
                 ['t1Name','t2Name','compT1','compT2', 'h2hT1', 'h2hT2'].forEach(id => { let el = document.getElementById(id); if(!el) return; let currentVal = el.value; el.innerHTML = opts; if(currentVal) el.value = currentVal; });
@@ -1698,7 +1983,7 @@ ${message}`); return; }
 
         function setPossession(teamNum) { posActiveTeam = teamNum; document.getElementById('btnPos1').className = 'pos-btn ' + (teamNum===1 ? 'active-1' : ''); document.getElementById('btnPos2').className = 'pos-btn ' + (teamNum===2 ? 'active-2' : ''); document.getElementById('btnPos0').className = 'pos-btn ' + (teamNum===0 ? 'active-0' : ''); let totPos = posSec1 + posSec2; let pct1 = totPos===0 ? 50 : Math.round((posSec1 / totPos) * 100); let pct2 = 100 - pct1; db.ref(`tournaments/${dbPath}/live_match/stats`).update({posSec1: posSec1, posSec2: posSec2, possession1: pct1, possession2: pct2}); }
         function updateStat(id, change) { let el = document.getElementById(id); let val = parseInt(el.value) || 0; if(val + change >= 0) { el.value = val + change; autoSaveMatchStats(); } }
-        function autoSaveMatchStats() { clearTimeout(autoSaveTimeout); autoSaveTimeout = setTimeout(() => { isInternalUpdate = true; db.ref(`tournaments/${dbPath}/live_match/stats`).update({ shots1: document.getElementById('shots1').value, shots2: document.getElementById('shots2').value, corners1: document.getElementById('corners1').value, corners2: document.getElementById('corners2').value, fouls1: document.getElementById('fouls1').value, fouls2: document.getElementById('fouls2').value }).then(() => { isInternalUpdate = false; }); }, 300); }
+        function autoSaveMatchStats() { clearTimeout(autoSaveTimeout); autoSaveTimeout = setTimeout(() => { isInternalUpdate = true; db.ref(`tournaments/${dbPath}/live_match/stats`).update(collectMatchStatsV15()).then(() => { isInternalUpdate = false; }); }, 300); }
 
         function updateTimerManually() { let m = parseInt(document.getElementById('tMinutes').value) || 0; db.ref(`tournaments/${dbPath}/live_match/timer`).once('value').then(snap => { let t = snap.val() || {}; let isRun = t.isRunning || false; db.ref(`tournaments/${dbPath}/live_match/timer`).set({ isRunning: isRun, startTime: isRun ? Date.now() : 0, savedSeconds: m * 60 }); }); }
         function startTimer() { db.ref(`tournaments/${dbPath}/live_match/timer`).once('value').then(snap => { let t = snap.val() || {}; if(t.isRunning) return; let sec = t.savedSeconds !== undefined ? t.savedSeconds : (t.baseMinute * 60 || 0); db.ref(`tournaments/${dbPath}/live_match/timer`).set({ isRunning: true, startTime: Date.now(), savedSeconds: sec }); }); }
@@ -1742,6 +2027,8 @@ ${message}`); return; }
         }
 
         async function addAutoEvent(type, textLabel) {
+            if(type === 'offsides' && !requireFeature('offside')) return;
+            if(type === 'subs' && !requireFeature('substitutions')) return;
             const side = document.querySelector('input[name="evtTeam"]:checked').value; const tName = document.getElementById('t' + side + 'Name').value; const pName = document.getElementById('evtPlayer').value;
             if(!tName || !pName) return alert("اختر اللاعب");
             let min = document.getElementById('evtMin').value; 
@@ -1762,7 +2049,7 @@ ${message}`); return; }
         async function endMatchAndSave() {
             const t1 = document.getElementById('t1Name').value; const t2 = document.getElementById('t2Name').value; const s1 = parseInt(document.getElementById('t1Score').value) || 0; const s2 = parseInt(document.getElementById('t2Score').value) || 0; const mRound = document.getElementById('mRound').value; const mLeg = document.getElementById('mLeg').value; const mGroup = document.getElementById('mGroup').value; const mEvents = document.getElementById('mEvents').value; const ref1 = document.getElementById('mRef1').value; const ref2 = document.getElementById('mRef2').value; const ref3 = document.getElementById('mRef3').value; const ref4 = document.getElementById('mRef4').value;
             const motmVal = document.getElementById('motmPlayer').value; let motmName = "", motmTeam = ""; if(motmVal) { [motmTeam, motmName] = motmVal.split('|'); db.ref(`tournaments/${dbPath}/teams/${motmTeam}/players/${motmName}/motm`).transaction(c => (c||0)+1); }
-            let totPos = posSec1 + posSec2; let pct1 = totPos===0 ? 50 : Math.round((posSec1 / totPos) * 100); let pct2 = 100 - pct1; const fStats = { possession1: pct1, possession2: pct2, shots1: document.getElementById('shots1').value, shots2: document.getElementById('shots2').value, corners1: document.getElementById('corners1').value, corners2: document.getElementById('corners2').value, fouls1: document.getElementById('fouls1').value, fouls2: document.getElementById('fouls2').value };
+            let totPos = posSec1 + posSec2; let pct1 = totPos===0 ? 50 : Math.round((posSec1 / totPos) * 100); let pct2 = 100 - pct1; const fStats = Object.assign({ possession1: pct1, possession2: pct2 }, collectMatchStatsV15());
             if(!t1 || !t2) return alert("اختر الفرق"); if(!confirm("إنهاء وحفظ المباراة؟")) return;
             
             showSaveIndicator("جاري أرشفة المباراة ومزامنة الإحصائيات...");
@@ -1780,7 +2067,7 @@ ${message}`); return; }
             }
 
             await db.ref(`tournaments/${dbPath}/saved_matches`).push(archiveData);
-            await db.ref(`tournaments/${dbPath}/live_match`).set({ team1:'', team2:'', score1:0, score2:0, events:'', status:'لم تبدأ', customLabel:'', round: '', leg: '', groupInfo: '', referee1:'', referee2:'', referee3:'', referee4:'', squad1:{}, squad2:{}, timer:{isRunning:false, savedSeconds:0, startTime:0}, stats: {posSec1:0, posSec2:0, possession1: 50, possession2: 50, shots1: 0, shots2: 0, corners1: 0, corners2: 0, fouls1: 0, fouls2: 0}}); 
+            await db.ref(`tournaments/${dbPath}/live_match`).set({ team1:'', team2:'', score1:0, score2:0, events:'', status:'لم تبدأ', customLabel:'', round: '', leg: '', groupInfo: '', referee1:'', referee2:'', referee3:'', referee4:'', squad1:{}, squad2:{}, timer:{isRunning:false, savedSeconds:0, startTime:0}, stats: {posSec1:0, posSec2:0, possession1: 50, possession2: 50, shots1: 0, shots2: 0, corners1: 0, corners2: 0, fouls1: 0, fouls2: 0, sot1:0, sot2:0, saves1:0, saves2:0, passes1:0, passes2:0, attacks1:0, attacks2:0, offsides1:0, offsides2:0, subs1:0, subs2:0, stoppage1:0, stoppage2:0}}); 
             
             let endMsg = `انتهت مباراة ${t1} و ${t2} بنتيجة ${s1} - ${s2}.`; if(motmName) endMsg += ` نجم المباراة: ${motmName}.`; sendManualPush("انتهاء المباراة", endMsg);
             document.getElementById('t1Name').value=''; document.getElementById('t2Name').value=''; document.getElementById('mRound').value=''; document.getElementById('mLeg').value=''; document.getElementById('mGroup').value=''; document.getElementById('mStatus').value='لم تبدأ'; document.getElementById('mCustomLabel').value=''; document.getElementById('tMinutes').value=0; document.getElementById('mRef1').value=''; document.getElementById('mRef2').value=''; document.getElementById('mRef3').value=''; document.getElementById('mRef4').value=''; posSec1=0; posSec2=0; posActiveTeam=0; setPossession(0); 
@@ -1817,8 +2104,7 @@ ${message}`); return; }
         async function saveFullTeam() { 
             const tName = document.getElementById('dbTeamName').value.trim(); if (!tName) return alert("اكتب اسم الفريق"); showSaveIndicator("جاري الحفظ...");
             let existingPlayers = (allData && allData.teams && allData.teams[tName] && allData.teams[tName].players) ? { ...allData.teams[tName].players } : {};
-            // مهم: لا نحفظ لاعبين أكثر من حد الباقة. نأخذ الإحصائيات القديمة فقط للأسماء المدخلة ضمن الحد.
-            let teamObj = { coach: document.getElementById('dbCoach').value || "", assistant: document.getElementById('dbAsst').value || "", players: {} }; 
+            let teamObj = { coach: document.getElementById('dbCoach').value || "", assistant: document.getElementById('dbAsst').value || "", players: existingPlayers }; 
             teamObj.nickname = document.getElementById('dbNickname').value || "";
             teamObj.stadium = document.getElementById('dbStadium').value || "";
 
@@ -1828,7 +2114,7 @@ ${message}`); return; }
                 let pPos = document.getElementById('pPos'+i).value;
                 if (pName) { 
                     let pStats = {goals:0, assists:0, yellow:0, red:0, matches:0, motm:0, cs:0}; 
-                    if(existingPlayers && existingPlayers[pName]) { pStats = existingPlayers[pName]; } 
+                    if(allData && allData.teams && allData.teams[tName] && allData.teams[tName].players && allData.teams[tName].players[pName]) { pStats = allData.teams[tName].players[pName]; } 
                     pStats.position = pPos;
                     if(pFile) { try { pStats.photo = await compressImage(pFile); } catch(e){} } 
                     teamObj.players[pName] = pStats; 
@@ -2165,7 +2451,7 @@ ${message}`); return; }
             isInternalUpdate = true;
             const s1 = parseInt(m.score1)||0; const s2 = parseInt(m.score2)||0;
 
-            await db.ref(`tournaments/${dbPath}/live_match`).update({ team1: m.team1, team2: m.team2, score1: s1, score2: s2, round: m.round||'', leg: m.leg||'', groupInfo: m.groupInfo||'', status: 'انتهت', events: m.events||'', referee1: m.referee1||'', referee2: m.referee2||'', referee3: m.referee3||'', referee4: m.referee4||'', squad1: m.squad1||{}, squad2: m.squad2||{}, timer: {isRunning:false, savedSeconds:0, startTime:0}, stats: m.stats || {posSec1:0, posSec2:0, possession1:50, possession2:50, shots1:0, shots2:0, corners1:0, corners2:0, fouls1:0, fouls2:0} });
+            await db.ref(`tournaments/${dbPath}/live_match`).update({ team1: m.team1, team2: m.team2, score1: s1, score2: s2, round: m.round||'', leg: m.leg||'', groupInfo: m.groupInfo||'', status: 'انتهت', events: m.events||'', referee1: m.referee1||'', referee2: m.referee2||'', referee3: m.referee3||'', referee4: m.referee4||'', squad1: m.squad1||{}, squad2: m.squad2||{}, timer: {isRunning:false, savedSeconds:0, startTime:0}, stats: m.stats || {posSec1:0, posSec2:0, possession1:50, possession2:50, shots1:0, shots2:0, corners1:0, corners2:0, fouls1:0, fouls2:0, sot1:0, sot2:0, saves1:0, saves2:0, passes1:0, passes2:0, attacks1:0, attacks2:0, offsides1:0, offsides2:0, subs1:0, subs2:0, stoppage1:0, stoppage2:0} });
             
             await db.ref(`tournaments/${dbPath}/saved_matches/${id}`).remove();
             
@@ -2472,222 +2758,6 @@ function attachAdminTransfersListener() {
             }
         });
         }
-
-
-        // =========================================================
-        // v12 - قفل الباقات الحقيقي من ملف الماستر أدمن
-        // هذه الإضافة تجعل ملف الأدمن القديم يلتزم بتعديلات الماستر:
-        // 1) يقرأ settings/license.
-        // 2) يستعمل بيانات saas_users كنسخة احتياطية.
-        // 3) يخفي ويقفل الأزرار والدوال، مو بس يخفي التبويب.
-        // =========================================================
-        const MASTER_PACKAGE_TEMPLATES_V12 = {
-            seven: {
-                plan: 'seven', planLabel: 'سباعي', sportMode: 'seven', sportLabel: 'سباعي',
-                maxPlayersPerTeam: 15, lineupPlayers: 7, halfMinutes: 25, lockedPlayers: true,
-                features: {
-                    live:true, matches:true, groups:true, teams:true, stats:true, media:true,
-                    videos:true, transfers:false, finance:false, comments:true, predictions:true,
-                    notifications:true, h2h:true, referees:false, sponsors:false, hallOfFame:true,
-                    roundStars:true, offside:false, substitutions:false, advancedStats:false
-                }
-            },
-            eleven_full: {
-                plan: 'eleven_full', planLabel: '11 لاعب كامل', sportMode: 'football11', sportLabel: '11 لاعب كامل',
-                maxPlayersPerTeam: 30, lineupPlayers: 11, halfMinutes: 45, lockedPlayers: true,
-                features: {
-                    live:true, matches:true, groups:true, teams:true, stats:true, media:true,
-                    videos:true, transfers:true, finance:true, comments:true, predictions:true,
-                    notifications:true, h2h:true, referees:true, sponsors:true, hallOfFame:true,
-                    roundStars:true, offside:true, substitutions:true, advancedStats:true
-                }
-            }
-        };
-
-        let __saasLicenseFallbackV12 = null;
-
-        function cloneV12(obj) { return JSON.parse(JSON.stringify(obj || {})); }
-
-        function updateUserPackageFallback(userData) {
-            userData = userData || {};
-            const plan = userData.license_plan || userData.plan || '';
-            if (plan && MASTER_PACKAGE_TEMPLATES_V12[plan]) {
-                __saasLicenseFallbackV12 = cloneV12(MASTER_PACKAGE_TEMPLATES_V12[plan]);
-            } else {
-                __saasLicenseFallbackV12 = null;
-            }
-            if (__saasLicenseFallbackV12) {
-                if (userData.license_label) __saasLicenseFallbackV12.planLabel = userData.license_label;
-                if (userData.max_players_per_team) __saasLicenseFallbackV12.maxPlayersPerTeam = Number(userData.max_players_per_team);
-                if (userData.lineup_players) __saasLicenseFallbackV12.lineupPlayers = Number(userData.lineup_players);
-                if (userData.sport_mode) __saasLicenseFallbackV12.sportMode = userData.sport_mode;
-            }
-        }
-
-        function normalizeAdminLicense(raw) {
-            raw = raw && typeof raw === 'object' ? raw : null;
-            const plan = raw?.plan || __saasLicenseFallbackV12?.plan || 'seven';
-            const base = cloneV12(MASTER_PACKAGE_TEMPLATES_V12[plan] || __saasLicenseFallbackV12 || MASTER_PACKAGE_TEMPLATES_V12.seven);
-            const merged = Object.assign({}, base, raw || __saasLicenseFallbackV12 || {});
-            merged.features = Object.assign({}, base.features || {}, (raw && raw.features) || (__saasLicenseFallbackV12 && __saasLicenseFallbackV12.features) || {});
-            merged.plan = merged.plan || plan;
-            merged.planLabel = merged.planLabel || merged.label || merged.name || merged.plan || 'باقة الزبون';
-            merged.sportMode = merged.sportMode || base.sportMode || 'seven';
-            merged.sportLabel = merged.sportLabel || base.sportLabel || merged.sportMode;
-            merged.maxPlayersPerTeam = Math.max(5, Math.min(30, parseInt(merged.maxPlayersPerTeam || base.maxPlayersPerTeam || 15, 10) || 15));
-            merged.lineupPlayers = Math.max(5, Math.min(11, parseInt(merged.lineupPlayers || base.lineupPlayers || 7, 10) || 7));
-            merged.halfMinutes = parseInt(merged.halfMinutes || base.halfMinutes || 25, 10) || 25;
-            return merged;
-        }
-
-        function getMaxPlayersPerTeam() {
-            return Math.max(5, Math.min(30, parseInt(currentLicense?.maxPlayersPerTeam || 15, 10) || 15));
-        }
-
-        function isFeatureEnabled(key) {
-            if (!currentLicense || !currentLicense.features) return false;
-            return currentLicense.features[key] === true;
-        }
-
-        function featureLockMessage(key) {
-            const names = {
-                transfers:'سوق الانتقالات', finance:'المالية', media:'الإعلام', videos:'الفيديو',
-                comments:'التعليقات/الدردشة', notifications:'الإشعارات', h2h:'المواجهات H2H',
-                referees:'الحكام', sponsors:'الرعاة', hallOfFame:'سجل الأبطال', roundStars:'نجوم الجولة',
-                live:'المباشر', matches:'المباريات', groups:'المجموعات', teams:'الفرق'
-            };
-            alert('هذه الميزة غير مفعلة ضمن باقة هذا الزبون: ' + (names[key] || key));
-        }
-
-        function requireFeature(key) {
-            if (isFeatureEnabled(key)) return true;
-            featureLockMessage(key);
-            return false;
-        }
-
-        function attachMasterPackageListener() {
-            if (!dbPath || __packageListenerAttached) return;
-            __packageListenerAttached = true;
-            const ref = db.ref(`tournaments/${dbPath}/settings/license`);
-            ref.on('value', snap => {
-                currentLicense = normalizeAdminLicense(snap.val());
-                applyPackageToOldAdmin();
-            }, err => {
-                console.warn('تعذر قراءة باقة الزبون من الماستر:', err && err.message ? err.message : err);
-                currentLicense = normalizeAdminLicense(__saasLicenseFallbackV12);
-                applyPackageToOldAdmin();
-            });
-        }
-
-        function hidePanelByText(textParts, enabled) {
-            const parts = Array.isArray(textParts) ? textParts : [textParts];
-            document.querySelectorAll('.panel').forEach(panel => {
-                const txt = panel.textContent || '';
-                if (parts.every(p => txt.includes(p))) {
-                    panel.style.display = enabled ? '' : 'none';
-                    panel.setAttribute('data-package-hidden', enabled ? '0' : '1');
-                }
-            });
-        }
-
-        function setTabLock(tabId, featureKey) {
-            const enabled = isFeatureEnabled(featureKey);
-            document.querySelectorAll('.tab-btn').forEach(btn => {
-                const oc = btn.getAttribute('onclick') || '';
-                if (oc.includes(`'${tabId}'`) || oc.includes(`"${tabId}"`)) btn.style.display = enabled ? '' : 'none';
-            });
-            const tab = document.getElementById(tabId);
-            if (tab && !enabled) tab.classList.remove('active');
-        }
-
-        function applyPackageToOldAdmin() {
-            currentLicense = normalizeAdminLicense(currentLicense);
-            const badge = document.getElementById('adminPackageBadge');
-            if (badge) badge.style.display = 'block';
-            const setText = (id, value) => { const el = document.getElementById(id); if (el) el.textContent = value; };
-            setText('adminPackageName', currentLicense.planLabel || currentLicense.plan || 'غير محددة');
-            setText('adminPackageSport', currentLicense.sportLabel || currentLicense.sportMode || 'عام');
-            setText('adminPackageMaxPlayers', `${getMaxPlayersPerTeam()} لاعب / ${currentLicense.lineupPlayers || '-'} أساسي`);
-
-            if (document.getElementById('playersGridInputs')) generatePlayersGrid();
-
-            // قفل التبويبات الرئيسية
-            setTabLock('tab-live', 'live');
-            setTabLock('tab-teams', 'teams');
-            setTabLock('tab-groups', 'groups');
-            setTabLock('tab-schedule', 'matches');
-            setTabLock('tab-media', 'media');
-            setTabLock('tab-finance', 'finance');
-
-            // قفل لوحات داخلية داخل تبويبات ما زالت مفتوحة
-            hidePanelByText(['إدارة وسوق الانتقالات'], isFeatureEnabled('transfers'));
-            hidePanelByText(['فحص المواجهات المباشرة'], isFeatureEnabled('h2h'));
-            hidePanelByText(['سجل الأبطال'], isFeatureEnabled('hallOfFame'));
-            hidePanelByText(['لوحة الرعاة'], isFeatureEnabled('sponsors'));
-            hidePanelByText(['نجوم الجولة'], isFeatureEnabled('roundStars'));
-            hidePanelByText(['إدارة الحكام'], isFeatureEnabled('referees'));
-
-            // قفل أزرار الإشعارات والدردشة إذا مطفية
-            document.querySelectorAll('button').forEach(btn => {
-                const txt = (btn.textContent || '').trim();
-                const oc = btn.getAttribute('onclick') || '';
-                if ((txt.includes('تنبيه') || txt.includes('إشعار') || oc.includes('sendManualPush')) && !isFeatureEnabled('notifications')) btn.style.display = 'none';
-                if ((txt.includes('دردشة') || txt.includes('تعليق') || oc.includes('clearLiveChat')) && !isFeatureEnabled('comments')) btn.style.display = 'none';
-            });
-
-            // إذا التبويب الحالي انغلق، ارجع لأول تبويب مسموح
-            const active = document.querySelector('.tab-content.active');
-            if (!active || getComputedStyle(active).display === 'none') {
-                const firstBtn = Array.from(document.querySelectorAll('.tab-btn')).find(b => b.style.display !== 'none');
-                if (firstBtn) {
-                    const oc = firstBtn.getAttribute('onclick') || '';
-                    const m = oc.match(/openTab\(['\"]([^'\"]+)/);
-                    if (m) openTab(m[1], firstBtn);
-                }
-            }
-        }
-
-        function openTab(tabId, btn) {
-            const map = {
-                'tab-live':'live', 'tab-teams':'teams', 'tab-groups':'groups',
-                'tab-schedule':'matches', 'tab-media':'media', 'tab-finance':'finance'
-            };
-            const feature = map[tabId];
-            if (feature && !isFeatureEnabled(feature)) return featureLockMessage(feature);
-            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-            const tab = document.getElementById(tabId);
-            if (tab) tab.classList.add('active');
-            if (btn) btn.classList.add('active');
-        }
-
-        // قفل الدوال نفسها حتى لو الزبون حاول يشغلها من console أو رابط داخلي
-        const __oldAddFinancialTransaction = window.addFinancialTransaction || addFinancialTransaction;
-        window.addFinancialTransaction = function() { if (!requireFeature('finance')) return; return __oldAddFinancialTransaction.apply(this, arguments); };
-
-        const __oldPublishMedia = window.publishMedia || publishMedia;
-        window.publishMedia = async function(mode) { if (!requireFeature('media')) return; if (mode === 'fb' && !requireFeature('videos')) return; return __oldPublishMedia.apply(this, arguments); };
-
-        const __oldExecuteTransferV12 = window.executeTransfer;
-        window.executeTransfer = async function() { if (!requireFeature('transfers')) return; return __oldExecuteTransferV12.apply(this, arguments); };
-
-        const __oldAddSponsor = window.addSponsor || addSponsor;
-        window.addSponsor = async function() { if (!requireFeature('sponsors')) return; return __oldAddSponsor.apply(this, arguments); };
-
-        const __oldSaveRoundStars = window.saveRoundStars || saveRoundStars;
-        window.saveRoundStars = async function() { if (!requireFeature('roundStars')) return; return __oldSaveRoundStars.apply(this, arguments); };
-
-        const __oldAddReferee = window.addReferee || addReferee;
-        window.addReferee = async function() { if (!requireFeature('referees')) return; return __oldAddReferee.apply(this, arguments); };
-
-        const __oldSendManualPush = window.sendManualPush || sendManualPush;
-        window.sendManualPush = async function() { if (!requireFeature('notifications')) return; return __oldSendManualPush.apply(this, arguments); };
-
-        const __oldClearLiveChat = window.clearLiveChat || clearLiveChat;
-        window.clearLiveChat = function() { if (!requireFeature('comments')) return; return __oldClearLiveChat.apply(this, arguments); };
-
-        // تطبيق القفل بعد تحميل الصفحة أيضاً، حتى لو الباقة وصلت قبل بناء بعض العناصر.
-        setTimeout(() => { try { applyPackageToOldAdmin(); } catch(e) {} }, 1200);
 
 
     </script>
