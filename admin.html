@@ -227,6 +227,14 @@
                         <select id="evtPlayer" style="flex:2; margin:0;"></select>
                         <input type="number" id="evtMin" placeholder="الدقيقة" style="flex:1; margin:0;">
                     </div>
+                    <div id="substitutionPanelV16" data-v15-feature="substitutions" style="display:none; margin-top:12px; background:rgba(59,130,246,0.08); border:1px solid rgba(59,130,246,0.35); border-radius:10px; padding:10px;">
+                        <label style="color:#60a5fa; font-size:12px; margin-bottom:8px;"><i class="fa-solid fa-right-left"></i> تبديل لاعب بلاعب</label>
+                        <div class="flex-row">
+                            <div><label>اللاعب الخارج:</label><select id="subOutPlayer" style="margin:0;"></select></div>
+                            <div><label>اللاعب الداخل:</label><select id="subInPlayer" style="margin:0;"></select></div>
+                        </div>
+                        <p style="font-size:10px; color:var(--muted); margin:8px 0 0;">اختار اللاعب الخارج والداخل ثم اضغط زر تبديل، وسيظهر الحدث للجمهور بهذا الشكل: اللاعب الداخل بدل اللاعب الخارج.</p>
+                    </div>
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top:15px;">
                         <button onclick="addAutoEvent('goals', '⚽')" style="margin:0; background:var(--accent); color:#000; border:none;"><i class="fa-solid fa-futbol"></i> هدف</button>
                         <button onclick="addOwnGoal()" style="margin:0; background:transparent; color:#ef4444; border:1px solid #ef4444;">هدف عكسي <i class="fa-solid fa-rotate-left"></i></button>
@@ -234,7 +242,8 @@
                         <button onclick="addAutoEvent('yellow', '🟨')" style="margin:0; background:#facc15; color:#000; border:none;">إنذار</button>
                         <button onclick="addAutoEvent('red', '🟥')" style="margin:0; background:#ef4444; color:#fff; border:none;">طرد</button>
                         <button onclick="if(requireFeature('offside')) addAutoEvent('offsides', '🚩')" style="margin:0; background:#fb7185; color:#000; border:none;">أوفسايد</button>
-                        <button onclick="if(requireFeature('substitutions')) addAutoEvent('subs', '🔃')" style="margin:0; background:#3b82f6; color:#fff; border:none; grid-column:span 2;">تبديل</button>
+                        <button data-v15-feature="substitutions" onclick="addSubstitutionEventV16()" style="margin:0; background:#3b82f6; color:#fff; border:none;">تبديل لاعب</button>
+                        <button data-v15-feature="stoppageTime" onclick="addStoppageTimeEventV16()" style="margin:0; background:#facc15; color:#000; border:none;">وقت ضائع</button>
                     </div>
                 </div>
                 <textarea id="mEvents" style="min-height: 80px; font-size:13px;" readonly placeholder="سجل الأحداث يظهر هنا..."></textarea>
@@ -1134,6 +1143,8 @@ function applyPackageToAdminV13(){
         const feature = el.getAttribute('data-v15-feature');
         el.style.display = isFeatureEnabled(feature) ? '' : 'none';
     });
+    const subPanel = document.getElementById('substitutionPanelV16');
+    if(subPanel) subPanel.style.display = isFeatureEnabled('substitutions') ? 'block' : 'none';
     document.querySelectorAll('[onclick*="sendManualPush"]').forEach(el => { el.style.display = isFeatureEnabled('notifications') ? '' : 'none'; });
     document.querySelectorAll('[onclick*="addAutoEvent(\'offsides\'"], [onclick*="addAutoEvent(\'subs\'"]').forEach(el => {
         const txt = el.textContent || '';
@@ -1271,6 +1282,7 @@ generatePlayersGrid();
                     } else {
                         applyPackageToAdminV13();
                         installPackageGuardsV13();
+                        syncLicenseToTournamentV13();
                     }
                 }, err => {
                     alert("❌ جدار الحماية: لا توجد صلاحية لقراءة بيانات الاشتراك. تأكد من Firebase Rules.");
@@ -1993,7 +2005,11 @@ ${message}`); return; }
         function updatePlayerList() {
             const t1 = document.getElementById('t1Name').value, t2 = document.getElementById('t2Name').value; const side = document.querySelector('input[name="evtTeam"]:checked').value; const activeTeam = side === "1" ? t1 : t2; 
             let pOpts = '<option value="">اختر اللاعب...</option>'; if(allData.teams?.[activeTeam]?.players) for(let p in allData.teams[activeTeam].players) pOpts += `<option value="${p}">${p}</option>`; 
-            document.getElementById('evtPlayer').innerHTML = pOpts; 
+            document.getElementById('evtPlayer').innerHTML = pOpts;
+            const subOutEl = document.getElementById('subOutPlayer');
+            const subInEl = document.getElementById('subInPlayer');
+            if(subOutEl) subOutEl.innerHTML = pOpts.replace('اختر اللاعب...', 'اختر اللاعب الخارج...');
+            if(subInEl) subInEl.innerHTML = pOpts.replace('اختر اللاعب...', 'اختر اللاعب الداخل...');
             let allPOpts = '<option value="">رجل المباراة...</option>'; if(allData.teams?.[t1]?.players) for(let p in allData.teams[t1].players) allPOpts += `<option value="${t1}|${p}">${p} (${t1})</option>`; if(allData.teams?.[t2]?.players) for(let p in allData.teams[t2].players) allPOpts += `<option value="${t2}|${p}">${p} (${t2})</option>`; 
             document.getElementById('motmPlayer').innerHTML = allPOpts;
         }
@@ -2026,9 +2042,58 @@ ${message}`); return; }
             const currentEvents = document.getElementById('mEvents').value; const newEvent = `⚽ ${min}' ${pName} (${tName}) (هدف عكسي)`; document.getElementById('mEvents').value = currentEvents ? currentEvents + '\n' + newEvent : newEvent; db.ref(`tournaments/${dbPath}/live_match/events`).set(document.getElementById('mEvents').value); autoSaveMatchDetails();
         }
 
+        function getCurrentMatchMinuteV16() {
+            let min = document.getElementById('evtMin').value;
+            if(min !== '' && min !== null && min !== undefined) return min;
+            const live = allData.live_match || {};
+            if(live.timer && live.timer.isRunning) {
+                let elapsed = Math.floor((Date.now() - (live.timer.startTime || Date.now())) / 1000);
+                return Math.floor(((live.timer.savedSeconds || 0) + elapsed) / 60);
+            }
+            return Math.floor((live.timer?.savedSeconds || 0) / 60);
+        }
+
+        function appendMatchEventV16(line) {
+            const currentEvents = document.getElementById('mEvents').value;
+            document.getElementById('mEvents').value = currentEvents ? currentEvents + '\n' + line : line;
+            db.ref(`tournaments/${dbPath}/live_match/events`).set(document.getElementById('mEvents').value);
+            autoSaveMatchDetails();
+        }
+
+        async function addSubstitutionEventV16() {
+            if(!requireFeature('substitutions')) return;
+            const side = document.querySelector('input[name="evtTeam"]:checked').value;
+            const tName = document.getElementById('t' + side + 'Name').value;
+            const outP = document.getElementById('subOutPlayer')?.value || '';
+            const inP = document.getElementById('subInPlayer')?.value || '';
+            if(!tName) return alert('اختر الفريق أولاً');
+            if(!outP || !inP) return alert('اختر اللاعب الخارج واللاعب الداخل');
+            if(outP === inP) return alert('لا يمكن اختيار نفس اللاعب خارج وداخل');
+            const min = getCurrentMatchMinuteV16();
+            appendMatchEventV16(`🔃 ${min}' ${inP} بدل ${outP} (${tName})`);
+            db.ref(`tournaments/${dbPath}/teams/${tName}/players/${outP}/subsOut`).transaction(c => (c || 0) + 1);
+            db.ref(`tournaments/${dbPath}/teams/${tName}/players/${inP}/subsIn`).transaction(c => (c || 0) + 1);
+            const statId = 'subs' + side;
+            if(document.getElementById(statId)) updateStat(statId, 1);
+            sendManualPush('تبديل', `${inP} بدل ${outP} - ${tName}`);
+        }
+
+        async function addStoppageTimeEventV16() {
+            if(!requireFeature('stoppageTime')) return;
+            const added = prompt('كم دقيقة وقت ضائع؟', '5');
+            if(added === null) return;
+            const cleanAdded = String(added).replace(/[^0-9]/g, '') || '0';
+            const min = getCurrentMatchMinuteV16();
+            appendMatchEventV16(`⏱️ ${min}' وقت ضائع +${cleanAdded}`);
+            const s1 = document.getElementById('stoppage1');
+            if(s1) { s1.value = cleanAdded; autoSaveMatchStats(); }
+            sendManualPush('وقت ضائع', `احتساب ${cleanAdded} دقيقة وقت ضائع`);
+        }
+
         async function addAutoEvent(type, textLabel) {
             if(type === 'offsides' && !requireFeature('offside')) return;
-            if(type === 'subs' && !requireFeature('substitutions')) return;
+            if(type === 'subs') { return addSubstitutionEventV16(); }
+            if(type === 'stoppage' && !requireFeature('stoppageTime')) return;
             const side = document.querySelector('input[name="evtTeam"]:checked').value; const tName = document.getElementById('t' + side + 'Name').value; const pName = document.getElementById('evtPlayer').value;
             if(!tName || !pName) return alert("اختر اللاعب");
             let min = document.getElementById('evtMin').value; 
@@ -2499,8 +2564,8 @@ ${message}`); return; }
 
         function updateGroup() { const grp = document.getElementById('gLetter').value, t = document.getElementById('gTeam').value; if(!t) return alert("اختر الفريق"); const p = parseInt(document.getElementById('gP').value) || 0; const gf = parseInt(document.getElementById('gGF').value) || 0; const ga = parseInt(document.getElementById('gGA').value) || 0; const gd = parseInt(document.getElementById('gGD').value) || (gf - ga); const pts = parseInt(document.getElementById('gPts').value) || 0; const status = document.getElementById('gStatus').value || ''; db.ref(`tournaments/${dbPath}/groups/${grp}/${t}`).set({ name: t, played: p, gf: gf, ga: ga, gd: gd, points: pts, status: status }).then(() => { alert("تم التحديث بنجاح! إذا ضغطت على زر الحساب التلقائي سيتم إعادة كتابة هذه الأرقام بناءً على الأرشيف"); }); }
         
-        function loadScheduledToLive(id) { const match = allData.schedule[id]; if(!match) return; if(confirm(`بدء المباراة ونقلها للمباشر؟ (ستُحذف من الجدول)`)) { isInternalUpdate = true; db.ref(`tournaments/${dbPath}/live_match`).update({ team1: match.team1, team2: match.team2, round: match.round || '', leg: match.leg || '', groupInfo: match.group || '', status: 'الشوط الأول', score1: 0, score2: 0, events: '', referee1: match.referee1 || '', referee2: match.referee2 || '', referee3: match.referee3 || '', referee4: match.referee4 || '', timer: { isRunning: false, savedSeconds: 0, startTime: 0 }, stats: {posSec1:0, posSec2:0, possession1: 50, possession2: 50, shots1: 0, shots2: 0, corners1: 0, corners2: 0, fouls1: 0, fouls2: 0} }).then(() => { db.ref(`tournaments/${dbPath}/schedule/${id}`).remove(); alert("بدأت المباراة"); openTab('tab-live', document.querySelectorAll('.tab-btn')[0]); isInternalUpdate = false; }).catch(e => { alert("حدث خطأ"); isInternalUpdate = false; }); } }
-        function loadGroupMatchupToLive(id) { const match = allData.group_matchups[id]; if(!match) return; if(confirm(`بدء المباراة ونقلها للمباشر؟`)) { isInternalUpdate = true; db.ref(`tournaments/${dbPath}/live_match`).update({ team1: match.team1, team2: match.team2, round: match.round || '', leg: match.leg || '', groupInfo: match.group || '', status: 'الشوط الأول', score1: 0, score2: 0, events: '', referee1: '', referee2: '', referee3: '', referee4: '', timer: { isRunning: false, savedSeconds: 0, startTime: 0 }, stats: {posSec1:0, posSec2:0, possession1: 50, possession2: 50, shots1: 0, shots2: 0, corners1: 0, corners2: 0, fouls1: 0, fouls2: 0} }).then(() => { alert("بدأت المباراة"); openTab('tab-live', document.querySelectorAll('.tab-btn')[0]); isInternalUpdate = false; }); } }
+        function loadScheduledToLive(id) { const match = allData.schedule[id]; if(!match) return; if(confirm(`بدء المباراة ونقلها للمباشر؟ (ستُحذف من الجدول)`)) { isInternalUpdate = true; db.ref(`tournaments/${dbPath}/live_match`).update({ team1: match.team1, team2: match.team2, round: match.round || '', leg: match.leg || '', groupInfo: match.group || '', status: 'الشوط الأول', score1: 0, score2: 0, events: '', referee1: match.referee1 || '', referee2: match.referee2 || '', referee3: match.referee3 || '', referee4: match.referee4 || '', timer: { isRunning: false, savedSeconds: 0, startTime: 0 }, stats: {posSec1:0, posSec2:0, possession1: 50, possession2: 50, shots1: 0, shots2: 0, corners1: 0, corners2: 0, fouls1: 0, fouls2: 0, sot1:0, sot2:0, saves1:0, saves2:0, passes1:0, passes2:0, attacks1:0, attacks2:0, offsides1:0, offsides2:0, subs1:0, subs2:0, stoppage1:0, stoppage2:0} }).then(() => { db.ref(`tournaments/${dbPath}/schedule/${id}`).remove(); alert("بدأت المباراة"); openTab('tab-live', document.querySelectorAll('.tab-btn')[0]); isInternalUpdate = false; }).catch(e => { alert("حدث خطأ"); isInternalUpdate = false; }); } }
+        function loadGroupMatchupToLive(id) { const match = allData.group_matchups[id]; if(!match) return; if(confirm(`بدء المباراة ونقلها للمباشر؟`)) { isInternalUpdate = true; db.ref(`tournaments/${dbPath}/live_match`).update({ team1: match.team1, team2: match.team2, round: match.round || '', leg: match.leg || '', groupInfo: match.group || '', status: 'الشوط الأول', score1: 0, score2: 0, events: '', referee1: '', referee2: '', referee3: '', referee4: '', timer: { isRunning: false, savedSeconds: 0, startTime: 0 }, stats: {posSec1:0, posSec2:0, possession1: 50, possession2: 50, shots1: 0, shots2: 0, corners1: 0, corners2: 0, fouls1: 0, fouls2: 0, sot1:0, sot2:0, saves1:0, saves2:0, passes1:0, passes2:0, attacks1:0, attacks2:0, offsides1:0, offsides2:0, subs1:0, subs2:0, stoppage1:0, stoppage2:0} }).then(() => { alert("بدأت المباراة"); openTab('tab-live', document.querySelectorAll('.tab-btn')[0]); isInternalUpdate = false; }); } }
 
         async function recalculateMatchesPlayed(silent = false) {
             if(!silent && !confirm("إعادة حساب الإحصائيات (أهداف، صناعة، بطاقات) بناءً على الأرشيف الحالي؟")) return;
