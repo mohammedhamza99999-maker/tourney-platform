@@ -1203,8 +1203,10 @@
             const f = currentLicense.features || {};
             setFeatureVisible('#page-groups', !!f.groups);
             setFeatureVisible('#page-teams', !!f.teams);
-            setFeatureVisible('#page-stats', !!f.stats);
+            setFeatureVisible('#page-stats', f.stats !== false);
             setFeatureVisible('#page-gallery', !!f.media);
+            const ticker = document.getElementById('newsTickerWrapper');
+            if(ticker && !f.media) ticker.style.display = 'none';
             setFeatureVisible('#transfersContainerMedia, #transfersContainerTeams, [onclick*="teams-transfers"]', !!f.transfers);
             setFeatureVisible('#btnLiveChat, #live-content-chat, #btnMdComments, #md-content-comments', !!f.comments);
             setFeatureVisible('#mdH2H', !!f.h2h);
@@ -1458,6 +1460,10 @@
             let newsWrapper = document.getElementById('newsTickerWrapper');
             let newsDisplay = document.getElementById('newsTextDisplay');
             let newsLabel = document.getElementById('newsTickerLabel');
+            if(!licenseFeatureEnabled('media')) {
+                if(newsWrapper) newsWrapper.style.display = 'none';
+                return;
+            }
 
             if(data) {let items = [];
 for(let k in data) {
@@ -1537,6 +1543,9 @@ for(let k in data) {
         else if (line.includes('🚩') || line.includes('أوفسايد') || line.includes('تسلل')) {
             eventType = '🚩'; iconHtml = '<i class="fa-solid fa-flag"></i>'; labelText = 'أوفسايد'; colorClass = 'label-🟥';
         }
+        else if (line.includes('⏱️') || line.includes('وقت ضائع')) {
+            eventType = '⏱️'; iconHtml = '<i class="fa-regular fa-clock"></i>'; labelText = 'وقت ضائع'; colorClass = 'label-🟨';
+        }
         
         // 2. استخراج الدقيقة بجميع الصيغ الممكنة: (د 14) أو (14) أو 14' 
         let minuteMatch = line.match(/\(د\s*(\d+)\)|\((\d+)\)|(\d+)'/); 
@@ -1544,8 +1553,8 @@ for(let k in data) {
         
         // 3. تنظيف السطر لاستخراج اسم اللاعب الصافي
         let cleanText = line
-            .replace(/⚽|🟨|🟥|🅰️|🅰|🔃/g, '') // حذف الإيموجيات
-            .replace(/هدف|إنذار|بطاقة صفراء|طرد|بطاقة حمراء|أسيست|صناعة|تبديل|أوفسايد|تسلل/g, '') // حذف الكلمات الدلالية
+            .replace(/⚽|🟨|🟥|🅰️|🅰|🔃|🚩|⏱️/g, '') // حذف الإيموجيات
+            .replace(/هدف|إنذار|بطاقة صفراء|طرد|بطاقة حمراء|أسيست|صناعة|تبديل|أوفسايد|تسلل|وقت ضائع/g, '') // حذف الكلمات الدلالية
             .replace(/\(د\s*\d+\)|\(\d+\)|\d+'/g, '') // حذف الدقيقة
             .replace(/^[-:\s]+/, '') // حذف أي مسافات أو فواصل بالبداية
             .trim(); 
@@ -1553,6 +1562,18 @@ for(let k in data) {
         let playerMatch = cleanText.match(/^(.*?)\s*(\(.*?\))?$/); 
         let playerName = playerMatch ? playerMatch[1].trim() : cleanText; 
         let eventDetail = playerMatch && playerMatch[2] ? playerMatch[2].trim() : '';
+        if(eventType === '🔃' && cleanText.includes(' بدل ')) {
+            const parts = cleanText.split(' بدل ');
+            playerName = (parts[0] || '').trim();
+            const rest = (parts[1] || '').trim();
+            const teamPart = rest.match(/\((.*?)\)/);
+            const outName = rest.replace(/\(.*?\)/g, '').trim();
+            eventDetail = `${t('بدل')} ${outName}${teamPart ? ' (' + teamPart[1] + ')' : ''}`;
+        }
+        if(eventType === '⏱️') {
+            playerName = cleanText.replace(/^[-:\s]+/, '').trim() || 'وقت ضائع';
+            eventDetail = '';
+        }
         
         // جلب صورة اللاعب إذا كانت متوفرة
         let playerPhotoHtml = ''; 
@@ -1578,6 +1599,7 @@ for(let k in data) {
             else if (eventType === '🟨') { pIcon = 'fa-square'; pColor = 'color: #facc15;'; }
             else if (eventType === '🟥') { pIcon = 'fa-square'; pColor = 'color: #ef4444;'; }
             else if (eventType === '🔃') { pIcon = 'fa-arrow-right-arrow-left'; pColor = 'color: #3b82f6;'; }
+            else if (eventType === '⏱️') { pIcon = 'fa-clock'; pColor = 'color: #facc15;'; }
             playerPhotoHtml = `<i class="fa-solid ${pIcon}" style="opacity:0.9; font-size:18px; ${pColor}"></i>`; 
         }
         
@@ -2049,7 +2071,9 @@ for(let k in data) {
             container.innerHTML = html || `<div style="color:var(--muted); font-size:12px; text-align:center; padding:20px;"></div>`; 
         }
         db.ref(`tournaments/${dbPath}/media_posts`).on('value', snap => {
-            const grid = document.getElementById('publicGalleryGrid'); if(!grid) return; grid.innerHTML = ''; let data = snap.val();
+            const grid = document.getElementById('publicGalleryGrid'); if(!grid) return; grid.innerHTML = '';
+            if(!licenseFeatureEnabled('media')) { grid.innerHTML = `<div class="empty-state-card" style="color:var(--muted); font-size:12px; text-align:center; padding:20px;">قسم الإعلام غير مفعل ضمن هذه الباقة</div>`; return; }
+            let data = snap.val();
             if(data) {
                 let items = []; for(let k in data) items.push(data[k]); items.sort((a,b) => (b.time || 0) - (a.time || 0));
                 items.forEach(post => {
@@ -2073,7 +2097,9 @@ for(let k in data) {
         });
 
         db.ref(`tournaments/${dbPath}/highlights`).on('value', snap => {
-            let cont = document.getElementById('publicVideosGrid'); if(!cont) return; cont.innerHTML = ''; let d = snap.val();
+            let cont = document.getElementById('publicVideosGrid'); if(!cont) return; cont.innerHTML = '';
+            if(!licenseFeatureEnabled('media')) { cont.innerHTML = `<div class="empty-state-card" style="color:var(--muted); font-size:12px; text-align:center; padding:20px;">قسم الفيديو غير مفعل ضمن هذه الباقة</div>`; return; }
+            let d = snap.val();
             if(d) {
                 let items = []; for(let k in d) items.push(d[k]); items.sort((a,b) => b.timestamp - a.timestamp);
                 items.forEach(v => {
