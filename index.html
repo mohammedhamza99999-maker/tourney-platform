@@ -20,7 +20,7 @@
 
     <script>
       let scheduleGlobal = {}, groupMatchupsGlobal = {}, savedMatchesGlobal = {};
-      function activateNotifications() { if (typeof setupNotifications === "function") setupNotifications(); }
+      function activateNotifications() { if (typeof licenseFeatureEnabled === "function" && !licenseFeatureEnabled("notifications")) return alert("الإشعارات غير مفعلة في هذه النسخة"); if (typeof setupNotifications === "function") setupNotifications(); }
     </script>
     
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -535,7 +535,7 @@
             'مجموعة': 'کۆمەڵەی', 'الجولة الأولى': 'گەڕی یەکەم', 'الجولة الثانية': 'گەڕی دووەم', 'الجولة الثالثة': 'گەڕی سێیەم', 'الجولة الرابعة': 'گەڕی چوارەم', 'الجولة الخامسة': 'گەڕی پێنجەم',
             'دور الـ 16': 'قۆناغی شانزە', 'ربع النهائي': 'قۆناغی هەشت', 'نصف النهائي': 'پێش کۆتایی', 'تحديد المركز الثالث': 'دیاریکردنی پلەی سێیەم', 'النهائي': 'یاری کۆتایی',
             'لم تبدأ': 'دەستی پێ نەکردووە', 'الشوط الأول': 'گێمی یەکەم', 'استراحة': 'پشوو', 'الشوط الثاني': 'گێمی دووەم', 'إضافي أول': 'زیادکراوی یەکەم', 'إضافي ثاني': 'زیادکراوی دووەم', 'ركلات ترجيح': 'پەناڵتی', 'انتهت': 'کۆتایی هات', 'انتظار': 'چاوەڕوان', 'مباشر': 'ڕاستەوخۆ',
-            'هدف': 'گۆڵ', 'عكسي': 'بەهەڵە', 'أسيست': 'ئەسیست', 'بطاقة صفراء': 'کارتی زەرد', 'بطاقة حمراء': 'کارتی سوور', 'تبديل': 'گۆڕانکاری',
+            'هدف': 'گۆڵ', 'عكسي': 'بەهەڵە', 'أسيست': 'ئەسیست', 'بطاقة صفراء': 'کارتی زەرد', 'بطاقة حمراء': 'کارتی سوور', 'تبديل': 'گۆڕانکاری', 'أوفسايد': 'ئۆفساید', 'تسديدات على المرمى': 'لەسەر گۆڵ', 'تصديات': 'ڕاگرتنەکان', 'تمريرات': 'پاسەکان', 'هجمات خطرة': 'هێرشی مەترسیدار',
             'حارس مرمى': 'گۆڵپارێز', 'قلب دفاع': 'بەرگریکار', 'مدافع أيسر': 'بەرگریکاری چەپ', 'مدافع أيمن': 'بەرگریکاری ڕاست', 'ارتكاز دفاعي': 'ناوەڕاستی بەرگری', 'وسط محور': 'ناوەڕاست', 'صانع ألعاب': 'دروستکەری یاری', 'وسط أيسر': 'ناوەڕاستی چەپ', 'وسط أيمن': 'ناوەڕاستی ڕاست', 'جناح أيسر': 'باڵی چەپ', 'جناح أيمن': 'باڵی ڕاست', 'مهاجم': 'هێرشبەر',
             'مدرب': 'ڕاهێنەر', 'مساعد': 'یاریدەدەر',
             'مباريات': 'یارییەکان', 'أهداف': 'گۆڵەکان', 'صناعة': 'ئەسیست', 'نجومية': 'ئەستێرە', 'إنذار': 'ئاگادارکردنەوە', 'طرد': 'دەرکردن', 'كلين شيت': 'گۆڵی خاوێن',
@@ -561,7 +561,7 @@
             'مجموعة': 'Group ', 'الجولة الأولى': 'Round 1', 'الجولة الثانية': 'Round 2', 'الجولة الثالثة': 'Round 3', 'الجولة الرابعة': 'Round 4', 'الجولة الخامسة': 'Round 5',
             'دور الـ 16': 'Round of 16', 'ربع النهائي': 'Quarter-Final', 'نصف النهائي': 'Semi-Final', 'تحديد المركز الثالث': 'Third Place', 'النهائي': 'Final',
             'لم تبدأ': 'Not Started', 'الشوط الأول': 'First Half', 'استراحة': 'Half Time', 'الشوط الثاني': 'Second Half', 'إضافي أول': 'Extra Time 1', 'إضافي ثاني': 'Extra Time 2', 'ركلات ترجيح': 'Penalties', 'انتهت': 'Ended', 'انتظار': 'Waiting', 'مباشر': 'LIVE',
-            'هدف': 'Goal', 'عكسي': 'Own Goal', 'أسيست': 'Assist', 'بطاقة صفراء': 'Yellow Card', 'بطاقة حمراء': 'Red Card', 'تبديل': 'Sub',
+            'هدف': 'Goal', 'عكسي': 'Own Goal', 'أسيست': 'Assist', 'بطاقة صفراء': 'Yellow Card', 'بطاقة حمراء': 'Red Card', 'تبديل': 'Sub', 'أوفسايد': 'Offside', 'تسديدات على المرمى': 'On Target', 'تصديات': 'Saves', 'تمريرات': 'Passes', 'هجمات خطرة': 'Danger Attacks',
             'حارس مرمى': 'GK', 'قلب دفاع': 'CB', 'مدافع أيسر': 'LB', 'مدافع أيمن': 'RB', 'ارتكاز دفاعي': 'CDM', 'وسط محور': 'CM', 'صانع ألعاب': 'CAM', 'وسط أيسر': 'LM', 'وسط أيمن': 'RM', 'جناح أيسر': 'LW', 'جناح أيمن': 'RW', 'مهاجم': 'ST',
             'مدرب': 'Coach', 'مساعد': 'Assistant',
             'مباريات': 'Matches', 'أهداف': 'Goals', 'صناعة': 'Assists', 'نجومية': 'MOTM', 'إنذار': 'Yellow', 'طرد': 'Red', 'كلين شيت': 'Clean Sheet',
@@ -607,16 +607,16 @@
             const nav = document.querySelector('.nav');
             if(!nav) return;
             const items = [
-                { id: 'live', icon: 'fa-tv', text: 'المباشر' },
-                { id: 'matches', icon: 'fa-regular fa-futbol', text: 'المباريات' },
-                { id: 'groups', icon: 'fa-solid fa-list-ol', text: 'المجموعات' },
-                { id: 'teams', icon: 'fa-solid fa-shield-halved', text: 'الفرق' },
-                { id: 'stats', icon: 'fa-regular fa-chart-bar', text: 'إحصائيات' },
-                { id: 'gallery', icon: 'fa-solid fa-images', text: 'الإعلام' }
-            ];
+                { id: 'live', icon: 'fa-tv', text: 'المباشر', feature: 'live' },
+                { id: 'matches', icon: 'fa-regular fa-futbol', text: 'المباريات', feature: 'matches' },
+                { id: 'groups', icon: 'fa-solid fa-list-ol', text: 'المجموعات', feature: 'groups' },
+                { id: 'teams', icon: 'fa-solid fa-shield-halved', text: 'الفرق', feature: 'teams' },
+                { id: 'stats', icon: 'fa-regular fa-chart-bar', text: 'إحصائيات', feature: 'stats' },
+                { id: 'gallery', icon: 'fa-solid fa-images', text: 'الإعلام', feature: 'media' }
+            ].filter(item => licenseFeatureEnabled(item.feature));
             
             let activeId = 'live';
-            if(window.location.hash) { let h = window.location.hash.substring(1); if(items.find(i => i.id === h)) activeId = h; }
+            if(window.location.hash) { let h = window.location.hash.substring(1); if(items.find(i => i.id === h)) activeId = h; } if(!items.find(i => i.id === activeId)) activeId = (items[0]?.id || 'live');
 
             nav.innerHTML = items.map(item => `
                 <div class="nav-item ${item.id === activeId ? 'active' : ''}" onclick="nav('${item.id}', this)">
@@ -804,6 +804,12 @@
                             <div class="stat-item-title" style="color:#ef4444;" data-trn="الفاولات">الفاولات</div>
                             <div class="stat-item-val left" id="fouls2Txt">0</div>
                         </div>
+                        <div class="stat-list-row" data-advanced-stat-row><div class="stat-item-val right" id="sot1Txt">0</div><div class="stat-item-title" style="color:#38bdf8;" data-trn="تسديدات على المرمى">تسديدات على المرمى</div><div class="stat-item-val left" id="sot2Txt">0</div></div>
+                        <div class="stat-list-row" data-advanced-stat-row><div class="stat-item-val right" id="saves1Txt">0</div><div class="stat-item-title" style="color:#22c55e;" data-trn="تصديات">تصديات</div><div class="stat-item-val left" id="saves2Txt">0</div></div>
+                        <div class="stat-list-row" data-offside-stat-row><div class="stat-item-val right" id="offsides1Txt">0</div><div class="stat-item-title" style="color:#fb7185;" data-trn="أوفسايد">أوفسايد</div><div class="stat-item-val left" id="offsides2Txt">0</div></div>
+                        <div class="stat-list-row" data-advanced-stat-row><div class="stat-item-val right" id="passes1Txt">0</div><div class="stat-item-title" style="color:#c084fc;" data-trn="تمريرات">تمريرات</div><div class="stat-item-val left" id="passes2Txt">0</div></div>
+                        <div class="stat-list-row" data-advanced-stat-row><div class="stat-item-val right" id="attacks1Txt">0</div><div class="stat-item-title" style="color:#f97316;" data-trn="هجمات خطرة">هجمات خطرة</div><div class="stat-item-val left" id="attacks2Txt">0</div></div>
+                        <div class="stat-list-row" data-sub-stat-row><div class="stat-item-val right" id="subs1Txt">0</div><div class="stat-item-title" style="color:#60a5fa;" data-trn="تبديل">تبديلات</div><div class="stat-item-val left" id="subs2Txt">0</div></div>
                     </div>
                 </div>
 
@@ -1049,6 +1055,12 @@
                     <div class="stat-list-row"><div class="stat-item-val right" id="mdShots1Txt">0</div><div class="stat-item-title" style="color:#facc15;" data-trn="التسديدات">التسديدات</div><div class="stat-item-val left" id="mdShots2Txt">0</div></div>
                     <div class="stat-list-row"><div class="stat-item-val right" id="mdCorn1Txt">0</div><div class="stat-item-title" style="color:#fff;" data-trn="الركنيات">الركنيات</div><div class="stat-item-val left" id="mdCorn2Txt">0</div></div>
                     <div class="stat-list-row"><div class="stat-item-val right" id="mdFouls1Txt">0</div><div class="stat-item-title" style="color:#ef4444;" data-trn="الفاولات">الفاولات</div><div class="stat-item-val left" id="mdFouls2Txt">0</div></div>
+                    <div class="stat-list-row" data-advanced-stat-row><div class="stat-item-val right" id="mdSot1Txt">0</div><div class="stat-item-title" style="color:#38bdf8;" data-trn="تسديدات على المرمى">تسديدات على المرمى</div><div class="stat-item-val left" id="mdSot2Txt">0</div></div>
+                    <div class="stat-list-row" data-advanced-stat-row><div class="stat-item-val right" id="mdSaves1Txt">0</div><div class="stat-item-title" style="color:#22c55e;" data-trn="تصديات">تصديات</div><div class="stat-item-val left" id="mdSaves2Txt">0</div></div>
+                    <div class="stat-list-row" data-offside-stat-row><div class="stat-item-val right" id="mdOffsides1Txt">0</div><div class="stat-item-title" style="color:#fb7185;" data-trn="أوفسايد">أوفسايد</div><div class="stat-item-val left" id="mdOffsides2Txt">0</div></div>
+                    <div class="stat-list-row" data-advanced-stat-row><div class="stat-item-val right" id="mdPasses1Txt">0</div><div class="stat-item-title" style="color:#c084fc;" data-trn="تمريرات">تمريرات</div><div class="stat-item-val left" id="mdPasses2Txt">0</div></div>
+                    <div class="stat-list-row" data-advanced-stat-row><div class="stat-item-val right" id="mdAttacks1Txt">0</div><div class="stat-item-title" style="color:#f97316;" data-trn="هجمات خطرة">هجمات خطرة</div><div class="stat-item-val left" id="mdAttacks2Txt">0</div></div>
+                    <div class="stat-list-row" data-sub-stat-row><div class="stat-item-val right" id="mdSubs1Txt">0</div><div class="stat-item-title" style="color:#60a5fa;" data-trn="تبديل">تبديلات</div><div class="stat-item-val left" id="mdSubs2Txt">0</div></div>
                 </div>
             </div>
 
@@ -1152,10 +1164,82 @@
             });
         };
         const urlParams = new URLSearchParams(window.location.search); let dbPath = cleanTournamentId(urlParams.get('db') || localStorage.getItem('audienceDbPath') || "Khanaqin_Tournament_Official"); if (urlParams.get('db')) { localStorage.setItem('audienceDbPath', dbPath); }
+
+        // -------------------------------------------------------------
+        // نظام الباقات: يقرأ settings/license ويخفي/يعرض الميزات تلقائياً
+        // -------------------------------------------------------------
+        const TOURNEY_PLAN_PRESETS = {"seven": {"plan": "seven", "planLabel": "سباعي", "sportMode": "seven", "sportLabel": "سباعي", "maxPlayersPerTeam": 15, "lineupPlayers": 7, "halfMinutes": 25, "lockedPlayers": true, "sortOrder": 1, "features": {"live": true, "matches": true, "groups": true, "teams": true, "stats": true, "media": true, "videos": true, "transfers": false, "finance": false, "comments": true, "predictions": true, "notifications": true, "h2h": true, "referees": false, "sponsors": false, "hallOfFame": true, "roundStars": true, "offside": false, "substitutions": false, "advancedStats": false}}, "eleven_full": {"plan": "eleven_full", "planLabel": "11 لاعب كامل", "sportMode": "football11", "sportLabel": "11 لاعب كامل", "maxPlayersPerTeam": 30, "lineupPlayers": 11, "halfMinutes": 45, "lockedPlayers": true, "sortOrder": 2, "features": {"live": true, "matches": true, "groups": true, "teams": true, "stats": true, "media": true, "videos": true, "transfers": true, "finance": true, "comments": true, "predictions": true, "notifications": true, "h2h": true, "referees": true, "sponsors": true, "hallOfFame": true, "roundStars": true, "offside": true, "substitutions": true, "advancedStats": true}}};
+        let currentLicense = null;
+        function clonePlain(obj) { return JSON.parse(JSON.stringify(obj || {})); }
+        function getDefaultLicense() { return clonePlain(TOURNEY_PLAN_PRESETS.eleven_full || Object.values(TOURNEY_PLAN_PRESETS)[0]); }
+        function normalizeLicense(raw) {
+            const input = raw && typeof raw === 'object' ? raw : {};
+            const plan = input.plan && TOURNEY_PLAN_PRESETS[input.plan] ? input.plan : 'eleven_full';
+            const preset = clonePlain(TOURNEY_PLAN_PRESETS[plan] || TOURNEY_PLAN_PRESETS.eleven_full);
+            const merged = Object.assign(preset, input);
+            merged.features = Object.assign({}, preset.features || {}, input.features || {});
+            merged.lineupPlayers = Math.max(5, Math.min(11, parseInt(merged.lineupPlayers || preset.lineupPlayers || 11, 10)));
+            merged.maxPlayersPerTeam = Math.max(5, parseInt(merged.maxPlayersPerTeam || preset.maxPlayersPerTeam || 25, 10));
+            merged.halfMinutes = Math.max(5, parseInt(merged.halfMinutes || preset.halfMinutes || 45, 10));
+            return merged;
+        }
+        function licenseFeatureEnabled(feature) {
+            currentLicense = normalizeLicense(currentLicense || {});
+            return !!(currentLicense.features && currentLicense.features[feature]);
+        }
+        function licensePageEnabled(tabId) {
+            const map = { live:'live', matches:'matches', groups:'groups', teams:'teams', stats:'stats', gallery:'media' };
+            const feature = map[tabId];
+            return !feature || licenseFeatureEnabled(feature);
+        }
+        function setFeatureVisible(selector, enabled) {
+            document.querySelectorAll(selector).forEach(el => { el.classList.toggle('feature-hidden', !enabled); });
+        }
+        function applyLicenseToAudienceUI(license) {
+            currentLicense = normalizeLicense(license);
+            const f = currentLicense.features || {};
+            setFeatureVisible('#page-groups', !!f.groups);
+            setFeatureVisible('#page-teams', !!f.teams);
+            setFeatureVisible('#page-stats', !!f.stats);
+            setFeatureVisible('#page-gallery', !!f.media);
+            setFeatureVisible('#transfersContainerMedia, #transfersContainerTeams, [onclick*="teams-transfers"]', !!f.transfers);
+            setFeatureVisible('#btnLiveChat, #live-content-chat, #btnMdComments, #md-content-comments', !!f.comments);
+            setFeatureVisible('#mdH2H', !!f.h2h);
+            setFeatureVisible('#sponsorsSection', !!f.sponsors);
+            document.querySelectorAll('.prediction-box').forEach(el => el.classList.toggle('feature-hidden', !f.predictions));
+            document.querySelectorAll('[data-advanced-stat-row]').forEach(el => el.classList.toggle('feature-hidden', !f.advancedStats));
+            document.querySelectorAll('[data-offside-stat-row]').forEach(el => el.classList.toggle('feature-hidden', !f.offside));
+            document.querySelectorAll('[data-sub-stat-row]').forEach(el => el.classList.toggle('feature-hidden', !f.substitutions));
+            renderNav();
+            const active = document.querySelector('.page.active');
+            if(active && active.id && !licensePageEnabled(active.id.replace('page-', ''))) { nav('live'); }
+        }
+
         window.changeAudienceDB = function() { let newDb = prompt("أدخل معرف البطولة:", dbPath); if(newDb && newDb.trim() !== "") { let cleanDb = cleanTournamentId(newDb); if(!cleanDb) return alert('معرف البطولة غير صالح'); localStorage.setItem('audienceDbPath', cleanDb); window.location.href = window.location.pathname + "?db=" + encodeURIComponent(cleanDb); } };
         let visualName = localStorage.getItem('visualName') || "بطولة دوائر خانقين"; updateAudienceTournamentTitle(visualName);
         window.openImageViewer = function(src) { if(!src) return; document.getElementById('fullSizeImg').src = src; document.getElementById('imageViewerModal').style.display = 'flex'; try{ history.pushState({ modal: 'imageViewerModal' }, "", "#image"); }catch(e){} }; window.closeImageViewer = function() { document.getElementById('imageViewerModal').style.display = 'none'; };
         
+        
+        function setTxt(id, value) { const el = document.getElementById(id); if(el) el.innerText = value || 0; }
+        function updateAudienceStats(prefix, statsData) {
+            statsData = statsData || {};
+            const map = [
+                ['Sot','sot'], ['Saves','saves'], ['Offsides','offsides'], ['Passes','passes'], ['Attacks','attacks'], ['Subs','subs']
+            ];
+            map.forEach(([dom, key]) => {
+                const cap = prefix ? prefix + dom : key;
+            });
+        }
+        function setExtraMatchStats(statsData, mdPrefix) {
+            statsData = statsData || {};
+            const ids = mdPrefix ? {
+                sot1:'mdSot1Txt', sot2:'mdSot2Txt', saves1:'mdSaves1Txt', saves2:'mdSaves2Txt', offsides1:'mdOffsides1Txt', offsides2:'mdOffsides2Txt', passes1:'mdPasses1Txt', passes2:'mdPasses2Txt', attacks1:'mdAttacks1Txt', attacks2:'mdAttacks2Txt', subs1:'mdSubs1Txt', subs2:'mdSubs2Txt'
+            } : {
+                sot1:'sot1Txt', sot2:'sot2Txt', saves1:'saves1Txt', saves2:'saves2Txt', offsides1:'offsides1Txt', offsides2:'offsides2Txt', passes1:'passes1Txt', passes2:'passes2Txt', attacks1:'attacks1Txt', attacks2:'attacks2Txt', subs1:'subs1Txt', subs2:'subs2Txt'
+            };
+            Object.keys(ids).forEach(k => setTxt(ids[k], statsData[k] || 0));
+        }
+
         function shareAsImage(elementId) { 
             const card = document.getElementById(elementId); 
             if(elementId === 'scheduleExportWrapper') document.getElementById('scheduleExportHeader').style.display = 'block'; else if(elementId !== 'compareResults') card.classList.add('premium-poster'); 
@@ -1321,7 +1405,7 @@
 
         let globalSettings = {};
         db.ref(`tournaments/${dbPath}/settings`).on('value', snap => {
-            let s = snap.val() || {}; globalSettings = s; window.testModeActive = s.testMode === true; window.triggerLiveVisibilityUpdate();
+            let s = snap.val() || {}; globalSettings = s; window.testModeActive = s.testMode === true; currentLicense = normalizeLicense(s.license || {}); applyLicenseToAudienceUI(currentLicense); window.triggerLiveVisibilityUpdate();
 // تحديث اسم البطولة للجمهور فوراً من الفايربيس، ويشمل العنوان العلوي والفوتر
     let displayTitle = s.visualName || "بطولة دوائر خانقين";
     if (s.visualName) localStorage.setItem('visualName', displayTitle);
@@ -1446,6 +1530,9 @@ for(let k in data) {
         else if (line.includes('🔃') || line.includes('تبديل')) { 
             eventType = '🔃'; iconHtml = '<i class="fa-solid fa-arrow-right-arrow-left"></i>'; labelText = 'تبديل'; colorClass = 'label-🔃'; 
         }
+        else if (line.includes('🚩') || line.includes('أوفسايد') || line.includes('تسلل')) {
+            eventType = '🚩'; iconHtml = '<i class="fa-solid fa-flag"></i>'; labelText = 'أوفسايد'; colorClass = 'label-🟥';
+        }
         
         // 2. استخراج الدقيقة بجميع الصيغ الممكنة: (د 14) أو (14) أو 14' 
         let minuteMatch = line.match(/\(د\s*(\d+)\)|\((\d+)\)|(\d+)'/); 
@@ -1454,7 +1541,7 @@ for(let k in data) {
         // 3. تنظيف السطر لاستخراج اسم اللاعب الصافي
         let cleanText = line
             .replace(/⚽|🟨|🟥|🅰️|🅰|🔃/g, '') // حذف الإيموجيات
-            .replace(/هدف|إنذار|بطاقة صفراء|طرد|بطاقة حمراء|أسيست|صناعة|تبديل/g, '') // حذف الكلمات الدلالية
+            .replace(/هدف|إنذار|بطاقة صفراء|طرد|بطاقة حمراء|أسيست|صناعة|تبديل|أوفسايد|تسلل/g, '') // حذف الكلمات الدلالية
             .replace(/\(د\s*\d+\)|\(\d+\)|\d+'/g, '') // حذف الدقيقة
             .replace(/^[-:\s]+/, '') // حذف أي مسافات أو فواصل بالبداية
             .trim(); 
@@ -1693,7 +1780,7 @@ for(let k in data) {
             document.getElementById('lTimelineList').innerHTML = formatEventsToTimeline(d.events);
             document.getElementById('lLogo1').innerHTML = teamsDataGlobal[d.team1]?.logo ? `<img src="${teamsDataGlobal[d.team1].logo}">` : `<i class="fa-solid fa-shield-halved"></i>`; document.getElementById('lLogo2').innerHTML = teamsDataGlobal[d.team2]?.logo ? `<img src="${teamsDataGlobal[d.team2].logo}">` : `<i class="fa-solid fa-shield-halved"></i>`;
             if(d.referee1 || d.referee2 || d.referee3 || d.referee4) { document.getElementById('lReferees').style.display = 'flex'; document.getElementById('lRef1Txt').innerHTML = getRefHtml(d.referee1); document.getElementById('lRef2Txt').innerHTML = getRefHtml(d.referee2); if(d.referee3) { document.getElementById('lRef3Wrap').style.display = 'flex'; document.getElementById('lRef3Txt').innerHTML = getRefHtml(d.referee3); } else { document.getElementById('lRef3Wrap').style.display = 'none'; } if(d.referee4) { document.getElementById('lRef4Wrap').style.display = 'flex'; document.getElementById('lRef4Txt').innerHTML = getRefHtml(d.referee4); } else { document.getElementById('lRef4Wrap').style.display = 'none'; } } else { document.getElementById('lReferees').style.display = 'none'; }
-            if(d.stats && (d.stats.possession1 !== undefined || d.stats.shots1 !== undefined)) { document.getElementById('lTabs').style.display = 'flex'; document.getElementById('pos1Txt').innerText = (d.stats.possession1 || 50) + '%'; document.getElementById('pos2Txt').innerText = (d.stats.possession2 || 50) + '%'; document.getElementById('pos1Bar').style.width = (d.stats.possession1 || 50) + '%'; document.getElementById('pos2Bar').style.width = (d.stats.possession2 || 50) + '%'; document.getElementById('shots1Txt').innerText = d.stats.shots1 || 0; document.getElementById('shots2Txt').innerText = d.stats.shots2 || 0; document.getElementById('corn1Txt').innerText = d.stats.corners1 || 0; document.getElementById('corn2Txt').innerText = d.stats.corners2 || 0; document.getElementById('fouls1Txt').innerText = d.stats.fouls1 || 0; document.getElementById('fouls2Txt').innerText = d.stats.fouls2 || 0; } else { document.getElementById('lTabs').style.display = 'none'; switchMatchTab('live', 'events'); }
+            if(d.stats && (d.stats.possession1 !== undefined || d.stats.shots1 !== undefined)) { document.getElementById('lTabs').style.display = 'flex'; document.getElementById('pos1Txt').innerText = (d.stats.possession1 || 50) + '%'; document.getElementById('pos2Txt').innerText = (d.stats.possession2 || 50) + '%'; document.getElementById('pos1Bar').style.width = (d.stats.possession1 || 50) + '%'; document.getElementById('pos2Bar').style.width = (d.stats.possession2 || 50) + '%'; document.getElementById('shots1Txt').innerText = d.stats.shots1 || 0; document.getElementById('shots2Txt').innerText = d.stats.shots2 || 0; document.getElementById('corn1Txt').innerText = d.stats.corners1 || 0; document.getElementById('corn2Txt').innerText = d.stats.corners2 || 0; document.getElementById('fouls1Txt').innerText = d.stats.fouls1 || 0; document.getElementById('fouls2Txt').innerText = d.stats.fouls2 || 0; setExtraMatchStats(d.stats, false); } else { document.getElementById('lTabs').style.display = 'none'; switchMatchTab('live', 'events'); }
             document.getElementById('lTeam1Container').onclick = function() { window.openTeam(d.team1); }; document.getElementById('lTeam2Container').onclick = function() { window.openTeam(d.team2); };
             let btnSq = document.getElementById('liveSquadBtn'); if(btnSq) { if((liveSquad1 && Object.keys(liveSquad1).length > 0) || (liveSquad2 && Object.keys(liveSquad2).length > 0)) { btnSq.style.display = 'block'; btnSq.onclick = function() { window.openSquads(d.team1, d.team2, liveSquad1, liveSquad2); }; } else { btnSq.style.display = 'none'; } }
             clearInterval(timerInterval); if(d.timer && d.timer.isRunning) { timerInterval = setInterval(() => { let elapsedSecs = Math.floor((Date.now() - (d.timer.startTime || Date.now())) / 1000); let totalSecs = (d.timer.savedSeconds || 0) + elapsedSecs; let m = Math.floor(totalSecs / 60); let s = totalSecs % 60; document.getElementById('lTimer').innerText = `${m}:${s < 10 ? '0'+s : s}`; }, 1000); } else if (d.timer && !d.timer.isRunning) { let totalSecs = d.timer.savedSeconds || 0; let m = Math.floor(totalSecs / 60); let s = totalSecs % 60; document.getElementById('lTimer').innerText = `${m}:${s < 10 ? '0'+s : s}`; } else { document.getElementById('lTimer').innerText = `00:00`; }
@@ -1751,8 +1838,8 @@ for(let k in data) {
                 matches.forEach(m => {
                     let p1 = m.predictions ? (m.predictions.team1 || 0) : 0; let p0 = m.predictions ? (m.predictions.draw || 0) : 0; let p2 = m.predictions ? (m.predictions.team2 || 0) : 0; let total = p1 + p0 + p2 || 1;
                     let voted = localStorage.getItem('voted_' + dbPath + '_' + m.id); let predSection = '';
-                    if(!voted) predSection = `<div class="prediction-box"><div style="font-size:11px; margin-bottom:8px;">${t('توقع النتيجة')}</div><div style="display:flex; gap:5px;"><button class="pred-btn" onclick="voteMatch('${m.id}', 'team1')">${m.team1}</button><button class="pred-btn" onclick="voteMatch('${m.id}', 'draw')">${t('تعادل')}</button><button class="pred-btn" onclick="voteMatch('${m.id}', 'team2')">${m.team2}</button></div></div>`;
-                    else predSection = `<div class="prediction-box"><div style="display:flex; justify-content:space-between; font-size:10px; margin-bottom:2px;"><span style="font-family:Arial,sans-serif">${m.team1} (${Math.round(p1/total*100)}%)</span><span style="font-family:Arial,sans-serif">${t('تعادل')} (${Math.round(p0/total*100)}%)</span><span style="font-family:Arial,sans-serif">${m.team2} (${Math.round(p2/total*100)}%)</span></div><div class="pred-bar"><div style="width:${p1/total*100}%; background:var(--primary);"></div><div style="width:${p0/total*100}%; background:#a1a1aa;"></div><div style="width:${p2/total*100}%; background:var(--accent);"></div></div></div>`;
+                    if(licenseFeatureEnabled('predictions') && !voted) predSection = `<div class="prediction-box"><div style="font-size:11px; margin-bottom:8px;">${t('توقع النتيجة')}</div><div style="display:flex; gap:5px;"><button class="pred-btn" onclick="voteMatch('${m.id}', 'team1')">${m.team1}</button><button class="pred-btn" onclick="voteMatch('${m.id}', 'draw')">${t('تعادل')}</button><button class="pred-btn" onclick="voteMatch('${m.id}', 'team2')">${m.team2}</button></div></div>`;
+                    else if(licenseFeatureEnabled('predictions')) predSection = `<div class="prediction-box"><div style="display:flex; justify-content:space-between; font-size:10px; margin-bottom:2px;"><span style="font-family:Arial,sans-serif">${m.team1} (${Math.round(p1/total*100)}%)</span><span style="font-family:Arial,sans-serif">${t('تعادل')} (${Math.round(p0/total*100)}%)</span><span style="font-family:Arial,sans-serif">${m.team2} (${Math.round(p2/total*100)}%)</span></div><div class="pred-bar"><div style="width:${p1/total*100}%; background:var(--primary);"></div><div style="width:${p0/total*100}%; background:#a1a1aa;"></div><div style="width:${p2/total*100}%; background:var(--accent);"></div></div></div>`;
                     let info = []; if(m.group) info.push(t('مجموعة') + ' ' + m.group); if(m.round) info.push(t(m.round)); if(m.leg) info.push(t(m.leg)); let badgeInfo = info.length > 0 ? `<div style="font-size:11px; color:var(--primary); margin-bottom:12px; text-align:center; font-weight:bold; background: rgba(59,130,246,0.1); padding: 6px; border-radius: 8px; border:1px solid rgba(59,130,246,0.3);">${info.join(' - ')}</div>` : '';
                     
                     let sp1 = getStarPlayer(m.team1); let sp2 = getStarPlayer(m.team2);
@@ -1773,7 +1860,7 @@ for(let k in data) {
             }
         }
 
-        window.voteMatch = function(matchId, choice) { requireAuth(() => {
+        window.voteMatch = function(matchId, choice) { if(!licenseFeatureEnabled('predictions')) return alert(t('توقع النتيجة غير مفعل في هذه النسخة')); requireAuth(() => {
             const cleanMatchId = cleanTournamentId(matchId);
             const cleanChoice = ['team1', 'team2', 'draw'].includes(choice) ? choice : '';
             if(!cleanMatchId || !cleanChoice) return;
@@ -2058,6 +2145,7 @@ for(let k in data) {
             document.getElementById('mdCorn2Txt').innerText = statsData.corners2 || 0; 
             document.getElementById('mdFouls1Txt').innerText = statsData.fouls1 || 0; 
             document.getElementById('mdFouls2Txt').innerText = statsData.fouls2 || 0; 
+            setExtraMatchStats(statsData, true);
             
             switchMatchTab('md', 'events'); document.getElementById('mdTeam1Container').onclick = function() { window.openTeam(m.team1); }; document.getElementById('mdTeam2Container').onclick = function() { window.openTeam(m.team2); };
             let btnSq = document.getElementById('mdSquadBtn'); if(btnSq) { if((m.squad1 && Object.keys(m.squad1).length > 0) || (m.squad2 && Object.keys(m.squad2).length > 0)) { btnSq.style.display = 'block'; btnSq.onclick = function() { window.openSquads(m.team1, m.team2, m.squad1, m.squad2); }; } else { btnSq.style.display = 'none'; } }
@@ -2075,7 +2163,7 @@ for(let k in data) {
         window.closePlayerModal = function() { closeModal('playerModal'); if(history.state && history.state.modal) history.back(); };
         window.closeSquadsModal = function() { closeModal('squadsModal'); if(history.state && history.state.modal) history.back(); };
 
-        window.sendArchiveComment = function() { requireAuth(() => { let id = cleanTournamentId(document.getElementById('currentArchiveMatchId').value); let name = cleanPublicText(localStorage.getItem('chatUserName'), 40); let text = cleanPublicText(document.getElementById('arcCommentText').value, 150); if(!text) return; if(!canSend('last_archive_comment_' + dbPath + '_' + id, 8000)) return alert(t('انتظر قليلاً قبل إرسال تعليق آخر')); db.ref(`tournaments/${dbPath}/saved_matches/${id}/comments`).push({ name: name, text: text, time: firebase.database.ServerValue.TIMESTAMP }); document.getElementById('arcCommentText').value = ''; }); };
+        window.sendArchiveComment = function() { if(!licenseFeatureEnabled('comments')) return alert(t('التعليقات غير مفعلة في هذه النسخة')); requireAuth(() => { let id = cleanTournamentId(document.getElementById('currentArchiveMatchId').value); let name = cleanPublicText(localStorage.getItem('chatUserName'), 40); let text = cleanPublicText(document.getElementById('arcCommentText').value, 150); if(!text) return; if(!canSend('last_archive_comment_' + dbPath + '_' + id, 8000)) return alert(t('انتظر قليلاً قبل إرسال تعليق آخر')); db.ref(`tournaments/${dbPath}/saved_matches/${id}/comments`).push({ name: name, text: text, time: firebase.database.ServerValue.TIMESTAMP }); document.getElementById('arcCommentText').value = ''; }); };
 
         window.openScheduledMatch = function(key) {
             let m = scheduleGlobal[key]; if(!m) return; let info = []; if(m.group) info.push(t('مجموعة') + ' ' + m.group); if(m.round) info.push(t(m.round)); if(m.leg) info.push(t(m.leg));
@@ -2103,6 +2191,7 @@ for(let k in data) {
         window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); });
 
 window.nav = function(tabId, btn) {
+    if(!licensePageEnabled(tabId)) tabId = 'live';
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
     document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
     let targetPage = document.getElementById('page-' + tabId);
