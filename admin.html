@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
@@ -76,6 +77,12 @@
         .h2h-stat { display:flex; flex-direction:column; align-items:center; background:#18181b; padding:10px; border-radius:8px; border:1px solid #3f3f46; flex:1;}
         .h2h-stat b { font-size:20px; font-family:Arial; }
         .h2h-stat span { font-size:10px; color:var(--muted); }
+    
+        .license-grid { display:grid; grid-template-columns: repeat(2, 1fr); gap:10px; margin-top:10px; }
+        .license-feature { background: var(--input-bg); border:1px solid var(--border); border-radius:8px; padding:9px 10px; display:flex; align-items:center; gap:8px; font-size:12px; color:var(--text); }
+        .license-feature input { width:auto; margin:0; }
+        .license-summary { font-size:12px; color:var(--text); line-height:1.8; background:rgba(59,130,246,0.08); border:1px solid rgba(59,130,246,0.35); border-radius:10px; padding:10px; margin-top:10px; }
+        @media (max-width:520px){ .license-grid { grid-template-columns: 1fr; } }
     </style>
 </head>
 <body>
@@ -106,8 +113,8 @@
             <button class="tab-btn" onclick="openTab('tab-teams', this)"><i class="fa-solid fa-users-gear"></i> الفرق وH2H</button>
             <button class="tab-btn" onclick="openTab('tab-groups', this)"><i class="fa-solid fa-sitemap"></i> المجموعات</button>
             <button class="tab-btn" onclick="openTab('tab-schedule', this)"><i class="fa-solid fa-calendar-days"></i> الجدول</button>
-            <button class="tab-btn" onclick="openTab('tab-media', this)"><i class="fa-solid fa-bullhorn"></i> الإعلام</button>
-            <button class="tab-btn" onclick="openTab('tab-finance', this)"><i class="fa-solid fa-wallet"></i> المالية</button>
+            <button class="tab-btn" data-feature-admin="media" onclick="openTab('tab-media', this)"><i class="fa-solid fa-bullhorn"></i> الإعلام</button>
+            <button class="tab-btn" data-feature-admin="finance" onclick="openTab('tab-finance', this)"><i class="fa-solid fa-wallet"></i> المالية</button>
             <button class="tab-btn" onclick="openTab('tab-settings', this)"><i class="fa-solid fa-gear"></i> الإعدادات</button>
         </div>
 
@@ -204,6 +211,29 @@
                         <div style="flex:1;"><label style="color:#a8a29e;">ركنيات (ف2)</label><div style="display:flex; justify-content:center; gap:5px; align-items:center;"><button onclick="updateStat('corners2', -1)" style="width:30px; padding:5px; margin:0;">-</button><input type="number" id="corners2" value="0" readonly style="width:40px; text-align:center; margin:0; font-size:14px; font-weight:bold;"><button onclick="updateStat('corners2', 1)" style="width:30px; padding:5px; margin:0;">+</button></div></div>
                         <div style="flex:1;"><label style="color:#ef4444;">مخالفات (ف2)</label><div style="display:flex; justify-content:center; gap:5px; align-items:center;"><button onclick="updateStat('fouls2', -1)" style="width:30px; padding:5px; margin:0;">-</button><input type="number" id="fouls2" value="0" readonly style="width:40px; text-align:center; margin:0; font-size:14px; font-weight:bold;"><button onclick="updateStat('fouls2', 1)" style="width:30px; padding:5px; margin:0;">+</button></div></div>
                     </div>
+                    <div data-advanced-stats-section style="margin-top:15px; border-top:1px solid var(--border); padding-top:15px;">
+                        <h3 style="color:var(--accent); font-size:13px; text-align:center; margin:0 0 12px;">إحصائيات متقدمة / 11 لاعب</h3>
+                        <div class="flex-row" style="text-align:center; margin-bottom:15px;">
+                            <div style="flex:1;"><label style="color:#38bdf8;">على المرمى (ف1)</label><div style="display:flex; justify-content:center; gap:5px; align-items:center;"><button onclick="updateStat('sot1', -1)" style="width:30px; padding:5px; margin:0;">-</button><input type="number" id="sot1" value="0" readonly style="width:40px; text-align:center; margin:0; font-size:14px; font-weight:bold;"><button onclick="updateStat('sot1', 1)" style="width:30px; padding:5px; margin:0;">+</button></div></div>
+                            <div style="flex:1;"><label style="color:#22c55e;">تصديات (ف1)</label><div style="display:flex; justify-content:center; gap:5px; align-items:center;"><button onclick="updateStat('saves1', -1)" style="width:30px; padding:5px; margin:0;">-</button><input type="number" id="saves1" value="0" readonly style="width:40px; text-align:center; margin:0; font-size:14px; font-weight:bold;"><button onclick="updateStat('saves1', 1)" style="width:30px; padding:5px; margin:0;">+</button></div></div>
+                            <div style="flex:1;"><label style="color:#fb7185;">أوفسايد (ف1)</label><div style="display:flex; justify-content:center; gap:5px; align-items:center;"><button onclick="updateStat('offsides1', -1)" style="width:30px; padding:5px; margin:0;">-</button><input type="number" id="offsides1" value="0" readonly style="width:40px; text-align:center; margin:0; font-size:14px; font-weight:bold;"><button onclick="updateStat('offsides1', 1)" style="width:30px; padding:5px; margin:0;">+</button></div></div>
+                        </div>
+                        <div class="flex-row" style="text-align:center; margin-bottom:15px;">
+                            <div style="flex:1;"><label style="color:#38bdf8;">على المرمى (ف2)</label><div style="display:flex; justify-content:center; gap:5px; align-items:center;"><button onclick="updateStat('sot2', -1)" style="width:30px; padding:5px; margin:0;">-</button><input type="number" id="sot2" value="0" readonly style="width:40px; text-align:center; margin:0; font-size:14px; font-weight:bold;"><button onclick="updateStat('sot2', 1)" style="width:30px; padding:5px; margin:0;">+</button></div></div>
+                            <div style="flex:1;"><label style="color:#22c55e;">تصديات (ف2)</label><div style="display:flex; justify-content:center; gap:5px; align-items:center;"><button onclick="updateStat('saves2', -1)" style="width:30px; padding:5px; margin:0;">-</button><input type="number" id="saves2" value="0" readonly style="width:40px; text-align:center; margin:0; font-size:14px; font-weight:bold;"><button onclick="updateStat('saves2', 1)" style="width:30px; padding:5px; margin:0;">+</button></div></div>
+                            <div style="flex:1;"><label style="color:#fb7185;">أوفسايد (ف2)</label><div style="display:flex; justify-content:center; gap:5px; align-items:center;"><button onclick="updateStat('offsides2', -1)" style="width:30px; padding:5px; margin:0;">-</button><input type="number" id="offsides2" value="0" readonly style="width:40px; text-align:center; margin:0; font-size:14px; font-weight:bold;"><button onclick="updateStat('offsides2', 1)" style="width:30px; padding:5px; margin:0;">+</button></div></div>
+                        </div>
+                        <div class="flex-row" style="text-align:center; margin-bottom:15px;">
+                            <div style="flex:1;"><label style="color:#c084fc;">تمريرات (ف1)</label><div style="display:flex; justify-content:center; gap:5px; align-items:center;"><button onclick="updateStat('passes1', -5)" style="width:30px; padding:5px; margin:0;">-5</button><input type="number" id="passes1" value="0" readonly style="width:50px; text-align:center; margin:0; font-size:14px; font-weight:bold;"><button onclick="updateStat('passes1', 5)" style="width:30px; padding:5px; margin:0;">+5</button></div></div>
+                            <div style="flex:1;"><label style="color:#f97316;">هجمات خطرة (ف1)</label><div style="display:flex; justify-content:center; gap:5px; align-items:center;"><button onclick="updateStat('attacks1', -1)" style="width:30px; padding:5px; margin:0;">-</button><input type="number" id="attacks1" value="0" readonly style="width:40px; text-align:center; margin:0; font-size:14px; font-weight:bold;"><button onclick="updateStat('attacks1', 1)" style="width:30px; padding:5px; margin:0;">+</button></div></div>
+                            <div style="flex:1;"><label style="color:#60a5fa;">تبديلات (ف1)</label><div style="display:flex; justify-content:center; gap:5px; align-items:center;"><button onclick="updateStat('subs1', -1)" style="width:30px; padding:5px; margin:0;">-</button><input type="number" id="subs1" value="0" readonly style="width:40px; text-align:center; margin:0; font-size:14px; font-weight:bold;"><button onclick="updateStat('subs1', 1)" style="width:30px; padding:5px; margin:0;">+</button></div></div>
+                        </div>
+                        <div class="flex-row" style="text-align:center;">
+                            <div style="flex:1;"><label style="color:#c084fc;">تمريرات (ف2)</label><div style="display:flex; justify-content:center; gap:5px; align-items:center;"><button onclick="updateStat('passes2', -5)" style="width:30px; padding:5px; margin:0;">-5</button><input type="number" id="passes2" value="0" readonly style="width:50px; text-align:center; margin:0; font-size:14px; font-weight:bold;"><button onclick="updateStat('passes2', 5)" style="width:30px; padding:5px; margin:0;">+5</button></div></div>
+                            <div style="flex:1;"><label style="color:#f97316;">هجمات خطرة (ف2)</label><div style="display:flex; justify-content:center; gap:5px; align-items:center;"><button onclick="updateStat('attacks2', -1)" style="width:30px; padding:5px; margin:0;">-</button><input type="number" id="attacks2" value="0" readonly style="width:40px; text-align:center; margin:0; font-size:14px; font-weight:bold;"><button onclick="updateStat('attacks2', 1)" style="width:30px; padding:5px; margin:0;">+</button></div></div>
+                            <div style="flex:1;"><label style="color:#60a5fa;">تبديلات (ف2)</label><div style="display:flex; justify-content:center; gap:5px; align-items:center;"><button onclick="updateStat('subs2', -1)" style="width:30px; padding:5px; margin:0;">-</button><input type="number" id="subs2" value="0" readonly style="width:40px; text-align:center; margin:0; font-size:14px; font-weight:bold;"><button onclick="updateStat('subs2', 1)" style="width:30px; padding:5px; margin:0;">+</button></div></div>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="sub-panel">
@@ -220,7 +250,9 @@
                         <button onclick="addOwnGoal()" style="margin:0; background:transparent; color:#ef4444; border:1px solid #ef4444;">هدف عكسي <i class="fa-solid fa-rotate-left"></i></button>
                         <button onclick="addAutoEvent('assists', '🅰️')" style="margin:0; background:#8b5cf6; color:#fff; border:none;">صناعة</button>
                         <button onclick="addAutoEvent('yellow', '🟨')" style="margin:0; background:#facc15; color:#000; border:none;">إنذار</button>
-                        <button onclick="addAutoEvent('red', '🟥')" style="margin:0; background:#ef4444; color:#fff; border:none; grid-column:span 2;">طرد</button>
+                        <button onclick="addAutoEvent('red', '🟥')" style="margin:0; background:#ef4444; color:#fff; border:none;">طرد</button>
+                        <button data-feature-action="substitutions" onclick="addAutoEvent('subs', '🔃')" style="margin:0; background:#3b82f6; color:#fff; border:none;">تبديل</button>
+                        <button data-feature-action="offside" onclick="addAutoEvent('offsides', '🚩')" style="margin:0; background:#f97316; color:#fff; border:none; grid-column:span 2;">أوفسايد</button>
                     </div>
                 </div>
                 <textarea id="mEvents" style="min-height: 80px; font-size:13px;" readonly placeholder="سجل الأحداث يظهر هنا..."></textarea>
@@ -232,7 +264,7 @@
 
         <div id="tab-teams" class="tab-content">
             
-            <div class="panel" style="border-color:var(--accent); background:rgba(74, 222, 128, 0.05);">
+            <div class="panel" data-feature-admin="transfers" style="border-color:var(--accent); background:rgba(74, 222, 128, 0.05);">
                 <h2 style="color:var(--accent);"><i class="fa-solid fa-right-left"></i> إدارة وسوق الانتقالات</h2>
                 <p style="font-size:12px; color:var(--text); text-align:center;">اختر لاعباً موجوداً لنقله بجميع إحصائياته، أو أضف لاعباً جديداً (حراً).</p>
                 
@@ -279,7 +311,7 @@
                 <div id="transfersAdminList" class="preview-box"></div>
             </div>
 
-            <div class="panel" style="border-color:var(--primary); background:rgba(59, 130, 246, 0.05);">
+            <div class="panel" data-feature-admin="h2h" style="border-color:var(--primary); background:rgba(59, 130, 246, 0.05);">
                 <h2 style="color:var(--primary);"><i class="fa-solid fa-code-compare"></i> فحص المواجهات المباشرة (H2H)</h2>
                 <p style="font-size:12px; color:var(--text); text-align:center;">اختر فريقين لمعرفة تاريخ مواجهاتهم في البطولة بدقة.</p>
                 <div class="flex-row">
@@ -302,7 +334,7 @@
                 </div>
             </div>
 
-            <div class="panel" style="border-color:#ef4444; background:rgba(239, 68, 68, 0.05);">
+            <div class="panel" data-feature-admin="stats" style="border-color:#ef4444; background:rgba(239, 68, 68, 0.05);">
                 <h2 style="color:#ef4444;"><i class="fa-solid fa-gavel"></i> سجل العقوبات والإيقافات</h2>
                 <p style="font-size:12px; color:var(--text); text-align:center;">هنا يظهر اللاعبون المهددون بالإيقاف (بطاقة حمراء أو بطاقتين صفراء).</p>
                 <div id="disciplinaryPreview" class="preview-box" style="background:var(--card); border:none; padding:0; max-height:250px;"></div>
@@ -458,7 +490,7 @@
             <div class="panel"><h2 style="color:var(--danger);">الأرشيف (المنتهية)</h2><div id="adminArchivePreview" class="preview-box" style="border:none; padding:0;"></div></div>
         </div>
 
-        <div id="tab-media" class="tab-content">
+        <div id="tab-media" class="tab-content" data-feature-admin="media">
             <div class="panel" style="border-color:#ef4444; background:rgba(239, 68, 68, 0.05);">
                 <h2 style="color:#ef4444;"><i class="fa-solid fa-bolt"></i> شريط الأخبار العاجلة (متعدد)</h2>
                 <p style="font-size:12px; color:var(--text); text-align:center;">يمكنك إضافة أكثر من خبر عاجل ليظهر كشريط متحرك في التطبيق.</p>
@@ -512,7 +544,7 @@
             </div>
         </div>
 
-        <div id="tab-finance" class="tab-content">
+        <div id="tab-finance" class="tab-content" data-feature-admin="finance">
             <div class="panel">
                 <h2 style="color:var(--accent);"><i class="fa-solid fa-wallet"></i> السجل المالي والإدارة</h2>
                 <div class="flex-row" style="text-align:center; margin-bottom:15px; flex-wrap:wrap;">
@@ -556,7 +588,7 @@
                 </div>
             </div>
 
-            <div class="panel" style="border-color:#facc15; background:rgba(250, 204, 21, 0.05);">
+            <div class="panel" data-feature-admin="hallOfFame" style="border-color:#facc15; background:rgba(250, 204, 21, 0.05);">
                 <h2 style="color:#facc15;"><i class="fa-solid fa-trophy"></i> سجل الأبطال (Hall of Fame)</h2>
                 <p style="font-size:12px; color:var(--text); text-align:center;">لتخليد ذكرى الفرق الفائزة بالبطولات السابقة وعرضها للجمهور.</p>
                 <div class="flex-row" style="margin-bottom:10px;">
@@ -571,7 +603,7 @@
                 <div id="hofList" class="preview-box" style="background:var(--card); border:none; padding:0;"></div>
             </div>
 
-            <div class="panel" style="border-color:#3b82f6; background:rgba(59, 130, 246, 0.05);">
+            <div class="panel" data-feature-admin="sponsors" style="border-color:#3b82f6; background:rgba(59, 130, 246, 0.05);">
                 <h2 style="color:#3b82f6;"><i class="fa-solid fa-handshake"></i> لوحة الرعاة والشركاء</h2>
                 <div class="flex-row" style="margin-bottom:10px;">
                     <input type="text" id="spName" placeholder="اسم الراعي" style="flex:1; margin:0;">
@@ -640,9 +672,80 @@
                 <button onclick="recalculateMatchesPlayed()" style="background:#ef4444; color:#fff; border:none; margin:0;"><i class="fa-solid fa-calculator"></i> بدء المزامنة الشاملة</button>
             </div>
             
+
+            <div class="panel" id="licensePanel" style="border-color:#22c55e; background:rgba(34, 197, 94, 0.05);">
+                <h2 style="color:#22c55e;"><i class="fa-solid fa-layer-group"></i> صانع الباقات وتحديد نسخة الزبون</h2>
+                <div id="licenseOwnerOnlyNotice" style="display:none; background:rgba(239,68,68,0.12); border:1px solid #ef4444; color:#fff; padding:10px; border-radius:8px; font-size:12px; margin-bottom:12px; text-align:center;">هذه اللوحة للماستر أدمن فقط. الزبون يشاهد الباقة ولا يستطيع تعديلها.</div>
+
+                <div style="background:rgba(255,255,255,0.04); border:1px solid var(--border); padding:12px; border-radius:12px; margin-bottom:14px;">
+                    <h3 style="margin:0 0 10px; color:#22c55e; font-size:14px;"><i class="fa-solid fa-box-open"></i> 1) اختر قالب جاهز أو اصنع باقة جديدة</h3>
+                    <div class="flex-row">
+                        <div>
+                            <label>قوالب الباقات المحفوظة:</label>
+                            <select id="licensePlanSelect" onchange="applyLicensePresetToInputs()">
+                                <option value="seven">سباعي</option><option value="eleven_full">11 لاعب كامل</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label>كود الباقة:</label>
+                            <input type="text" id="licensePlanCode" placeholder="مثال: vip_futsal أو full_plus">
+                        </div>
+                        <div>
+                            <label>اسم الباقة الظاهر:</label>
+                            <input type="text" id="licensePlanLabel" placeholder="مثال: خماسي VIP">
+                        </div>
+                    </div>
+                    <p style="font-size:11px; color:var(--muted); margin:5px 0 0;">الكود يكون إنكليزي/أرقام/شرطة سفلية فقط. الاسم يظهر إلك داخل الأدمن.</p>
+                </div>
+
+                <div style="background:rgba(255,255,255,0.04); border:1px solid var(--border); padding:12px; border-radius:12px; margin-bottom:14px;">
+                    <h3 style="margin:0 0 10px; color:#22c55e; font-size:14px;"><i class="fa-solid fa-sliders"></i> 2) رتب تفاصيل الباقة بنفسك</h3>
+                    <div class="flex-row">
+                        <div><label>نوع اللعبة:</label><select id="licenseSportMode"><option value="seven">سباعي</option><option value="football11">11 لاعب</option><option value="general">عام</option><option value="futsal">خماسي</option></select></div>
+                        <div><label>أقصى عدد لاعبين لكل فريق:</label><input type="number" id="licenseMaxPlayers" min="5" max="60"></div>
+                        <div><label>عدد الأساسيين:</label><input type="number" id="licenseLineupPlayers" min="5" max="11"></div>
+                        <div><label>دقائق الشوط:</label><input type="number" id="licenseHalfMinutes" min="5" max="60"></div>
+                    </div>
+                    <div class="license-grid">
+                        <label class="license-feature"><input type="checkbox" data-license-feature="live"> المباشر</label>
+                        <label class="license-feature"><input type="checkbox" data-license-feature="matches"> المباريات</label>
+                        <label class="license-feature"><input type="checkbox" data-license-feature="groups"> المجموعات</label>
+                        <label class="license-feature"><input type="checkbox" data-license-feature="teams"> الفرق</label>
+                        <label class="license-feature"><input type="checkbox" data-license-feature="stats"> الإحصائيات</label>
+                        <label class="license-feature"><input type="checkbox" data-license-feature="media"> الإعلام والأخبار</label>
+                        <label class="license-feature"><input type="checkbox" data-license-feature="videos"> الفيديوهات</label>
+                        <label class="license-feature"><input type="checkbox" data-license-feature="transfers"> سوق الانتقالات</label>
+                        <label class="license-feature"><input type="checkbox" data-license-feature="finance"> المالية</label>
+                        <label class="license-feature"><input type="checkbox" data-license-feature="comments"> التعليقات والدردشة</label>
+                        <label class="license-feature"><input type="checkbox" data-license-feature="predictions"> توقع النتائج</label>
+                        <label class="license-feature"><input type="checkbox" data-license-feature="notifications"> الإشعارات</label>
+                        <label class="license-feature"><input type="checkbox" data-license-feature="h2h"> المواجهات H2H</label>
+                        <label class="license-feature"><input type="checkbox" data-license-feature="referees"> الحكام</label>
+                        <label class="license-feature"><input type="checkbox" data-license-feature="sponsors"> الرعاة</label>
+                        <label class="license-feature"><input type="checkbox" data-license-feature="hallOfFame"> سجل الأبطال</label>
+                        <label class="license-feature"><input type="checkbox" data-license-feature="roundStars"> نجوم الجولة</label>
+                        <label class="license-feature"><input type="checkbox" data-license-feature="offside"> حالات الأوفسايد</label>
+                        <label class="license-feature"><input type="checkbox" data-license-feature="substitutions"> التبديلات</label>
+                        <label class="license-feature"><input type="checkbox" data-license-feature="advancedStats"> إحصائيات متقدمة</label>
+                    </div>
+                </div>
+
+                <div id="licenseSummary" class="license-summary">جاري تحميل الباقة...</div>
+
+                <div class="flex-row" style="margin-top:12px;">
+                    <button onclick="savePackageTemplate()" style="background:#3b82f6; color:#fff; border:none; margin:0;"><i class="fa-solid fa-floppy-disk"></i> حفظ/تحديث هذا القالب</button>
+                    <button onclick="deletePackageTemplate()" style="background:transparent; color:#ef4444; border:1px solid #ef4444; margin:0;"><i class="fa-solid fa-trash"></i> حذف القالب</button>
+                </div>
+                <div class="flex-row" style="margin-top:10px;">
+                    <button onclick="saveLicenseSettings()" style="background:#22c55e; color:#000; border:none; margin:0;"><i class="fa-solid fa-user-check"></i> تطبيق هذه الباقة على الزبون الحالي</button>
+                    <button onclick="restoreDefaultPackageTemplates()" style="background:transparent; color:#facc15; border:1px solid #facc15; margin:0;"><i class="fa-solid fa-rotate-right"></i> استعادة القوالب الافتراضية</button>
+                </div>
+                <p style="font-size:11px; color:var(--muted); line-height:1.7; margin-bottom:0;">الفرق: حفظ القالب يخلي الباقة موجودة للاستخدام لاحقاً، أما تطبيق الباقة على الزبون فيحفظها داخل بطولة هذا الزبون فقط.</p>
+            </div>
+
             <div class="panel" style="border-color:#facc15;"><h2 style="color:#facc15;"><i class="fa-solid fa-flask"></i> وضع التجربة</h2><div style="background:rgba(255,255,255,0.05); padding:15px; border-radius:8px; margin-bottom:15px;"><label style="color:var(--text); font-size:14px;">تفعيل وضع التجربة</label><select id="testModeSelect" onchange="updateAppSettings()" style="border-color:#facc15; margin:0;"><option value="false">إيقاف (علني)</option><option value="true">تفعيل (مخفي)</option></select></div></div>
-            <div class="panel"><h2 style="color:var(--text);">نجوم الجولة</h2><div style="background:var(--input-bg); border:1px solid var(--border); border-radius:8px; padding:10px; margin-bottom:10px;"><label style="color:var(--accent);">لاعب الجولة:</label><input type="file" id="potwImg" accept="image/*" style="border:none; background:transparent; padding:5px; margin:0;"></div><div style="background:var(--input-bg); border:1px solid var(--border); border-radius:8px; padding:10px; margin-bottom:15px;"><label style="color:var(--primary);">تشكيلة الجولة:</label><input type="file" id="totwImg" accept="image/*" style="border:none; background:transparent; padding:5px; margin:0;"></div><button onclick="saveRoundStars()" style="background:linear-gradient(45deg, #d4af37, #b48600); color:#000; border:none;"><i class="fa-solid fa-upload"></i> حفظ وتحديث</button></div>
-            <div class="panel"><h2 style="color:var(--primary);">إدارة الحكام</h2><div class="flex-row" style="margin-bottom:10px;"><input type="text" id="newRefName" placeholder="اسم الحكم" style="margin:0;"><div style="background:var(--input-bg); border:1px solid var(--border); border-radius:8px; display:flex; align-items:center; padding:0 10px; flex:1;"><span style="font-size:11px; color:var(--muted);">صورة:</span><input type="file" id="newRefPhoto" accept="image/*" style="border:none; background:transparent; padding:5px; margin:0; width:100%;"></div></div><button onclick="addReferee()"><i class="fa-solid fa-user-plus"></i> حفظ الحكم</button><div id="refereesPreview" class="preview-box" style="padding:0; border:none; background:transparent;"></div></div>
+            <div class="panel" data-feature-admin="roundStars"><h2 style="color:var(--text);">نجوم الجولة</h2><div style="background:var(--input-bg); border:1px solid var(--border); border-radius:8px; padding:10px; margin-bottom:10px;"><label style="color:var(--accent);">لاعب الجولة:</label><input type="file" id="potwImg" accept="image/*" style="border:none; background:transparent; padding:5px; margin:0;"></div><div style="background:var(--input-bg); border:1px solid var(--border); border-radius:8px; padding:10px; margin-bottom:15px;"><label style="color:var(--primary);">تشكيلة الجولة:</label><input type="file" id="totwImg" accept="image/*" style="border:none; background:transparent; padding:5px; margin:0;"></div><button onclick="saveRoundStars()" style="background:linear-gradient(45deg, #d4af37, #b48600); color:#000; border:none;"><i class="fa-solid fa-upload"></i> حفظ وتحديث</button></div>
+            <div class="panel" data-feature-admin="referees"><h2 style="color:var(--primary);">إدارة الحكام</h2><div class="flex-row" style="margin-bottom:10px;"><input type="text" id="newRefName" placeholder="اسم الحكم" style="margin:0;"><div style="background:var(--input-bg); border:1px solid var(--border); border-radius:8px; display:flex; align-items:center; padding:0 10px; flex:1;"><span style="font-size:11px; color:var(--muted);">صورة:</span><input type="file" id="newRefPhoto" accept="image/*" style="border:none; background:transparent; padding:5px; margin:0; width:100%;"></div></div><button onclick="addReferee()"><i class="fa-solid fa-user-plus"></i> حفظ الحكم</button><div id="refereesPreview" class="preview-box" style="padding:0; border:none; background:transparent;"></div></div>
         </div>
         
         <div style="text-align: center; margin-top: 20px; font-size: 12px; color: var(--muted);">
@@ -763,11 +866,32 @@
         firebase.initializeApp(firebaseConfig); 
         const db = firebase.database(); 
         const auth = firebase.auth();
-// دالة لتوليد حقول إدخال اللاعبين الـ 15 تلقائياً في الواجهة
-function generatePlayersGrid() {
+// دالة لتوليد حقول إدخال اللاعبين حسب باقة الزبون
+window.__currentMaxPlayersPerTeam = 15;
+function getTeamPlayerLimit() {
+    return Math.max(5, Math.min(60, parseInt(window.__currentMaxPlayersPerTeam || 15, 10)));
+}
+function getFilledPlayerNamesFromGrid() {
+    const result = {};
+    for (let i = 1; i <= 60; i++) {
+        const nameEl = document.getElementById('p' + i);
+        if (!nameEl) continue;
+        const pName = nameEl.value.trim();
+        if (!pName) continue;
+        result[i] = {
+            name: pName,
+            pos: document.getElementById('pPos' + i)?.value || '',
+            iconOk: document.getElementById('pIcon' + i)?.className || ''
+        };
+    }
+    return result;
+}
+function generatePlayersGrid(maxPlayers) {
     const grid = document.getElementById('playersGridInputs');
     if (!grid) return;
-    grid.innerHTML = '';
+    const oldValues = getFilledPlayerNamesFromGrid();
+    const max = Math.max(5, Math.min(60, parseInt(maxPlayers || window.__currentMaxPlayersPerTeam || 15, 10)));
+    window.__currentMaxPlayersPerTeam = max;
     let html = '';
     const positions = `
         <option value="">المركز...</option>
@@ -784,10 +908,10 @@ function generatePlayersGrid() {
         <option value="RW">جناح أيمن</option>
         <option value="ST">مهاجم</option>
     `;
-    for (let i = 1; i <= 15; i++) {
+    for (let i = 1; i <= max; i++) {
         html += `
         <div class="sub-panel" style="margin-bottom: 10px; padding: 10px; border: 1px solid #27272a; background: #0f0f11;">
-            <label>لاعب ${i}:</label>
+            <label>لاعب ${i} من ${max}:</label>
             <input type="text" id="p${i}" placeholder="اسم اللاعب الثلاثي..." style="margin-bottom:8px;">
             <div class="flex-row" style="margin-bottom:0; display:flex; gap:10px; align-items:center;">
                 <select id="pPos${i}" style="margin:0; flex:2;">${positions}</select>
@@ -796,18 +920,301 @@ function generatePlayersGrid() {
                 </label>
                 <input type="file" id="pImg${i}" accept="image/*" style="display:none;" onchange="document.getElementById('pIcon${i}').className='fa-solid fa-check'; document.getElementById('pIcon${i}').style.color='var(--accent)';">
             </div>
-        </div>
-        `;
+        </div>`;
     }
     grid.innerHTML = html;
+    Object.keys(oldValues).forEach(i => {
+        if (parseInt(i, 10) > max) return;
+        const item = oldValues[i];
+        const nameEl = document.getElementById('p' + i);
+        if (nameEl) nameEl.value = item.name;
+        const posEl = document.getElementById('pPos' + i);
+        if (posEl) posEl.value = item.pos || '';
+    });
+}
+function canAddPlayerToTeam(teamName, pName) {
+    const max = getTeamPlayerLimit();
+    const players = (allData && allData.teams && allData.teams[teamName] && allData.teams[teamName].players) ? allData.teams[teamName].players : {};
+    if (players[pName]) return true;
+    const count = Object.keys(players).length;
+    if (count >= max) {
+        alert(`لا يمكن إضافة أكثر من ${max} لاعب لهذا الفريق حسب باقة الزبون الحالية.`);
+        return false;
+    }
+    return true;
 }
 
-// تشغيل الدالة فوراً لتجهيز العناصر في الـ DOM
-generatePlayersGrid();
+// تشغيل افتراضي للسباعي، ويتغير تلقائياً بعد تحميل باقة الزبون
+generatePlayersGrid(15);
 
         let dbPath = ""; 
         let testModeActive = false; let allData = {}; let adminClockInterval; let isInternalUpdate = false;
         let posActiveTeam = 0; let posSec1 = 0; let posSec2 = 0;
+
+        // -----------------------------------------------------------------
+        // نظام الباقات التجارية: سباعي / 11 لاعب كامل
+        // -----------------------------------------------------------------
+        const OWNER_EMAILS = ['mohammedhamza99999@gmail.com'];
+        let currentAdminEmail = '';
+        let TOURNEY_PLAN_PRESETS = {"seven": {"plan": "seven", "planLabel": "سباعي", "sportMode": "seven", "sportLabel": "سباعي", "maxPlayersPerTeam": 15, "lineupPlayers": 7, "halfMinutes": 25, "lockedPlayers": true, "sortOrder": 1, "features": {"live": true, "matches": true, "groups": true, "teams": true, "stats": true, "media": true, "videos": true, "transfers": false, "finance": false, "comments": true, "predictions": true, "notifications": true, "h2h": true, "referees": false, "sponsors": false, "hallOfFame": true, "roundStars": true, "offside": false, "substitutions": false, "advancedStats": false}}, "eleven_full": {"plan": "eleven_full", "planLabel": "11 لاعب كامل", "sportMode": "football11", "sportLabel": "11 لاعب كامل", "maxPlayersPerTeam": 30, "lineupPlayers": 11, "halfMinutes": 45, "lockedPlayers": true, "sortOrder": 2, "features": {"live": true, "matches": true, "groups": true, "teams": true, "stats": true, "media": true, "videos": true, "transfers": true, "finance": true, "comments": true, "predictions": true, "notifications": true, "h2h": true, "referees": true, "sponsors": true, "hallOfFame": true, "roundStars": true, "offside": true, "substitutions": true, "advancedStats": true}}};
+        let currentLicense = null;
+
+        function clonePlain(obj) { return JSON.parse(JSON.stringify(obj || {})); }
+        function getDefaultLicense() { return clonePlain(TOURNEY_PLAN_PRESETS.eleven_full || Object.values(TOURNEY_PLAN_PRESETS)[0]); }
+        function normalizeLicense(raw) {
+            const base = getDefaultLicense();
+            const input = raw && typeof raw === 'object' ? raw : {};
+            const plan = input.plan && TOURNEY_PLAN_PRESETS[input.plan] ? input.plan : (base.plan || 'eleven_full');
+            const preset = clonePlain(TOURNEY_PLAN_PRESETS[plan] || base);
+            const merged = Object.assign(preset, input);
+            merged.features = Object.assign({}, preset.features || {}, input.features || {});
+            merged.maxPlayersPerTeam = Math.max(5, parseInt(merged.maxPlayersPerTeam || preset.maxPlayersPerTeam || 25, 10));
+            merged.lineupPlayers = Math.max(5, Math.min(11, parseInt(merged.lineupPlayers || preset.lineupPlayers || 11, 10)));
+            merged.halfMinutes = Math.max(5, parseInt(merged.halfMinutes || preset.halfMinutes || 45, 10));
+            return enforceLockedPackageNumbers(merged);
+        }
+        function isOwnerAdmin() { return OWNER_EMAILS.includes(String(currentAdminEmail || '').toLowerCase()); }
+        function adminFeatureEnabled(name) {
+            currentLicense = normalizeLicense(currentLicense || {});
+            return !!(currentLicense.features && currentLicense.features[name]);
+        }
+        function applyLicensePresetToInputs() {
+            const planEl = document.getElementById('licensePlanSelect');
+            const plan = planEl ? planEl.value : 'eleven_full';
+            fillLicenseInputs(normalizeLicense(TOURNEY_PLAN_PRESETS[plan] || TOURNEY_PLAN_PRESETS.eleven_full));
+        }
+        function fillLicenseInputs(license) {
+            license = normalizeLicense(license);
+            const setVal = (id, val) => { const el = document.getElementById(id); if(el && document.activeElement !== el) el.value = val; };
+            setVal('licensePlanSelect', license.plan || 'eleven_full');
+            setVal('licenseSportMode', license.sportMode || 'football11');
+            setVal('licenseMaxPlayers', license.maxPlayersPerTeam || 25);
+            setVal('licenseLineupPlayers', license.lineupPlayers || 11);
+            setVal('licenseHalfMinutes', license.halfMinutes || 45);
+            document.querySelectorAll('[data-license-feature]').forEach(cb => {
+                const key = cb.getAttribute('data-license-feature');
+                cb.checked = !!(license.features && license.features[key]);
+            });
+            const summary = document.getElementById('licenseSummary');
+            if(summary) summary.innerHTML = `<b>الباقة الحالية:</b> ${license.planLabel || license.plan} &nbsp; | &nbsp; <b>اللعبة:</b> ${license.sportLabel || license.sportMode} &nbsp; | &nbsp; <b>التشكيلة:</b> ${license.lineupPlayers} أساسي &nbsp; | &nbsp; <b>الشوط:</b> ${license.halfMinutes} دقيقة`;
+        }
+        function collectLicenseFromInputs() {
+            const plan = document.getElementById('licensePlanSelect')?.value || 'eleven_full';
+            const preset = normalizeLicense(TOURNEY_PLAN_PRESETS[plan] || TOURNEY_PLAN_PRESETS.eleven_full);
+            const features = Object.assign({}, preset.features || {});
+            document.querySelectorAll('[data-license-feature]').forEach(cb => { features[cb.getAttribute('data-license-feature')] = !!cb.checked; });
+            return normalizeLicense({
+                plan,
+                planLabel: preset.planLabel || plan,
+                sportMode: document.getElementById('licenseSportMode')?.value || preset.sportMode,
+                sportLabel: document.getElementById('licenseSportMode')?.selectedOptions?.[0]?.textContent || preset.sportLabel,
+                maxPlayersPerTeam: parseInt(document.getElementById('licenseMaxPlayers')?.value || preset.maxPlayersPerTeam, 10),
+                lineupPlayers: parseInt(document.getElementById('licenseLineupPlayers')?.value || preset.lineupPlayers, 10),
+                halfMinutes: parseInt(document.getElementById('licenseHalfMinutes')?.value || preset.halfMinutes, 10),
+                features
+            });
+        }
+        function setAdminFeatureVisible(feature, enabled) {
+            document.querySelectorAll(`[data-feature-admin="${feature}"]`).forEach(el => { el.style.display = enabled ? '' : 'none'; });
+        }
+        function applyLicenseToAdminUI(license) {
+            currentLicense = normalizeLicense(license);
+            fillLicenseInputs(currentLicense);
+            const f = currentLicense.features || {};
+            ['media','finance','transfers','h2h','stats','sponsors','hallOfFame','roundStars','referees'].forEach(k => setAdminFeatureVisible(k, k === 'stats' ? !!f.stats : !!f[k]));
+            document.querySelectorAll('[data-feature-action="offside"]').forEach(el => el.style.display = f.offside ? '' : 'none');
+            document.querySelectorAll('[data-feature-action="substitutions"]').forEach(el => el.style.display = f.substitutions ? '' : 'none');
+            document.querySelectorAll('[data-advanced-stats-section]').forEach(el => el.style.display = f.advancedStats ? '' : 'none');
+            window.__currentMaxPlayersPerTeam = currentLicense.maxPlayersPerTeam || 15;
+            if(document.getElementById('playersGridInputs')) generatePlayersGrid(window.__currentMaxPlayersPerTeam);
+            const owner = isOwnerAdmin();
+            const notice = document.getElementById('licenseOwnerOnlyNotice');
+            if(notice) notice.style.display = owner ? 'none' : 'block';
+            document.querySelectorAll('#licensePanel input, #licensePanel select, #licensePanel button').forEach(el => { el.disabled = !owner; });
+            const activeTab = document.querySelector('.tab-content.active');
+            if(activeTab && activeTab.style.display === 'none') { const liveBtn = document.querySelector('.tab-btn[onclick*="tab-live"]'); if(liveBtn) openTab('tab-live', liveBtn); }
+        }
+        async function saveLicenseSettings() {
+            if(!isOwnerAdmin()) return alert('هذه العملية مخصصة للماستر أدمن فقط.');
+            if(!dbPath) return alert('لم يتم تحديد البطولة بعد.');
+            const license = collectLicenseFromInputs();
+            await db.ref(`tournaments/${dbPath}/settings/license`).set(license);
+            alert('تم حفظ باقة الزبون وتطبيقها على الجمهور والأدمن.');
+        }
+
+        
+        function enforceLockedPackageNumbers(license) {
+            license = license || {};
+            if (license.plan === 'seven' || license.sportMode === 'seven') {
+                license.maxPlayersPerTeam = 15;
+                license.lineupPlayers = 7;
+                license.lockedPlayers = true;
+            }
+            if (license.plan === 'eleven_full') {
+                license.maxPlayersPerTeam = 30;
+                license.lineupPlayers = 11;
+                license.lockedPlayers = true;
+                license.sportMode = 'football11';
+            }
+            return license;
+        }
+        function updateLockedInputsUI(license) {
+            const locked = !!(license && license.lockedPlayers);
+            ['licenseMaxPlayers','licenseLineupPlayers'].forEach(id => {
+                const el = document.getElementById(id);
+                if(el) {
+                    el.readOnly = locked;
+                    el.style.opacity = locked ? '0.75' : '1';
+                    el.title = locked ? 'هذا الرقم مقفول حسب نوع النسخة' : '';
+                }
+            });
+        }
+
+        function sanitizePackageCode(raw) {
+            let code = String(raw || '').trim().toLowerCase()
+                .replace(/\s+/g, '_')
+                .replace(/[^a-z0-9_\\-]/g, '');
+            return code || 'custom_package';
+        }
+
+        function renderLicensePlanOptions(selected) {
+            const select = document.getElementById('licensePlanSelect');
+            if (!select) return;
+            const current = selected || select.value || 'eleven_full';
+            const entries = Object.entries(TOURNEY_PLAN_PRESETS || {}).sort((a, b) => {
+                const ao = Number(a[1]?.sortOrder || 999);
+                const bo = Number(b[1]?.sortOrder || 999);
+                if (ao !== bo) return ao - bo;
+                return String(a[1]?.planLabel || a[0]).localeCompare(String(b[1]?.planLabel || b[0]), 'ar');
+            });
+            select.innerHTML = entries.map(([key, p]) => {
+                const label = safeAdminText(p.planLabel || p.label || key);
+                return `<option value="${safeAdminAttr(key)}">${label}</option>`;
+            }).join('');
+            if (TOURNEY_PLAN_PRESETS[current]) select.value = current;
+        }
+
+        function safeAdminText(v) {
+            return String(v ?? '').replace(/[&<>"'`]/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;','`':'&#96;'}[ch]));
+        }
+        function safeAdminAttr(v) { return safeAdminText(v).replace(/"/g, '&quot;'); }
+
+        const DEFAULT_PACKAGE_TEMPLATES = clonePlain(TOURNEY_PLAN_PRESETS);
+
+        function loadLicensePackageTemplates() {
+            if (!firebase || !db) return;
+            db.ref('license_package_templates').on('value', snap => {
+                const remote = snap.val();
+                if (remote && typeof remote === 'object') {
+                    TOURNEY_PLAN_PRESETS = Object.assign({}, DEFAULT_PACKAGE_TEMPLATES, remote);
+                } else {
+                    TOURNEY_PLAN_PRESETS = Object.assign({}, DEFAULT_PACKAGE_TEMPLATES);
+                }
+                renderLicensePlanOptions(currentLicense?.plan || 'eleven_full');
+                fillLicenseInputs(currentLicense || getDefaultLicense());
+            }, err => {
+                console.warn('تعذر تحميل قوالب الباقات:', err && err.message ? err.message : err);
+                TOURNEY_PLAN_PRESETS = Object.assign({}, DEFAULT_PACKAGE_TEMPLATES);
+                renderLicensePlanOptions(currentLicense?.plan || 'eleven_full');
+            });
+        }
+
+        // إعادة تعريف هذه الدوال حتى تدعم الباقات التي ترتبها أنت من اللوحة.
+        function applyLicensePresetToInputs() {
+            const planEl = document.getElementById('licensePlanSelect');
+            const plan = planEl ? planEl.value : 'eleven_full';
+            fillLicenseInputs(normalizeLicense(TOURNEY_PLAN_PRESETS[plan] || TOURNEY_PLAN_PRESETS.eleven_full));
+        }
+
+        function fillLicenseInputs(license) {
+            license = enforceLockedPackageNumbers(normalizeLicense(license));
+            renderLicensePlanOptions(license.plan || 'eleven_full');
+
+            const setVal = (id, val) => {
+                const el = document.getElementById(id);
+                if (el && document.activeElement !== el) el.value = val ?? '';
+            };
+
+            setVal('licensePlanSelect', license.plan || 'eleven_full');
+            setVal('licensePlanCode', license.plan || 'custom_package');
+            setVal('licensePlanLabel', license.planLabel || license.label || license.plan || 'باقة مخصصة');
+            setVal('licenseSportMode', license.sportMode || 'football11');
+            setVal('licenseMaxPlayers', license.maxPlayersPerTeam || 25);
+            setVal('licenseLineupPlayers', license.lineupPlayers || 11);
+            setVal('licenseHalfMinutes', license.halfMinutes || 45);
+            updateLockedInputsUI(license);
+            window.__currentMaxPlayersPerTeam = license.maxPlayersPerTeam || 15;
+            if(document.getElementById('playersGridInputs')) generatePlayersGrid(window.__currentMaxPlayersPerTeam);
+
+            document.querySelectorAll('[data-license-feature]').forEach(cb => {
+                const key = cb.getAttribute('data-license-feature');
+                cb.checked = !!(license.features && license.features[key]);
+            });
+
+            const summary = document.getElementById('licenseSummary');
+            if(summary) {
+                const enabledCount = Object.values(license.features || {}).filter(Boolean).length;
+                summary.innerHTML = `<b>الباقة المختارة:</b> ${safeAdminText(license.planLabel || license.plan)}
+                    &nbsp; | &nbsp; <b>الكود:</b> ${safeAdminText(license.plan)}
+                    &nbsp; | &nbsp; <b>اللعبة:</b> ${safeAdminText(license.sportLabel || license.sportMode)}
+                    &nbsp; | &nbsp; <b>التشكيلة:</b> ${safeAdminText(license.lineupPlayers)} أساسي
+                    &nbsp; | &nbsp; <b>الشوط:</b> ${safeAdminText(license.halfMinutes)} دقيقة
+                    &nbsp; | &nbsp; <b>الميزات المفعلة:</b> ${enabledCount}`;
+            }
+        }
+
+        function collectLicenseFromInputs() {
+            const code = sanitizePackageCode(document.getElementById('licensePlanCode')?.value || document.getElementById('licensePlanSelect')?.value || 'custom_package');
+            const preset = normalizeLicense(TOURNEY_PLAN_PRESETS[code] || TOURNEY_PLAN_PRESETS[document.getElementById('licensePlanSelect')?.value] || TOURNEY_PLAN_PRESETS.eleven_full);
+            const features = Object.assign({}, preset.features || {});
+            document.querySelectorAll('[data-license-feature]').forEach(cb => {
+                features[cb.getAttribute('data-license-feature')] = !!cb.checked;
+            });
+
+            return enforceLockedPackageNumbers(normalizeLicense({
+                plan: code,
+                planLabel: document.getElementById('licensePlanLabel')?.value?.trim() || preset.planLabel || code,
+                sportMode: document.getElementById('licenseSportMode')?.value || preset.sportMode,
+                sportLabel: document.getElementById('licenseSportMode')?.selectedOptions?.[0]?.textContent || preset.sportLabel,
+                maxPlayersPerTeam: parseInt(document.getElementById('licenseMaxPlayers')?.value || preset.maxPlayersPerTeam, 10),
+                lineupPlayers: parseInt(document.getElementById('licenseLineupPlayers')?.value || preset.lineupPlayers, 10),
+                halfMinutes: parseInt(document.getElementById('licenseHalfMinutes')?.value || preset.halfMinutes, 10),
+                features
+            }));
+        }
+
+        async function savePackageTemplate() {
+            if(!isOwnerAdmin()) return alert('هذه العملية مخصصة للماستر أدمن فقط.');
+            const license = collectLicenseFromInputs();
+            const code = sanitizePackageCode(license.plan);
+            license.plan = code;
+            await db.ref(`license_package_templates/${code}`).set(license);
+            alert('تم حفظ/تحديث قالب الباقة. تقدر تستخدمه لأي زبون بعد الآن.');
+        }
+
+        async function deletePackageTemplate() {
+            if(!isOwnerAdmin()) return alert('هذه العملية مخصصة للماستر أدمن فقط.');
+            const code = sanitizePackageCode(document.getElementById('licensePlanCode')?.value || document.getElementById('licensePlanSelect')?.value);
+            if (!code) return alert('اختار باقة للحذف.');
+            if (DEFAULT_PACKAGE_TEMPLATES[code]) return alert('هذا قالب افتراضي. لا ينحذف، لكن تقدر تعدّل عليه وتحفظه كقالب مخصص بكود جديد.');
+            if (!confirm('تحذف قالب الباقة: ' + code + ' ؟')) return;
+            await db.ref(`license_package_templates/${code}`).remove();
+            alert('تم حذف قالب الباقة.');
+        }
+
+        async function restoreDefaultPackageTemplates() {
+            if(!isOwnerAdmin()) return alert('هذه العملية مخصصة للماستر أدمن فقط.');
+            if (!confirm('ترفع القوالب الافتراضية إلى Firebase؟ هذا لا يحذف قوالبك المخصصة.')) return;
+            await db.ref('license_package_templates').update(DEFAULT_PACKAGE_TEMPLATES);
+            alert('تم رفع القوالب الافتراضية.');
+        }
+
+        function requireAdminFeature(featureName, label) {
+            if(adminFeatureEnabled(featureName)) return true;
+            alert('هذه الميزة غير مفعلة في باقة هذا الزبون: ' + (label || featureName));
+            return false;
+        }
+
 
         // -----------------------------------------------------------------
         // جدار حماية إضافي للوحة الأدمن: اشتراك + جهاز مربوط + معرف بطولة آمن
@@ -845,6 +1252,8 @@ generatePlayersGrid();
         // -----------------------------------------------------------------
         auth.onAuthStateChanged(user => {
             if(user) {
+                currentAdminEmail = String(user.email || '').toLowerCase();
+                setTimeout(loadLicensePackageTemplates, 300);
                 db.ref(`saas_users/${user.uid}`).on('value', snap => {
                     const userData = snap.val();
                     if(!firewallValidateAdminUser(user, userData)) return;
@@ -911,7 +1320,7 @@ generatePlayersGrid();
         function updateAppSettings() { const tm = document.getElementById('testModeSelect').value === 'true'; db.ref(`tournaments/${dbPath}/settings`).update({ testMode: tm }); }
         function saveTourneySystem() { const sys = document.getElementById('tourneySystemType').value; db.ref(`tournaments/${dbPath}/settings`).update({ systemType: sys }).then(() => alert("تم حفظ النظام")); }
 
-        function addFinancialTransaction() {
+        function addFinancialTransaction() { if(!requireAdminFeature('finance', 'المالية')) return;
             let desc = document.getElementById('finDesc').value.trim();
             let amount = parseFloat(document.getElementById('finAmount').value);
             let type = document.getElementById('finType').value;
@@ -1395,6 +1804,9 @@ ${message}`); return; }
                 const sysEl = document.getElementById('tourneySystemType');
                 if(s.systemType && sysEl) sysEl.value = s.systemType;
 
+                currentLicense = normalizeLicense(s.license || {});
+                applyLicenseToAdminUI(currentLicense);
+
                 window.currentActiveLiveBg = s.active_liveBg;
                 window.currentActiveAdBg = s.active_adBg;
 
@@ -1580,8 +1992,29 @@ ${message}`); return; }
         function hideSaveIndicator() { document.getElementById('autoSaveMsg1').classList.remove('show'); }
 
         function setPossession(teamNum) { posActiveTeam = teamNum; document.getElementById('btnPos1').className = 'pos-btn ' + (teamNum===1 ? 'active-1' : ''); document.getElementById('btnPos2').className = 'pos-btn ' + (teamNum===2 ? 'active-2' : ''); document.getElementById('btnPos0').className = 'pos-btn ' + (teamNum===0 ? 'active-0' : ''); let totPos = posSec1 + posSec2; let pct1 = totPos===0 ? 50 : Math.round((posSec1 / totPos) * 100); let pct2 = 100 - pct1; db.ref(`tournaments/${dbPath}/live_match/stats`).update({posSec1: posSec1, posSec2: posSec2, possession1: pct1, possession2: pct2}); }
-        function updateStat(id, change) { let el = document.getElementById(id); let val = parseInt(el.value) || 0; if(val + change >= 0) { el.value = val + change; autoSaveMatchStats(); } }
-        function autoSaveMatchStats() { clearTimeout(autoSaveTimeout); autoSaveTimeout = setTimeout(() => { isInternalUpdate = true; db.ref(`tournaments/${dbPath}/live_match/stats`).update({ shots1: document.getElementById('shots1').value, shots2: document.getElementById('shots2').value, corners1: document.getElementById('corners1').value, corners2: document.getElementById('corners2').value, fouls1: document.getElementById('fouls1').value, fouls2: document.getElementById('fouls2').value }).then(() => { isInternalUpdate = false; }); }, 300); }
+        function getAllMatchStatKeys() { return ['shots1','shots2','corners1','corners2','fouls1','fouls2','sot1','sot2','saves1','saves2','offsides1','offsides2','passes1','passes2','attacks1','attacks2','subs1','subs2']; }
+        function getDefaultMatchStats() {
+            const base = {posSec1:0, posSec2:0, possession1:50, possession2:50};
+            getAllMatchStatKeys().forEach(k => base[k] = 0);
+            return base;
+        }
+        function readMatchStatsFromInputs(extra) {
+            const out = Object.assign({}, extra || {});
+            getAllMatchStatKeys().forEach(k => {
+                const el = document.getElementById(k);
+                out[k] = parseInt(el ? el.value : 0, 10) || 0;
+            });
+            return out;
+        }
+        function setMatchStatsInputs(stats) {
+            stats = Object.assign(getDefaultMatchStats(), stats || {});
+            getAllMatchStatKeys().forEach(k => {
+                const el = document.getElementById(k);
+                if(el) el.value = stats[k] || 0;
+            });
+        }
+        function updateStat(id, change) { let el = document.getElementById(id); if(!el) return; let val = parseInt(el.value) || 0; if(val + change >= 0) { el.value = val + change; autoSaveMatchStats(); } }
+        function autoSaveMatchStats() { clearTimeout(autoSaveTimeout); autoSaveTimeout = setTimeout(() => { isInternalUpdate = true; db.ref(`tournaments/${dbPath}/live_match/stats`).update(readMatchStatsFromInputs()).then(() => { isInternalUpdate = false; }); }, 300); }/live_match/stats`).update({ shots1: document.getElementById('shots1').value, shots2: document.getElementById('shots2').value, corners1: document.getElementById('corners1').value, corners2: document.getElementById('corners2').value, fouls1: document.getElementById('fouls1').value, fouls2: document.getElementById('fouls2').value }).then(() => { isInternalUpdate = false; }); }, 300); }
 
         function updateTimerManually() { let m = parseInt(document.getElementById('tMinutes').value) || 0; db.ref(`tournaments/${dbPath}/live_match/timer`).once('value').then(snap => { let t = snap.val() || {}; let isRun = t.isRunning || false; db.ref(`tournaments/${dbPath}/live_match/timer`).set({ isRunning: isRun, startTime: isRun ? Date.now() : 0, savedSeconds: m * 60 }); }); }
         function startTimer() { db.ref(`tournaments/${dbPath}/live_match/timer`).once('value').then(snap => { let t = snap.val() || {}; if(t.isRunning) return; let sec = t.savedSeconds !== undefined ? t.savedSeconds : (t.baseMinute * 60 || 0); db.ref(`tournaments/${dbPath}/live_match/timer`).set({ isRunning: true, startTime: Date.now(), savedSeconds: sec }); }); }
@@ -1638,6 +2071,8 @@ ${message}`); return; }
                 if (yellowCount >= 1) { alert(`تنبيه: هذه البطاقة الثانية للاعب ${pName}`); setTimeout(() => addAutoEvent('red', 'طرد'), 500); }
             }
             if(type === 'red') sendManualPush("طرد", `طرد للاعب ${pName}`);
+            if(type === 'offsides') { sendManualPush("أوفسايد", `حالة أوفسايد على ${pName}`); updateStat('offsides' + side, 1); }
+            if(type === 'subs') { sendManualPush("تبديل", `تبديل لفريق ${tName}: ${pName}`); updateStat('subs' + side, 1); }
             
             const currentEvents = document.getElementById('mEvents').value; const newEvent = `${textLabel} ${min}' ${pName} (${tName})`; document.getElementById('mEvents').value = currentEvents ? currentEvents + '\n' + newEvent : newEvent; db.ref(`tournaments/${dbPath}/live_match/events`).set(document.getElementById('mEvents').value); db.ref(`tournaments/${dbPath}/teams/${tName}/players/${pName}/${type}`).transaction(c => (c||0)+1); autoSaveMatchDetails();
         }
@@ -1645,7 +2080,7 @@ ${message}`); return; }
         async function endMatchAndSave() {
             const t1 = document.getElementById('t1Name').value; const t2 = document.getElementById('t2Name').value; const s1 = parseInt(document.getElementById('t1Score').value) || 0; const s2 = parseInt(document.getElementById('t2Score').value) || 0; const mRound = document.getElementById('mRound').value; const mLeg = document.getElementById('mLeg').value; const mGroup = document.getElementById('mGroup').value; const mEvents = document.getElementById('mEvents').value; const ref1 = document.getElementById('mRef1').value; const ref2 = document.getElementById('mRef2').value; const ref3 = document.getElementById('mRef3').value; const ref4 = document.getElementById('mRef4').value;
             const motmVal = document.getElementById('motmPlayer').value; let motmName = "", motmTeam = ""; if(motmVal) { [motmTeam, motmName] = motmVal.split('|'); db.ref(`tournaments/${dbPath}/teams/${motmTeam}/players/${motmName}/motm`).transaction(c => (c||0)+1); }
-            let totPos = posSec1 + posSec2; let pct1 = totPos===0 ? 50 : Math.round((posSec1 / totPos) * 100); let pct2 = 100 - pct1; const fStats = { possession1: pct1, possession2: pct2, shots1: document.getElementById('shots1').value, shots2: document.getElementById('shots2').value, corners1: document.getElementById('corners1').value, corners2: document.getElementById('corners2').value, fouls1: document.getElementById('fouls1').value, fouls2: document.getElementById('fouls2').value };
+            let totPos = posSec1 + posSec2; let pct1 = totPos===0 ? 50 : Math.round((posSec1 / totPos) * 100); let pct2 = 100 - pct1; const fStats = readMatchStatsFromInputs({ possession1: pct1, possession2: pct2, posSec1, posSec2 });
             if(!t1 || !t2) return alert("اختر الفرق"); if(!confirm("إنهاء وحفظ المباراة؟")) return;
             
             showSaveIndicator("جاري أرشفة المباراة ومزامنة الإحصائيات...");
@@ -1663,7 +2098,7 @@ ${message}`); return; }
             }
 
             await db.ref(`tournaments/${dbPath}/saved_matches`).push(archiveData);
-            await db.ref(`tournaments/${dbPath}/live_match`).set({ team1:'', team2:'', score1:0, score2:0, events:'', status:'لم تبدأ', customLabel:'', round: '', leg: '', groupInfo: '', referee1:'', referee2:'', referee3:'', referee4:'', squad1:{}, squad2:{}, timer:{isRunning:false, savedSeconds:0, startTime:0}, stats: {posSec1:0, posSec2:0, possession1: 50, possession2: 50, shots1: 0, shots2: 0, corners1: 0, corners2: 0, fouls1: 0, fouls2: 0}}); 
+            await db.ref(`tournaments/${dbPath}/live_match`).set({ team1:'', team2:'', score1:0, score2:0, events:'', status:'لم تبدأ', customLabel:'', round: '', leg: '', groupInfo: '', referee1:'', referee2:'', referee3:'', referee4:'', squad1:{}, squad2:{}, timer:{isRunning:false, savedSeconds:0, startTime:0}, stats: getDefaultMatchStats()}); 
             
             let endMsg = `انتهت مباراة ${t1} و ${t2} بنتيجة ${s1} - ${s2}.`; if(motmName) endMsg += ` نجم المباراة: ${motmName}.`; sendManualPush("انتهاء المباراة", endMsg);
             document.getElementById('t1Name').value=''; document.getElementById('t2Name').value=''; document.getElementById('mRound').value=''; document.getElementById('mLeg').value=''; document.getElementById('mGroup').value=''; document.getElementById('mStatus').value='لم تبدأ'; document.getElementById('mCustomLabel').value=''; document.getElementById('tMinutes').value=0; document.getElementById('mRef1').value=''; document.getElementById('mRef2').value=''; document.getElementById('mRef3').value=''; document.getElementById('mRef4').value=''; posSec1=0; posSec2=0; posActiveTeam=0; setPossession(0); 
@@ -1699,12 +2134,13 @@ ${message}`); return; }
         
         async function saveFullTeam() { 
             const tName = document.getElementById('dbTeamName').value.trim(); if (!tName) return alert("اكتب اسم الفريق"); showSaveIndicator("جاري الحفظ...");
+            const playerLimit = getTeamPlayerLimit();
             let existingPlayers = (allData && allData.teams && allData.teams[tName] && allData.teams[tName].players) ? { ...allData.teams[tName].players } : {};
-            let teamObj = { coach: document.getElementById('dbCoach').value || "", assistant: document.getElementById('dbAsst').value || "", players: existingPlayers }; 
+            let teamObj = { coach: document.getElementById('dbCoach').value || "", assistant: document.getElementById('dbAsst').value || "", players: {} }; 
             teamObj.nickname = document.getElementById('dbNickname').value || "";
             teamObj.stadium = document.getElementById('dbStadium').value || "";
 
-            for(let i=1; i<=15; i++) { 
+            for(let i=1; i<=playerLimit; i++) { 
                 let pName = document.getElementById('p'+i).value.trim(); 
                 let pFile = document.getElementById('pImg'+i).files[0]; 
                 let pPos = document.getElementById('pPos'+i).value;
@@ -1729,9 +2165,34 @@ ${message}`); return; }
             db.ref(`tournaments/${dbPath}/teams/${tName}`).set(teamObj).then(() => { hideSaveIndicator(); alert("تم حفظ الفريق"); clearTeamForm(); }).catch(e => alert("خطأ")); 
         }
 
-        function clearTeamForm() { document.getElementById('dbTeamName').value=''; document.getElementById('dbNickname').value=''; document.getElementById('dbStadium').value=''; document.getElementById('dbCoach').value=''; document.getElementById('dbAsst').value=''; document.getElementById('dbLogo').value=''; document.getElementById('dbCoachPhoto').value=''; document.getElementById('dbAsstPhoto').value=''; document.getElementById('dbJerseyColor').value='#ffffff'; document.getElementById('dbJerseyImg').value=''; document.getElementById('dbJerseyImg2').value=''; for(let i=1; i<=15; i++) { document.getElementById('p'+i).value=''; document.getElementById('pImg'+i).value=''; document.getElementById('pIcon'+i).className = 'fa-solid fa-camera'; document.getElementById('pIcon'+i).style.color = 'var(--muted)'; if(document.getElementById('pPos'+i)) document.getElementById('pPos'+i).value=''; } }
+        function clearTeamForm() {
+            document.getElementById('dbTeamName').value=''; document.getElementById('dbNickname').value=''; document.getElementById('dbStadium').value=''; document.getElementById('dbCoach').value=''; document.getElementById('dbAsst').value=''; document.getElementById('dbLogo').value=''; document.getElementById('dbCoachPhoto').value=''; document.getElementById('dbAsstPhoto').value=''; document.getElementById('dbJerseyColor').value='#ffffff'; document.getElementById('dbJerseyImg').value=''; document.getElementById('dbJerseyImg2').value='';
+            generatePlayersGrid(getTeamPlayerLimit());
+        }
 
-        window.loadTeamForEdit = function(tName) { const tData = allData.teams[tName]; if(!tData) return; clearTeamForm(); document.getElementById('dbTeamName').value = tName; document.getElementById('dbNickname').value = tData.nickname || ''; document.getElementById('dbStadium').value = tData.stadium || ''; document.getElementById('dbCoach').value = tData.coach || ''; document.getElementById('dbAsst').value = tData.assistant || ''; document.getElementById('dbJerseyColor').value = tData.jerseyColor || '#ffffff'; if(tData.players) { let i = 1; for(let pName in tData.players) { if(i > 15) break; document.getElementById('p'+i).value = pName; if(tData.players[pName].photo) { document.getElementById('pIcon'+i).className = 'fa-solid fa-check-double'; document.getElementById('pIcon'+i).style.color = '#3b82f6'; } if(tData.players[pName].position && document.getElementById('pPos'+i)) { document.getElementById('pPos'+i).value = tData.players[pName].position; } i++; } } openTab('tab-teams', document.querySelectorAll('.tab-btn')[1]); };
+        window.loadTeamForEdit = function(tName) {
+            const tData = allData.teams[tName]; if(!tData) return;
+            clearTeamForm();
+            const playerLimit = getTeamPlayerLimit();
+            generatePlayersGrid(playerLimit);
+            document.getElementById('dbTeamName').value = tName;
+            document.getElementById('dbNickname').value = tData.nickname || '';
+            document.getElementById('dbStadium').value = tData.stadium || '';
+            document.getElementById('dbCoach').value = tData.coach || '';
+            document.getElementById('dbAsst').value = tData.assistant || '';
+            document.getElementById('dbJerseyColor').value = tData.jerseyColor || '#ffffff';
+            if(tData.players) {
+                let i = 1;
+                for(let pName in tData.players) {
+                    if(i > playerLimit) break;
+                    document.getElementById('p'+i).value = pName;
+                    if(tData.players[pName].photo) { document.getElementById('pIcon'+i).className = 'fa-solid fa-check-double'; document.getElementById('pIcon'+i).style.color = '#3b82f6'; }
+                    if(tData.players[pName].position && document.getElementById('pPos'+i)) document.getElementById('pPos'+i).value = tData.players[pName].position;
+                    i++;
+                }
+            }
+            openTab('tab-teams', document.querySelectorAll('.tab-btn')[1]);
+        };
 
         window.setGroupStatus = function(g, t, status) {
             db.ref(`tournaments/${dbPath}/groups/${g}/${t}`).update({ status: status });
@@ -2047,7 +2508,7 @@ ${message}`); return; }
             isInternalUpdate = true;
             const s1 = parseInt(m.score1)||0; const s2 = parseInt(m.score2)||0;
 
-            await db.ref(`tournaments/${dbPath}/live_match`).update({ team1: m.team1, team2: m.team2, score1: s1, score2: s2, round: m.round||'', leg: m.leg||'', groupInfo: m.groupInfo||'', status: 'انتهت', events: m.events||'', referee1: m.referee1||'', referee2: m.referee2||'', referee3: m.referee3||'', referee4: m.referee4||'', squad1: m.squad1||{}, squad2: m.squad2||{}, timer: {isRunning:false, savedSeconds:0, startTime:0}, stats: m.stats || {posSec1:0, posSec2:0, possession1:50, possession2:50, shots1:0, shots2:0, corners1:0, corners2:0, fouls1:0, fouls2:0} });
+            await db.ref(`tournaments/${dbPath}/live_match`).update({ team1: m.team1, team2: m.team2, score1: s1, score2: s2, round: m.round||'', leg: m.leg||'', groupInfo: m.groupInfo||'', status: 'انتهت', events: m.events||'', referee1: m.referee1||'', referee2: m.referee2||'', referee3: m.referee3||'', referee4: m.referee4||'', squad1: m.squad1||{}, squad2: m.squad2||{}, timer: {isRunning:false, savedSeconds:0, startTime:0}, stats: m.stats || getDefaultMatchStats() });
             
             await db.ref(`tournaments/${dbPath}/saved_matches/${id}`).remove();
             
@@ -2095,8 +2556,8 @@ ${message}`); return; }
 
         function updateGroup() { const grp = document.getElementById('gLetter').value, t = document.getElementById('gTeam').value; if(!t) return alert("اختر الفريق"); const p = parseInt(document.getElementById('gP').value) || 0; const gf = parseInt(document.getElementById('gGF').value) || 0; const ga = parseInt(document.getElementById('gGA').value) || 0; const gd = parseInt(document.getElementById('gGD').value) || (gf - ga); const pts = parseInt(document.getElementById('gPts').value) || 0; const status = document.getElementById('gStatus').value || ''; db.ref(`tournaments/${dbPath}/groups/${grp}/${t}`).set({ name: t, played: p, gf: gf, ga: ga, gd: gd, points: pts, status: status }).then(() => { alert("تم التحديث بنجاح! إذا ضغطت على زر الحساب التلقائي سيتم إعادة كتابة هذه الأرقام بناءً على الأرشيف"); }); }
         
-        function loadScheduledToLive(id) { const match = allData.schedule[id]; if(!match) return; if(confirm(`بدء المباراة ونقلها للمباشر؟ (ستُحذف من الجدول)`)) { isInternalUpdate = true; db.ref(`tournaments/${dbPath}/live_match`).update({ team1: match.team1, team2: match.team2, round: match.round || '', leg: match.leg || '', groupInfo: match.group || '', status: 'الشوط الأول', score1: 0, score2: 0, events: '', referee1: match.referee1 || '', referee2: match.referee2 || '', referee3: match.referee3 || '', referee4: match.referee4 || '', timer: { isRunning: false, savedSeconds: 0, startTime: 0 }, stats: {posSec1:0, posSec2:0, possession1: 50, possession2: 50, shots1: 0, shots2: 0, corners1: 0, corners2: 0, fouls1: 0, fouls2: 0} }).then(() => { db.ref(`tournaments/${dbPath}/schedule/${id}`).remove(); alert("بدأت المباراة"); openTab('tab-live', document.querySelectorAll('.tab-btn')[0]); isInternalUpdate = false; }).catch(e => { alert("حدث خطأ"); isInternalUpdate = false; }); } }
-        function loadGroupMatchupToLive(id) { const match = allData.group_matchups[id]; if(!match) return; if(confirm(`بدء المباراة ونقلها للمباشر؟`)) { isInternalUpdate = true; db.ref(`tournaments/${dbPath}/live_match`).update({ team1: match.team1, team2: match.team2, round: match.round || '', leg: match.leg || '', groupInfo: match.group || '', status: 'الشوط الأول', score1: 0, score2: 0, events: '', referee1: '', referee2: '', referee3: '', referee4: '', timer: { isRunning: false, savedSeconds: 0, startTime: 0 }, stats: {posSec1:0, posSec2:0, possession1: 50, possession2: 50, shots1: 0, shots2: 0, corners1: 0, corners2: 0, fouls1: 0, fouls2: 0} }).then(() => { alert("بدأت المباراة"); openTab('tab-live', document.querySelectorAll('.tab-btn')[0]); isInternalUpdate = false; }); } }
+        function loadScheduledToLive(id) { const match = allData.schedule[id]; if(!match) return; if(confirm(`بدء المباراة ونقلها للمباشر؟ (ستُحذف من الجدول)`)) { isInternalUpdate = true; db.ref(`tournaments/${dbPath}/live_match`).update({ team1: match.team1, team2: match.team2, round: match.round || '', leg: match.leg || '', groupInfo: match.group || '', status: 'الشوط الأول', score1: 0, score2: 0, events: '', referee1: match.referee1 || '', referee2: match.referee2 || '', referee3: match.referee3 || '', referee4: match.referee4 || '', timer: { isRunning: false, savedSeconds: 0, startTime: 0 }, stats: getDefaultMatchStats() }).then(() => { db.ref(`tournaments/${dbPath}/schedule/${id}`).remove(); alert("بدأت المباراة"); openTab('tab-live', document.querySelectorAll('.tab-btn')[0]); isInternalUpdate = false; }).catch(e => { alert("حدث خطأ"); isInternalUpdate = false; }); } }
+        function loadGroupMatchupToLive(id) { const match = allData.group_matchups[id]; if(!match) return; if(confirm(`بدء المباراة ونقلها للمباشر؟`)) { isInternalUpdate = true; db.ref(`tournaments/${dbPath}/live_match`).update({ team1: match.team1, team2: match.team2, round: match.round || '', leg: match.leg || '', groupInfo: match.group || '', status: 'الشوط الأول', score1: 0, score2: 0, events: '', referee1: '', referee2: '', referee3: '', referee4: '', timer: { isRunning: false, savedSeconds: 0, startTime: 0 }, stats: getDefaultMatchStats() }).then(() => { alert("بدأت المباراة"); openTab('tab-live', document.querySelectorAll('.tab-btn')[0]); isInternalUpdate = false; }); } }
 
         async function recalculateMatchesPlayed(silent = false) {
             if(!silent && !confirm("إعادة حساب الإحصائيات (أهداف، صناعة، بطاقات) بناءً على الأرشيف الحالي؟")) return;
@@ -2308,6 +2769,7 @@ ${message}`); return; }
             let playerData = { goals:0, assists:0, matches:0, yellow:0, red:0, motm:0, cs:0, position:'' };
 
             if(type === 'official') {
+                if(!canAddPlayerToTeam(toTeam, pName)) { hideSaveIndicator(); return; }
                 if(!isNew) {
                     if(allData.teams[fromTeam] && allData.teams[fromTeam].players[pName]) {
                         playerData = allData.teams[fromTeam].players[pName];
