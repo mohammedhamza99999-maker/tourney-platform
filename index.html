@@ -810,6 +810,7 @@
                         <div class="stat-list-row" data-advanced-stat-row><div class="stat-item-val right" id="passes1Txt">0</div><div class="stat-item-title" style="color:#c084fc;" data-trn="تمريرات">تمريرات</div><div class="stat-item-val left" id="passes2Txt">0</div></div>
                         <div class="stat-list-row" data-advanced-stat-row><div class="stat-item-val right" id="attacks1Txt">0</div><div class="stat-item-title" style="color:#f97316;" data-trn="هجمات خطرة">هجمات خطرة</div><div class="stat-item-val left" id="attacks2Txt">0</div></div>
                         <div class="stat-list-row" data-sub-stat-row><div class="stat-item-val right" id="subs1Txt">0</div><div class="stat-item-title" style="color:#60a5fa;" data-trn="تبديل">تبديلات</div><div class="stat-item-val left" id="subs2Txt">0</div></div>
+                        <div class="stat-list-row" data-stoppage-stat-row><div class="stat-item-val right" id="stoppage1Txt">0</div><div class="stat-item-title" style="color:#facc15;" data-trn="وقت ضائع">وقت ضائع</div><div class="stat-item-val left" id="stoppage2Txt">0</div></div>
                     </div>
                 </div>
 
@@ -1061,6 +1062,7 @@
                     <div class="stat-list-row" data-advanced-stat-row><div class="stat-item-val right" id="mdPasses1Txt">0</div><div class="stat-item-title" style="color:#c084fc;" data-trn="تمريرات">تمريرات</div><div class="stat-item-val left" id="mdPasses2Txt">0</div></div>
                     <div class="stat-list-row" data-advanced-stat-row><div class="stat-item-val right" id="mdAttacks1Txt">0</div><div class="stat-item-title" style="color:#f97316;" data-trn="هجمات خطرة">هجمات خطرة</div><div class="stat-item-val left" id="mdAttacks2Txt">0</div></div>
                     <div class="stat-list-row" data-sub-stat-row><div class="stat-item-val right" id="mdSubs1Txt">0</div><div class="stat-item-title" style="color:#60a5fa;" data-trn="تبديل">تبديلات</div><div class="stat-item-val left" id="mdSubs2Txt">0</div></div>
+                    <div class="stat-list-row" data-stoppage-stat-row><div class="stat-item-val right" id="mdStoppage1Txt">0</div><div class="stat-item-title" style="color:#facc15;" data-trn="وقت ضائع">وقت ضائع</div><div class="stat-item-val left" id="mdStoppage2Txt">0</div></div>
                 </div>
             </div>
 
@@ -1168,19 +1170,20 @@
         // -------------------------------------------------------------
         // نظام الباقات: يقرأ settings/license ويخفي/يعرض الميزات تلقائياً
         // -------------------------------------------------------------
-        const TOURNEY_PLAN_PRESETS = {"seven": {"plan": "seven", "planLabel": "سباعي", "sportMode": "seven", "sportLabel": "سباعي", "maxPlayersPerTeam": 15, "lineupPlayers": 7, "halfMinutes": 25, "lockedPlayers": true, "sortOrder": 1, "features": {"live": true, "matches": true, "groups": true, "teams": true, "stats": true, "media": true, "videos": true, "transfers": false, "finance": false, "comments": true, "predictions": true, "notifications": true, "h2h": true, "referees": false, "sponsors": false, "hallOfFame": true, "roundStars": true, "offside": false, "substitutions": false, "advancedStats": false}}, "eleven_full": {"plan": "eleven_full", "planLabel": "11 لاعب كامل", "sportMode": "football11", "sportLabel": "11 لاعب كامل", "maxPlayersPerTeam": 30, "lineupPlayers": 11, "halfMinutes": 45, "lockedPlayers": true, "sortOrder": 2, "features": {"live": true, "matches": true, "groups": true, "teams": true, "stats": true, "media": true, "videos": true, "transfers": true, "finance": true, "comments": true, "predictions": true, "notifications": true, "h2h": true, "referees": true, "sponsors": true, "hallOfFame": true, "roundStars": true, "offside": true, "substitutions": true, "advancedStats": true}}};
+        const TOURNEY_PLAN_PRESETS = {"seven_normal":{"plan":"seven_normal","sportPackage":"seven","tier":"normal","tierLabel":"عادي","planLabel":"سباعي - عادي","sportMode":"seven","sportLabel":"سباعي","maxPlayersPerTeam":15,"lineupPlayers":7,"halfMinutes":25,"lockedPlayers":true,"features":{"live":true,"matches":true,"groups":true,"teams":true,"stats":true,"media":false,"videos":false,"transfers":false,"finance":false,"comments":false,"predictions":false,"notifications":true,"h2h":false,"referees":false,"sponsors":false,"hallOfFame":false,"roundStars":false,"offside":false,"substitutions":false,"stoppageTime":false,"advancedStats":false}},"seven_pro":{"plan":"seven_pro","sportPackage":"seven","tier":"pro","tierLabel":"برو","planLabel":"سباعي - برو","sportMode":"seven","sportLabel":"سباعي","maxPlayersPerTeam":15,"lineupPlayers":7,"halfMinutes":25,"lockedPlayers":true,"features":{"live":true,"matches":true,"groups":true,"teams":true,"stats":true,"media":true,"videos":false,"transfers":false,"finance":false,"comments":true,"predictions":true,"notifications":true,"h2h":true,"referees":false,"sponsors":false,"hallOfFame":true,"roundStars":true,"offside":false,"substitutions":false,"stoppageTime":false,"advancedStats":false}},"seven_promax":{"plan":"seven_promax","sportPackage":"seven","tier":"promax","tierLabel":"برو ماكس","planLabel":"سباعي - برو ماكس","sportMode":"seven","sportLabel":"سباعي","maxPlayersPerTeam":15,"lineupPlayers":7,"halfMinutes":25,"lockedPlayers":true,"features":{"live":true,"matches":true,"groups":true,"teams":true,"stats":true,"media":true,"videos":true,"transfers":true,"finance":true,"comments":true,"predictions":true,"notifications":true,"h2h":true,"referees":true,"sponsors":true,"hallOfFame":true,"roundStars":true,"offside":false,"substitutions":false,"stoppageTime":false,"advancedStats":true}},"eleven_normal":{"plan":"eleven_normal","sportPackage":"eleven","tier":"normal","tierLabel":"عادي","planLabel":"11 لاعب - عادي","sportMode":"football11","sportLabel":"11 لاعب","maxPlayersPerTeam":30,"lineupPlayers":11,"halfMinutes":45,"lockedPlayers":true,"features":{"live":true,"matches":true,"groups":true,"teams":true,"stats":true,"media":false,"videos":false,"transfers":false,"finance":false,"comments":false,"predictions":false,"notifications":true,"h2h":false,"referees":true,"sponsors":false,"hallOfFame":false,"roundStars":false,"offside":true,"substitutions":true,"stoppageTime":true,"advancedStats":true}},"eleven_pro":{"plan":"eleven_pro","sportPackage":"eleven","tier":"pro","tierLabel":"برو","planLabel":"11 لاعب - برو","sportMode":"football11","sportLabel":"11 لاعب","maxPlayersPerTeam":30,"lineupPlayers":11,"halfMinutes":45,"lockedPlayers":true,"features":{"live":true,"matches":true,"groups":true,"teams":true,"stats":true,"media":true,"videos":false,"transfers":false,"finance":false,"comments":true,"predictions":true,"notifications":true,"h2h":true,"referees":true,"sponsors":false,"hallOfFame":true,"roundStars":true,"offside":true,"substitutions":true,"stoppageTime":true,"advancedStats":true}},"eleven_promax":{"plan":"eleven_promax","sportPackage":"eleven","tier":"promax","tierLabel":"برو ماكس","planLabel":"11 لاعب - برو ماكس","sportMode":"football11","sportLabel":"11 لاعب","maxPlayersPerTeam":30,"lineupPlayers":11,"halfMinutes":45,"lockedPlayers":true,"features":{"live":true,"matches":true,"groups":true,"teams":true,"stats":true,"media":true,"videos":true,"transfers":true,"finance":true,"comments":true,"predictions":true,"notifications":true,"h2h":true,"referees":true,"sponsors":true,"hallOfFame":true,"roundStars":true,"offside":true,"substitutions":true,"stoppageTime":true,"advancedStats":true}}};
         let currentLicense = null;
         function clonePlain(obj) { return JSON.parse(JSON.stringify(obj || {})); }
-        function getDefaultLicense() { return clonePlain(TOURNEY_PLAN_PRESETS.eleven_full || Object.values(TOURNEY_PLAN_PRESETS)[0]); }
+        function getDefaultLicense() { return clonePlain(TOURNEY_PLAN_PRESETS.eleven_promax || Object.values(TOURNEY_PLAN_PRESETS)[0]); }
         function normalizeLicense(raw) {
             const input = raw && typeof raw === 'object' ? raw : {};
-            const plan = input.plan && TOURNEY_PLAN_PRESETS[input.plan] ? input.plan : 'eleven_full';
-            const preset = clonePlain(TOURNEY_PLAN_PRESETS[plan] || TOURNEY_PLAN_PRESETS.eleven_full);
+            const plan = input.plan && TOURNEY_PLAN_PRESETS[input.plan] ? input.plan : (input.sportPackage === 'seven' ? 'seven_normal' : 'eleven_promax');
+            const preset = clonePlain(TOURNEY_PLAN_PRESETS[plan] || TOURNEY_PLAN_PRESETS.eleven_promax);
             const merged = Object.assign(preset, input);
             merged.features = Object.assign({}, preset.features || {}, input.features || {});
             merged.lineupPlayers = Math.max(5, Math.min(11, parseInt(merged.lineupPlayers || preset.lineupPlayers || 11, 10)));
             merged.maxPlayersPerTeam = Math.max(5, parseInt(merged.maxPlayersPerTeam || preset.maxPlayersPerTeam || 25, 10));
             merged.halfMinutes = Math.max(5, parseInt(merged.halfMinutes || preset.halfMinutes || 45, 10));
+            if(merged.sportPackage === 'seven' || merged.sportMode === 'seven' || String(merged.plan || '').startsWith('seven')) { merged.features.offside = false; merged.features.substitutions = false; merged.features.stoppageTime = false; merged.lineupPlayers = 7; merged.maxPlayersPerTeam = 15; }
             return merged;
         }
         function licenseFeatureEnabled(feature) {
@@ -1210,6 +1213,7 @@
             document.querySelectorAll('[data-advanced-stat-row]').forEach(el => el.classList.toggle('feature-hidden', !f.advancedStats));
             document.querySelectorAll('[data-offside-stat-row]').forEach(el => el.classList.toggle('feature-hidden', !f.offside));
             document.querySelectorAll('[data-sub-stat-row]').forEach(el => el.classList.toggle('feature-hidden', !f.substitutions));
+            document.querySelectorAll('[data-stoppage-stat-row]').forEach(el => el.classList.toggle('feature-hidden', !f.stoppageTime));
             renderNav();
             const active = document.querySelector('.page.active');
             if(active && active.id && !licensePageEnabled(active.id.replace('page-', ''))) { nav('live'); }
@@ -1233,9 +1237,9 @@
         function setExtraMatchStats(statsData, mdPrefix) {
             statsData = statsData || {};
             const ids = mdPrefix ? {
-                sot1:'mdSot1Txt', sot2:'mdSot2Txt', saves1:'mdSaves1Txt', saves2:'mdSaves2Txt', offsides1:'mdOffsides1Txt', offsides2:'mdOffsides2Txt', passes1:'mdPasses1Txt', passes2:'mdPasses2Txt', attacks1:'mdAttacks1Txt', attacks2:'mdAttacks2Txt', subs1:'mdSubs1Txt', subs2:'mdSubs2Txt'
+                sot1:'mdSot1Txt', sot2:'mdSot2Txt', saves1:'mdSaves1Txt', saves2:'mdSaves2Txt', offsides1:'mdOffsides1Txt', offsides2:'mdOffsides2Txt', passes1:'mdPasses1Txt', passes2:'mdPasses2Txt', attacks1:'mdAttacks1Txt', attacks2:'mdAttacks2Txt', subs1:'mdSubs1Txt', subs2:'mdSubs2Txt', stoppage1:'mdStoppage1Txt', stoppage2:'mdStoppage2Txt'
             } : {
-                sot1:'sot1Txt', sot2:'sot2Txt', saves1:'saves1Txt', saves2:'saves2Txt', offsides1:'offsides1Txt', offsides2:'offsides2Txt', passes1:'passes1Txt', passes2:'passes2Txt', attacks1:'attacks1Txt', attacks2:'attacks2Txt', subs1:'subs1Txt', subs2:'subs2Txt'
+                sot1:'sot1Txt', sot2:'sot2Txt', saves1:'saves1Txt', saves2:'saves2Txt', offsides1:'offsides1Txt', offsides2:'offsides2Txt', passes1:'passes1Txt', passes2:'passes2Txt', attacks1:'attacks1Txt', attacks2:'attacks2Txt', subs1:'subs1Txt', subs2:'subs2Txt', stoppage1:'stoppage1Txt', stoppage2:'stoppage2Txt'
             };
             Object.keys(ids).forEach(k => setTxt(ids[k], statsData[k] || 0));
         }
