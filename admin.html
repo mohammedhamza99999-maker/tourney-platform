@@ -1523,6 +1523,26 @@
                 </div>
                 <button onclick="recalculateAllGroupsStandings()" style="background:#10b981; color:#000; border:none;"><i class="fa-solid fa-sync"></i> إعادة حساب وبناء المجموعات تلقائياً</button>
             </div>
+
+            <!-- V18: نقل إدارة المجموعات المفتوحة إلى تبويب المجموعات -->
+
+
+            <div class="panel" id="customGroupsPanelV17" style="border-color:#06b6d4; background:rgba(6,182,212,0.05);">
+                <h2 style="color:#06b6d4;"><i class="fa-solid fa-layer-group"></i> إدارة المجموعات المفتوحة</h2>
+                <div class="v17-panel-note">تم نقل هذا القسم إلى تبويب المجموعات. تقدر تنشئ مجموعة واحدة أو عدد غير محدود من المجموعات وتغير أسماءها، وتضيف الفرق إليها. هذه المجموعات تظهر للجمهور بنفس الاسم.</div>
+                <div class="flex-row">
+                    <div><label>اسم المجموعة:</label><input type="text" id="customGroupNameV17" placeholder="مثال: مجموعة الشمال"></div>
+                    <div><label>عدد المتأهلين من المجموعة:</label><input type="number" id="customGroupQualifiersV17" value="2" min="0" max="16"></div>
+                    <div><label>ترتيب الظهور:</label><input type="number" id="customGroupOrderV17" value="1" min="1"></div>
+                </div>
+                <button onclick="addCustomGroupV17()" style="background:#06b6d4;color:#000;border:none;"><i class="fa-solid fa-plus"></i> إضافة مجموعة جديدة</button>
+                <div class="flex-row" style="margin-top:15px;">
+                    <div><label>إضافة فريق إلى مجموعة:</label><select id="customGroupTeamSelectV17"></select></div>
+                    <div><label>المجموعة:</label><select id="customGroupSelectV17"></select></div>
+                    <button onclick="addTeamToCustomGroupV17()" style="align-self:end;background:#0ea5e9;color:#fff;border:none;margin-bottom:10px;"><i class="fa-solid fa-user-plus"></i> إضافة</button>
+                </div>
+                <div id="customGroupsAdminListV17" class="preview-box" style="border:none;padding:0;"></div>
+            </div>
             
             <div class="panel">
                 <div style="font-size:12px; color:var(--accent); text-align:center; margin-bottom:15px; padding:10px; background:rgba(74,222,128,0.1); border-radius:8px; border:1px solid var(--accent);">يمكنك من هنا إدخال وتعديل نتائج أي فريق بالمجموعة يدوياً. اختر الفريق لتظهر أرقامه وعدلها كيفما تشاء.</div>
@@ -1551,17 +1571,7 @@
         </div>
         
         <div id="tab-schedule" class="tab-content">
-            <div class="panel" style="border-color:var(--primary); background:rgba(59, 130, 246, 0.05);">
-                <h2 style="color:var(--primary); margin-bottom:10px; border:none;">نظام البطولة</h2>
-                <div class="flex-row">
-                    <select id="tourneySystemType" style="margin:0;">
-                        <option value="مجموعات وإقصاء المغلوب">مجموعات وإقصاء المغلوب</option><option value="دوري ومجموعات">دوري ومجموعات</option><option value="إقصاء المغلوب فقط">إقصاء المغلوب فقط</option><option value="دوري فقط">دوري فقط</option>
-                    </select>
-                    <button onclick="saveTourneySystem()" style="margin:0; background:var(--primary); color:#fff; width:auto; padding:0 20px;"><i class="fa-solid fa-save"></i> حفظ</button>
-                </div>
-            </div>
 
-            
             <div class="panel" id="competitionSystemPanel" style="border-color:#22c55e; background:rgba(34,197,94,0.05);">
                 <h2 style="color:#22c55e;"><i class="fa-solid fa-trophy"></i> نوع البطولة وطريقة اللعب</h2>
                 <div class="v17-panel-note">اختر نظام البطولة. هذا الاختيار يحدد ما يظهر للجمهور: دوري، إقصاء مغلوب، أو مجموعات + إقصاء مغلوب.</div>
@@ -1600,23 +1610,6 @@
                     </label>
                     <button onclick="saveCompetitionSettingsV17()" style="background:#22c55e;color:#000;border:none;margin:0;"><i class="fa-solid fa-floppy-disk"></i> حفظ نظام البطولة</button>
                 </div>
-            </div>
-
-            <div class="panel" id="customGroupsPanelV17" style="border-color:#06b6d4; background:rgba(6,182,212,0.05);">
-                <h2 style="color:#06b6d4;"><i class="fa-solid fa-layer-group"></i> إدارة المجموعات المفتوحة</h2>
-                <div class="v17-panel-note">تقدر تنشئ مجموعة واحدة أو عدد غير محدود من المجموعات وتغير أسماءها. هذه المجموعات تظهر للجمهور بنفس الاسم.</div>
-                <div class="flex-row">
-                    <div><label>اسم المجموعة:</label><input type="text" id="customGroupNameV17" placeholder="مثال: مجموعة الشمال"></div>
-                    <div><label>عدد المتأهلين من المجموعة:</label><input type="number" id="customGroupQualifiersV17" value="2" min="0" max="16"></div>
-                    <div><label>ترتيب الظهور:</label><input type="number" id="customGroupOrderV17" value="1" min="1"></div>
-                </div>
-                <button onclick="addCustomGroupV17()" style="background:#06b6d4;color:#000;border:none;"><i class="fa-solid fa-plus"></i> إضافة مجموعة جديدة</button>
-                <div class="flex-row" style="margin-top:15px;">
-                    <div><label>إضافة فريق إلى مجموعة:</label><select id="customGroupTeamSelectV17"></select></div>
-                    <div><label>المجموعة:</label><select id="customGroupSelectV17"></select></div>
-                    <button onclick="addTeamToCustomGroupV17()" style="align-self:end;background:#0ea5e9;color:#fff;border:none;margin-bottom:10px;"><i class="fa-solid fa-user-plus"></i> إضافة</button>
-                </div>
-                <div id="customGroupsAdminListV17" class="preview-box" style="border:none;padding:0;"></div>
             </div>
 
             <div class="panel" id="knockoutBuilderPanelV17" style="border-color:#f97316; background:rgba(249,115,22,0.05);">
