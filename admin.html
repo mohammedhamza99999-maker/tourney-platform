@@ -5,11 +5,1126 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>إدارة البطولات - محمد حمزة</title>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-functions.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jsrsasign/10.9.0/jsrsasign-all-min.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js">
+
+        /* ===== V17: نظام بطولة مرن + مجموعات مفتوحة + شجرة متقدمة ===== */
+        const BRACKET_ROUNDS_V17 = {
+            R64: { name: 'دور 64', order: 10, size: 64 },
+            R32: { name: 'دور 32', order: 20, size: 32 },
+            R16: { name: 'دور 16', order: 30, size: 16 },
+            QF: { name: 'ربع النهائي', order: 40, size: 8 },
+            SF: { name: 'نصف النهائي', order: 50, size: 4 },
+            FINAL: { name: 'النهائي', order: 60, size: 2 },
+            THIRD: { name: 'تحديد المركز الثالث والرابع', order: 70, size: 2 }
+        };
+        let customGroupsV17 = {};
+        let bracketV17 = { settings:{}, rounds:{} };
+
+        function escV17(v) { return String(v ?? '').replace(/[&<>"'`]/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;','`':'&#96;'}[ch])); }
+        function keyV17(prefix='id') { return prefix + '_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2,7); }
+        function getAllTeamNamesV17() { return allData && allData.teams ? Object.keys(allData.teams).sort((a,b)=>a.localeCompare(b,'ar')) : []; }
+        function competitionRefV17() { return db.ref(`tournaments/${dbPath}/settings/competition`); }
+        function groupsCustomRefV17() { return db.ref(`tournaments/${dbPath}/groups_custom`); }
+        function bracketRefV17() { return db.ref(`tournaments/${dbPath}/knockout_bracket`); }
+
+        const oldSaveTourneySystemV17 = typeof saveTourneySystem === 'function' ? saveTourneySystem : null;
+        saveTourneySystem = function() { saveCompetitionSettingsV17(); };
+
+        function saveCompetitionSettingsV17() {
+            if(!dbPath) return alert('لم يتم ربط البطولة بعد');
+            const mode = document.getElementById('competitionModeV17')?.value || document.getElementById('tourneySystemType')?.value || 'groups_knockout';
+            const leagueType = document.getElementById('leagueTypeV17')?.value || 'single';
+            const startRound = document.getElementById('bracketStartRoundV17')?.value || 'auto';
+            const thirdPlace = document.getElementById('thirdPlaceV17')?.checked !== false;
+            const legacyLabel = mode === 'league' ? 'دوري فقط' : (mode === 'knockout' ? 'إقصاء المغلوب فقط' : 'مجموعات وإقصاء المغلوب');
+            return db.ref(`tournaments/${dbPath}/settings`).update({ systemType: legacyLabel, competition: { mode, leagueType, bracketStartRound: startRound, thirdPlace, updatedAt: firebase.database.ServerValue.TIMESTAMP } })
+                .then(()=>{ showSaveIndicator('تم حفظ نظام البطولة'); setTimeout(hideSaveIndicator,1500); })
+                .catch(err=>alert('تعذر الحفظ: ' + err.message));
+        }
+
+        function applyCompetitionSettingsV17(c) {
+            c = c || {};
+            const legacy = allData?.settings?.systemType || '';
+            const mode = c.mode || (legacy.includes('دوري فقط') ? 'league' : (legacy.includes('إقصاء') && !legacy.includes('مجموعات') ? 'knockout' : 'groups_knockout'));
+            const modeEl = document.getElementById('competitionModeV17'); if(modeEl) modeEl.value = mode;
+            const leagueEl = document.getElementById('leagueTypeV17'); if(leagueEl) leagueEl.value = c.leagueType || 'single';
+            const startEl = document.getElementById('bracketStartRoundV17'); if(startEl) startEl.value = c.bracketStartRound || 'auto';
+            const thirdEl = document.getElementById('thirdPlaceV17'); if(thirdEl) thirdEl.checked = c.thirdPlace !== false;
+            const legacyEl = document.getElementById('tourneySystemType');
+            if(legacyEl) legacyEl.value = mode === 'league' ? 'دوري فقط' : (mode === 'knockout' ? 'إقصاء المغلوب فقط' : 'مجموعات وإقصاء المغلوب');
+        }
+
+        function refreshTeamSelectsV17() {
+            const teamOpts = '<option value="">اختر الفريق...</option>' + getAllTeamNamesV17().map(t=>`<option value="${escV17(t)}">${escV17(t)}</option>`).join('');
+            ['customGroupTeamSelectV17','manualMatchTeam1V17','manualMatchTeam2V17'].forEach(id=>{ const el=document.getElementById(id); if(el) el.innerHTML = teamOpts; });
+        }
+
+        function refreshGroupOptionsV17() {
+            const groups = customGroupsV17 || {};
+            const sorted = Object.keys(groups).sort((a,b)=>(groups[a].order||999)-(groups[b].order||999));
+            let opts = sorted.length ? sorted.map(k=>`<option value="${escV17(k)}">${escV17(groups[k].name || k)}</option>`).join('') : '<option value="A">مجموعة A</option><option value="B">مجموعة B</option><option value="C">مجموعة C</option><option value="D">مجموعة D</option>';
+            const withEmpty = '<option value="">(بدون مجموعة / إقصائيات)</option>' + opts;
+            ['customGroupSelectV17'].forEach(id=>{ const el=document.getElementById(id); if(el) el.innerHTML = opts; });
+            ['gLetter'].forEach(id=>{ const el=document.getElementById(id); if(el) el.innerHTML = opts; });
+            ['mGroup','sGroup','gmGroup'].forEach(id=>{ const el=document.getElementById(id); if(el) el.innerHTML = withEmpty; });
+            refreshTeamSelectsV17();
+        }
+
+        function addCustomGroupV17() {
+            const name = document.getElementById('customGroupNameV17')?.value.trim();
+            if(!name) return alert('اكتب اسم المجموعة');
+            const qualifiers = parseInt(document.getElementById('customGroupQualifiersV17')?.value || '2', 10);
+            const order = parseInt(document.getElementById('customGroupOrderV17')?.value || '1', 10);
+            const id = keyV17('g');
+            groupsCustomRefV17().child(id).set({ name, qualifiers, order, createdAt: firebase.database.ServerValue.TIMESTAMP }).then(()=>{
+                document.getElementById('customGroupNameV17').value='';
+                showSaveIndicator('تمت إضافة المجموعة'); setTimeout(hideSaveIndicator,1500);
+            }).catch(err=>alert('تعذر إضافة المجموعة: ' + err.message));
+        }
+
+        function updateCustomGroupV17(id, patch) { return groupsCustomRefV17().child(id).update(patch).catch(err=>alert('تعذر التحديث: ' + err.message)); }
+        function deleteCustomGroupV17(id) { if(!confirm('حذف هذه المجموعة؟ لن يتم حذف الفرق من قاعدة الفرق.')) return; groupsCustomRefV17().child(id).remove(); db.ref(`tournaments/${dbPath}/groups/${id}`).remove(); }
+        function removeTeamFromCustomGroupV17(gid, team) { db.ref(`tournaments/${dbPath}/groups/${gid}/${team}`).remove(); groupsCustomRefV17().child(gid).child('teams').child(team).remove(); }
+        function addTeamToCustomGroupV17() {
+            const team = document.getElementById('customGroupTeamSelectV17')?.value;
+            const gid = document.getElementById('customGroupSelectV17')?.value;
+            if(!team || !gid) return alert('اختر الفريق والمجموعة');
+            const baseStats = { name: team, played:0, gf:0, ga:0, gd:0, points:0, status:'' };
+            const updates = {};
+            updates[`tournaments/${dbPath}/groups/${gid}/${team}`] = baseStats;
+            updates[`tournaments/${dbPath}/groups_custom/${gid}/teams/${team}`] = true;
+            db.ref().update(updates).then(()=>{ showSaveIndicator('تمت إضافة الفريق للمجموعة'); setTimeout(hideSaveIndicator,1200); });
+        }
+
+        function renderCustomGroupsAdminV17() {
+            refreshGroupOptionsV17();
+            const cont = document.getElementById('customGroupsAdminListV17'); if(!cont) return;
+            const groups = customGroupsV17 || {};
+            const standings = allData?.groups || {};
+            const keys = Object.keys(groups).sort((a,b)=>(groups[a].order||999)-(groups[b].order||999));
+            if(!keys.length) { cont.innerHTML = '<div class="v17-card-row" style="text-align:center;color:var(--muted);">لا توجد مجموعات مخصصة. أضف مجموعة للبدء.</div>'; return; }
+            cont.innerHTML = keys.map(gid=>{
+                const g = groups[gid] || {};
+                const teams = Object.keys(standings[gid] || g.teams || {});
+                const teamHtml = teams.length ? teams.map(t=>`<span class="v17-badge">${escV17(t)} <button onclick="removeTeamFromCustomGroupV17('${gid}', ${JSON.stringify(t)})" style="background:transparent;border:none;color:#ef4444;cursor:pointer;"><i class="fa-solid fa-xmark"></i></button></span>`).join(' ') : '<span style="color:var(--muted);font-size:12px;">لا توجد فرق</span>';
+                return `<div class="v17-card-row"><h4><i class="fa-solid fa-layer-group"></i> ${escV17(g.name || gid)}</h4>
+                    <div class="flex-row"><div><label>الاسم</label><input value="${escV17(g.name||'')}" onchange="updateCustomGroupV17('${gid}', {name:this.value})"></div><div><label>المتأهلين</label><input type="number" min="0" value="${g.qualifiers ?? 2}" onchange="updateCustomGroupV17('${gid}', {qualifiers:parseInt(this.value)||0})"></div><div><label>الترتيب</label><input type="number" min="1" value="${g.order ?? 1}" onchange="updateCustomGroupV17('${gid}', {order:parseInt(this.value)||1})"></div></div>
+                    <div style="margin:8px 0;display:flex;gap:6px;flex-wrap:wrap;">${teamHtml}</div>
+                    <button class="del-btn" onclick="deleteCustomGroupV17('${gid}')"><i class="fa-solid fa-trash"></i> حذف المجموعة</button></div>`;
+            }).join('');
+        }
+
+        function roundNameV17(key) { return BRACKET_ROUNDS_V17[key]?.name || bracketV17?.rounds?.[key]?.name || key; }
+        function roundOrderV17(key) { return BRACKET_ROUNDS_V17[key]?.order || bracketV17?.rounds?.[key]?.order || 999; }
+        function requiredStartRoundV17(teamCount, forced) {
+            if(forced && forced !== 'auto') return forced;
+            if(teamCount > 32) return 'R64';
+            if(teamCount > 16) return 'R32';
+            if(teamCount > 8) return 'R16';
+            if(teamCount > 4) return 'QF';
+            if(teamCount > 2) return 'SF';
+            return 'FINAL';
+        }
+        function roundSequenceV17(start, includeThird=true) {
+            const order = ['R64','R32','R16','QF','SF','FINAL'];
+            let idx = order.indexOf(start); if(idx < 0) idx = 0;
+            let arr = order.slice(idx);
+            if(includeThird) arr.push('THIRD');
+            return arr;
+        }
+        function getQualifiersV17() {
+            const groups = customGroupsV17 || {};
+            const standings = allData?.groups || {};
+            const out = [];
+            Object.keys(groups).sort((a,b)=>(groups[a].order||999)-(groups[b].order||999)).forEach(gid=>{
+                const q = parseInt(groups[gid].qualifiers || 0, 10);
+                let teams = Object.keys(standings[gid] || {}).map(k=>({name:k, ...standings[gid][k]}));
+                teams.sort((a,b)=>{
+                    if(a.status === 'متأهل' && b.status !== 'متأهل') return -1;
+                    if(b.status === 'متأهل' && a.status !== 'متأهل') return 1;
+                    return (b.points||0)-(a.points||0) || (b.gd||0)-(a.gd||0) || (b.gf||0)-(a.gf||0);
+                });
+                teams.slice(0,q || teams.length).forEach(t=>out.push(t.name));
+            });
+            return [...new Set(out)].filter(Boolean);
+        }
+        function buildBracketDataV17(teams, titleSource) {
+            teams = [...new Set((teams||[]).filter(Boolean))];
+            if(teams.length < 2) { alert('تحتاج فريقين على الأقل لإنشاء الشجرة'); return null; }
+            const c = allData?.settings?.competition || {};
+            const third = document.getElementById('thirdPlaceV17')?.checked ?? (c.thirdPlace !== false);
+            const start = requiredStartRoundV17(teams.length, document.getElementById('bracketStartRoundV17')?.value || c.bracketStartRound || 'auto');
+            const rounds = {};
+            const seq = roundSequenceV17(start, third);
+            seq.forEach(key=>{ rounds[key] = { name: roundNameV17(key), order: roundOrderV17(key), matches:{} }; });
+            const startSize = BRACKET_ROUNDS_V17[start]?.size || Math.pow(2, Math.ceil(Math.log2(teams.length)));
+            const slots = teams.slice(); while(slots.length < startSize) slots.push('BYE');
+            for(let i=0; i<slots.length; i+=2) {
+                const id = keyV17('m');
+                rounds[start].matches[id] = { team1: slots[i] || 'يحدد لاحقاً', team2: slots[i+1] || 'BYE', score1:'', score2:'', winner:'', source:titleSource || 'auto', order:i/2+1 };
+            }
+            return { settings:{ startRound:start, thirdPlace: third, source:titleSource || 'manual', generatedAt: firebase.database.ServerValue.TIMESTAMP }, rounds };
+        }
+        function generateKnockoutFromAllTeamsV17() { const data = buildBracketDataV17(getAllTeamNamesV17(), 'all_teams'); if(data) bracketRefV17().set(data).then(()=>alert('تم توليد الشجرة من كل الفرق')); }
+        function generateKnockoutFromQualifiersV17() { const data = buildBracketDataV17(getQualifiersV17(), 'qualifiers'); if(data) bracketRefV17().set(data).then(()=>alert('تم توليد الشجرة من المتأهلين')); }
+        function clearKnockoutBracketV17() { if(confirm('حذف الشجرة بالكامل؟')) bracketRefV17().remove(); }
+
+        function addManualRoundV17() {
+            const name = document.getElementById('manualRoundNameV17')?.value.trim();
+            const count = parseInt(document.getElementById('manualRoundMatchesV17')?.value || '1', 10);
+            if(!name) return alert('اكتب اسم الدور');
+            const id = keyV17('CUSTOM');
+            const matches = {};
+            for(let i=0;i<count;i++) matches[keyV17('m')] = { team1:'يحدد لاحقاً', team2:'يحدد لاحقاً', score1:'', score2:'', winner:'', order:i+1 };
+            bracketRefV17().child('rounds').child(id).set({ name, order: 5 + Date.now()%1000, custom:true, matches }).then(()=>{ document.getElementById('manualRoundNameV17').value=''; });
+        }
+        function refreshBracketRoundOptionsV17() {
+            const rounds = bracketV17?.rounds || {};
+            const keys = Object.keys(rounds).sort((a,b)=>(rounds[a].order||999)-(rounds[b].order||999));
+            let opts = keys.map(k=>`<option value="${escV17(k)}">${escV17(rounds[k].name || roundNameV17(k))}</option>`).join('');
+            if(!opts) opts = Object.keys(BRACKET_ROUNDS_V17).filter(k=>k!=='THIRD').map(k=>`<option value="${k}">${BRACKET_ROUNDS_V17[k].name}</option>`).join('');
+            const el = document.getElementById('manualMatchRoundV17'); if(el) el.innerHTML = opts;
+        }
+        function addManualBracketMatchV17() {
+            const round = document.getElementById('manualMatchRoundV17')?.value;
+            const t1 = document.getElementById('manualMatchTeam1V17')?.value || 'يحدد لاحقاً';
+            const t2 = document.getElementById('manualMatchTeam2V17')?.value || 'يحدد لاحقاً';
+            if(!round) return alert('اختر الدور');
+            const roundMeta = bracketV17.rounds?.[round] || BRACKET_ROUNDS_V17[round] || { name: roundNameV17(round), order: roundOrderV17(round) };
+            const updates = {};
+            updates[`rounds/${round}/name`] = roundMeta.name;
+            updates[`rounds/${round}/order`] = roundMeta.order;
+            updates[`rounds/${round}/matches/${keyV17('m')}`] = { team1:t1, team2:t2, score1:'', score2:'', winner:'', order: Date.now() };
+            bracketRefV17().update(updates);
+        }
+        function updateBracketMatchV17(round, mid, patch) { bracketRefV17().child('rounds').child(round).child('matches').child(mid).update(patch); }
+        function deleteBracketMatchV17(round, mid) { bracketRefV17().child('rounds').child(round).child('matches').child(mid).remove(); }
+        function deleteBracketRoundV17(round) { if(confirm('حذف هذا الدور؟')) bracketRefV17().child('rounds').child(round).remove(); }
+        function renderBracketAdminV17() {
+            refreshBracketRoundOptionsV17(); refreshTeamSelectsV17();
+            const cont = document.getElementById('bracketAdminPreviewV17'); if(!cont) return;
+            const rounds = bracketV17?.rounds || {};
+            const keys = Object.keys(rounds).sort((a,b)=>(rounds[a].order||999)-(rounds[b].order||999));
+            if(!keys.length) { cont.innerHTML = '<div class="v17-card-row" style="text-align:center;color:var(--muted);">لا توجد شجرة بعد. ولدها تلقائياً أو أضف دور يدوي.</div>'; return; }
+            cont.innerHTML = keys.map(rk=>{
+                const r = rounds[rk] || {};
+                const matches = r.matches || {};
+                const mHtml = Object.keys(matches).sort((a,b)=>(matches[a].order||0)-(matches[b].order||0)).map(mid=>{
+                    const m = matches[mid] || {};
+                    return `<div class="v17-match-admin"><div class="flex-row"><input value="${escV17(m.team1 || '')}" onchange="updateBracketMatchV17('${rk}','${mid}',{team1:this.value})"><input value="${escV17(m.team2 || '')}" onchange="updateBracketMatchV17('${rk}','${mid}',{team2:this.value})"><input type="number" placeholder="نتيجة 1" value="${escV17(m.score1 ?? '')}" onchange="updateBracketMatchV17('${rk}','${mid}',{score1:this.value})"><input type="number" placeholder="نتيجة 2" value="${escV17(m.score2 ?? '')}" onchange="updateBracketMatchV17('${rk}','${mid}',{score2:this.value})"></div><div class="flex-row"><input placeholder="الفائز / المتأهل" value="${escV17(m.winner || '')}" onchange="updateBracketMatchV17('${rk}','${mid}',{winner:this.value})"><button class="del-btn" onclick="deleteBracketMatchV17('${rk}','${mid}')"><i class="fa-solid fa-trash"></i></button></div></div>`;
+                }).join('') || '<div style="font-size:12px;color:var(--muted);padding:8px;">لا توجد مباريات</div>';
+                return `<div><div class="v17-round-title"><b>${escV17(r.name || roundNameV17(rk))}</b><button class="del-btn" onclick="deleteBracketRoundV17('${rk}')"><i class="fa-solid fa-trash"></i> حذف الدور</button></div>${mHtml}</div>`;
+            }).join('');
+        }
+
+        function attachCompetitionListenersV17() {
+            if(window.__competitionV17Attached || !dbPath) return;
+            window.__competitionV17Attached = true;
+            db.ref(`tournaments/${dbPath}/settings/competition`).on('value', snap => applyCompetitionSettingsV17(snap.val() || {}));
+            groupsCustomRefV17().on('value', snap => { customGroupsV17 = snap.val() || {}; renderCustomGroupsAdminV17(); refreshGroupOptionsV17(); });
+            bracketRefV17().on('value', snap => { bracketV17 = snap.val() || {settings:{}, rounds:{}}; renderBracketAdminV17(); });
+            setInterval(()=>{ try { refreshTeamSelectsV17(); refreshGroupOptionsV17(); renderCustomGroupsAdminV17(); } catch(e){} }, 3000);
+        }
+        setInterval(()=>{ if(dbPath) attachCompetitionListenersV17(); }, 1000);
+
+
+</script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js">
+
+        /* ===== V17: نظام بطولة مرن + مجموعات مفتوحة + شجرة متقدمة ===== */
+        const BRACKET_ROUNDS_V17 = {
+            R64: { name: 'دور 64', order: 10, size: 64 },
+            R32: { name: 'دور 32', order: 20, size: 32 },
+            R16: { name: 'دور 16', order: 30, size: 16 },
+            QF: { name: 'ربع النهائي', order: 40, size: 8 },
+            SF: { name: 'نصف النهائي', order: 50, size: 4 },
+            FINAL: { name: 'النهائي', order: 60, size: 2 },
+            THIRD: { name: 'تحديد المركز الثالث والرابع', order: 70, size: 2 }
+        };
+        let customGroupsV17 = {};
+        let bracketV17 = { settings:{}, rounds:{} };
+
+        function escV17(v) { return String(v ?? '').replace(/[&<>"'`]/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;','`':'&#96;'}[ch])); }
+        function keyV17(prefix='id') { return prefix + '_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2,7); }
+        function getAllTeamNamesV17() { return allData && allData.teams ? Object.keys(allData.teams).sort((a,b)=>a.localeCompare(b,'ar')) : []; }
+        function competitionRefV17() { return db.ref(`tournaments/${dbPath}/settings/competition`); }
+        function groupsCustomRefV17() { return db.ref(`tournaments/${dbPath}/groups_custom`); }
+        function bracketRefV17() { return db.ref(`tournaments/${dbPath}/knockout_bracket`); }
+
+        const oldSaveTourneySystemV17 = typeof saveTourneySystem === 'function' ? saveTourneySystem : null;
+        saveTourneySystem = function() { saveCompetitionSettingsV17(); };
+
+        function saveCompetitionSettingsV17() {
+            if(!dbPath) return alert('لم يتم ربط البطولة بعد');
+            const mode = document.getElementById('competitionModeV17')?.value || document.getElementById('tourneySystemType')?.value || 'groups_knockout';
+            const leagueType = document.getElementById('leagueTypeV17')?.value || 'single';
+            const startRound = document.getElementById('bracketStartRoundV17')?.value || 'auto';
+            const thirdPlace = document.getElementById('thirdPlaceV17')?.checked !== false;
+            const legacyLabel = mode === 'league' ? 'دوري فقط' : (mode === 'knockout' ? 'إقصاء المغلوب فقط' : 'مجموعات وإقصاء المغلوب');
+            return db.ref(`tournaments/${dbPath}/settings`).update({ systemType: legacyLabel, competition: { mode, leagueType, bracketStartRound: startRound, thirdPlace, updatedAt: firebase.database.ServerValue.TIMESTAMP } })
+                .then(()=>{ showSaveIndicator('تم حفظ نظام البطولة'); setTimeout(hideSaveIndicator,1500); })
+                .catch(err=>alert('تعذر الحفظ: ' + err.message));
+        }
+
+        function applyCompetitionSettingsV17(c) {
+            c = c || {};
+            const legacy = allData?.settings?.systemType || '';
+            const mode = c.mode || (legacy.includes('دوري فقط') ? 'league' : (legacy.includes('إقصاء') && !legacy.includes('مجموعات') ? 'knockout' : 'groups_knockout'));
+            const modeEl = document.getElementById('competitionModeV17'); if(modeEl) modeEl.value = mode;
+            const leagueEl = document.getElementById('leagueTypeV17'); if(leagueEl) leagueEl.value = c.leagueType || 'single';
+            const startEl = document.getElementById('bracketStartRoundV17'); if(startEl) startEl.value = c.bracketStartRound || 'auto';
+            const thirdEl = document.getElementById('thirdPlaceV17'); if(thirdEl) thirdEl.checked = c.thirdPlace !== false;
+            const legacyEl = document.getElementById('tourneySystemType');
+            if(legacyEl) legacyEl.value = mode === 'league' ? 'دوري فقط' : (mode === 'knockout' ? 'إقصاء المغلوب فقط' : 'مجموعات وإقصاء المغلوب');
+        }
+
+        function refreshTeamSelectsV17() {
+            const teamOpts = '<option value="">اختر الفريق...</option>' + getAllTeamNamesV17().map(t=>`<option value="${escV17(t)}">${escV17(t)}</option>`).join('');
+            ['customGroupTeamSelectV17','manualMatchTeam1V17','manualMatchTeam2V17'].forEach(id=>{ const el=document.getElementById(id); if(el) el.innerHTML = teamOpts; });
+        }
+
+        function refreshGroupOptionsV17() {
+            const groups = customGroupsV17 || {};
+            const sorted = Object.keys(groups).sort((a,b)=>(groups[a].order||999)-(groups[b].order||999));
+            let opts = sorted.length ? sorted.map(k=>`<option value="${escV17(k)}">${escV17(groups[k].name || k)}</option>`).join('') : '<option value="A">مجموعة A</option><option value="B">مجموعة B</option><option value="C">مجموعة C</option><option value="D">مجموعة D</option>';
+            const withEmpty = '<option value="">(بدون مجموعة / إقصائيات)</option>' + opts;
+            ['customGroupSelectV17'].forEach(id=>{ const el=document.getElementById(id); if(el) el.innerHTML = opts; });
+            ['gLetter'].forEach(id=>{ const el=document.getElementById(id); if(el) el.innerHTML = opts; });
+            ['mGroup','sGroup','gmGroup'].forEach(id=>{ const el=document.getElementById(id); if(el) el.innerHTML = withEmpty; });
+            refreshTeamSelectsV17();
+        }
+
+        function addCustomGroupV17() {
+            const name = document.getElementById('customGroupNameV17')?.value.trim();
+            if(!name) return alert('اكتب اسم المجموعة');
+            const qualifiers = parseInt(document.getElementById('customGroupQualifiersV17')?.value || '2', 10);
+            const order = parseInt(document.getElementById('customGroupOrderV17')?.value || '1', 10);
+            const id = keyV17('g');
+            groupsCustomRefV17().child(id).set({ name, qualifiers, order, createdAt: firebase.database.ServerValue.TIMESTAMP }).then(()=>{
+                document.getElementById('customGroupNameV17').value='';
+                showSaveIndicator('تمت إضافة المجموعة'); setTimeout(hideSaveIndicator,1500);
+            }).catch(err=>alert('تعذر إضافة المجموعة: ' + err.message));
+        }
+
+        function updateCustomGroupV17(id, patch) { return groupsCustomRefV17().child(id).update(patch).catch(err=>alert('تعذر التحديث: ' + err.message)); }
+        function deleteCustomGroupV17(id) { if(!confirm('حذف هذه المجموعة؟ لن يتم حذف الفرق من قاعدة الفرق.')) return; groupsCustomRefV17().child(id).remove(); db.ref(`tournaments/${dbPath}/groups/${id}`).remove(); }
+        function removeTeamFromCustomGroupV17(gid, team) { db.ref(`tournaments/${dbPath}/groups/${gid}/${team}`).remove(); groupsCustomRefV17().child(gid).child('teams').child(team).remove(); }
+        function addTeamToCustomGroupV17() {
+            const team = document.getElementById('customGroupTeamSelectV17')?.value;
+            const gid = document.getElementById('customGroupSelectV17')?.value;
+            if(!team || !gid) return alert('اختر الفريق والمجموعة');
+            const baseStats = { name: team, played:0, gf:0, ga:0, gd:0, points:0, status:'' };
+            const updates = {};
+            updates[`tournaments/${dbPath}/groups/${gid}/${team}`] = baseStats;
+            updates[`tournaments/${dbPath}/groups_custom/${gid}/teams/${team}`] = true;
+            db.ref().update(updates).then(()=>{ showSaveIndicator('تمت إضافة الفريق للمجموعة'); setTimeout(hideSaveIndicator,1200); });
+        }
+
+        function renderCustomGroupsAdminV17() {
+            refreshGroupOptionsV17();
+            const cont = document.getElementById('customGroupsAdminListV17'); if(!cont) return;
+            const groups = customGroupsV17 || {};
+            const standings = allData?.groups || {};
+            const keys = Object.keys(groups).sort((a,b)=>(groups[a].order||999)-(groups[b].order||999));
+            if(!keys.length) { cont.innerHTML = '<div class="v17-card-row" style="text-align:center;color:var(--muted);">لا توجد مجموعات مخصصة. أضف مجموعة للبدء.</div>'; return; }
+            cont.innerHTML = keys.map(gid=>{
+                const g = groups[gid] || {};
+                const teams = Object.keys(standings[gid] || g.teams || {});
+                const teamHtml = teams.length ? teams.map(t=>`<span class="v17-badge">${escV17(t)} <button onclick="removeTeamFromCustomGroupV17('${gid}', ${JSON.stringify(t)})" style="background:transparent;border:none;color:#ef4444;cursor:pointer;"><i class="fa-solid fa-xmark"></i></button></span>`).join(' ') : '<span style="color:var(--muted);font-size:12px;">لا توجد فرق</span>';
+                return `<div class="v17-card-row"><h4><i class="fa-solid fa-layer-group"></i> ${escV17(g.name || gid)}</h4>
+                    <div class="flex-row"><div><label>الاسم</label><input value="${escV17(g.name||'')}" onchange="updateCustomGroupV17('${gid}', {name:this.value})"></div><div><label>المتأهلين</label><input type="number" min="0" value="${g.qualifiers ?? 2}" onchange="updateCustomGroupV17('${gid}', {qualifiers:parseInt(this.value)||0})"></div><div><label>الترتيب</label><input type="number" min="1" value="${g.order ?? 1}" onchange="updateCustomGroupV17('${gid}', {order:parseInt(this.value)||1})"></div></div>
+                    <div style="margin:8px 0;display:flex;gap:6px;flex-wrap:wrap;">${teamHtml}</div>
+                    <button class="del-btn" onclick="deleteCustomGroupV17('${gid}')"><i class="fa-solid fa-trash"></i> حذف المجموعة</button></div>`;
+            }).join('');
+        }
+
+        function roundNameV17(key) { return BRACKET_ROUNDS_V17[key]?.name || bracketV17?.rounds?.[key]?.name || key; }
+        function roundOrderV17(key) { return BRACKET_ROUNDS_V17[key]?.order || bracketV17?.rounds?.[key]?.order || 999; }
+        function requiredStartRoundV17(teamCount, forced) {
+            if(forced && forced !== 'auto') return forced;
+            if(teamCount > 32) return 'R64';
+            if(teamCount > 16) return 'R32';
+            if(teamCount > 8) return 'R16';
+            if(teamCount > 4) return 'QF';
+            if(teamCount > 2) return 'SF';
+            return 'FINAL';
+        }
+        function roundSequenceV17(start, includeThird=true) {
+            const order = ['R64','R32','R16','QF','SF','FINAL'];
+            let idx = order.indexOf(start); if(idx < 0) idx = 0;
+            let arr = order.slice(idx);
+            if(includeThird) arr.push('THIRD');
+            return arr;
+        }
+        function getQualifiersV17() {
+            const groups = customGroupsV17 || {};
+            const standings = allData?.groups || {};
+            const out = [];
+            Object.keys(groups).sort((a,b)=>(groups[a].order||999)-(groups[b].order||999)).forEach(gid=>{
+                const q = parseInt(groups[gid].qualifiers || 0, 10);
+                let teams = Object.keys(standings[gid] || {}).map(k=>({name:k, ...standings[gid][k]}));
+                teams.sort((a,b)=>{
+                    if(a.status === 'متأهل' && b.status !== 'متأهل') return -1;
+                    if(b.status === 'متأهل' && a.status !== 'متأهل') return 1;
+                    return (b.points||0)-(a.points||0) || (b.gd||0)-(a.gd||0) || (b.gf||0)-(a.gf||0);
+                });
+                teams.slice(0,q || teams.length).forEach(t=>out.push(t.name));
+            });
+            return [...new Set(out)].filter(Boolean);
+        }
+        function buildBracketDataV17(teams, titleSource) {
+            teams = [...new Set((teams||[]).filter(Boolean))];
+            if(teams.length < 2) { alert('تحتاج فريقين على الأقل لإنشاء الشجرة'); return null; }
+            const c = allData?.settings?.competition || {};
+            const third = document.getElementById('thirdPlaceV17')?.checked ?? (c.thirdPlace !== false);
+            const start = requiredStartRoundV17(teams.length, document.getElementById('bracketStartRoundV17')?.value || c.bracketStartRound || 'auto');
+            const rounds = {};
+            const seq = roundSequenceV17(start, third);
+            seq.forEach(key=>{ rounds[key] = { name: roundNameV17(key), order: roundOrderV17(key), matches:{} }; });
+            const startSize = BRACKET_ROUNDS_V17[start]?.size || Math.pow(2, Math.ceil(Math.log2(teams.length)));
+            const slots = teams.slice(); while(slots.length < startSize) slots.push('BYE');
+            for(let i=0; i<slots.length; i+=2) {
+                const id = keyV17('m');
+                rounds[start].matches[id] = { team1: slots[i] || 'يحدد لاحقاً', team2: slots[i+1] || 'BYE', score1:'', score2:'', winner:'', source:titleSource || 'auto', order:i/2+1 };
+            }
+            return { settings:{ startRound:start, thirdPlace: third, source:titleSource || 'manual', generatedAt: firebase.database.ServerValue.TIMESTAMP }, rounds };
+        }
+        function generateKnockoutFromAllTeamsV17() { const data = buildBracketDataV17(getAllTeamNamesV17(), 'all_teams'); if(data) bracketRefV17().set(data).then(()=>alert('تم توليد الشجرة من كل الفرق')); }
+        function generateKnockoutFromQualifiersV17() { const data = buildBracketDataV17(getQualifiersV17(), 'qualifiers'); if(data) bracketRefV17().set(data).then(()=>alert('تم توليد الشجرة من المتأهلين')); }
+        function clearKnockoutBracketV17() { if(confirm('حذف الشجرة بالكامل؟')) bracketRefV17().remove(); }
+
+        function addManualRoundV17() {
+            const name = document.getElementById('manualRoundNameV17')?.value.trim();
+            const count = parseInt(document.getElementById('manualRoundMatchesV17')?.value || '1', 10);
+            if(!name) return alert('اكتب اسم الدور');
+            const id = keyV17('CUSTOM');
+            const matches = {};
+            for(let i=0;i<count;i++) matches[keyV17('m')] = { team1:'يحدد لاحقاً', team2:'يحدد لاحقاً', score1:'', score2:'', winner:'', order:i+1 };
+            bracketRefV17().child('rounds').child(id).set({ name, order: 5 + Date.now()%1000, custom:true, matches }).then(()=>{ document.getElementById('manualRoundNameV17').value=''; });
+        }
+        function refreshBracketRoundOptionsV17() {
+            const rounds = bracketV17?.rounds || {};
+            const keys = Object.keys(rounds).sort((a,b)=>(rounds[a].order||999)-(rounds[b].order||999));
+            let opts = keys.map(k=>`<option value="${escV17(k)}">${escV17(rounds[k].name || roundNameV17(k))}</option>`).join('');
+            if(!opts) opts = Object.keys(BRACKET_ROUNDS_V17).filter(k=>k!=='THIRD').map(k=>`<option value="${k}">${BRACKET_ROUNDS_V17[k].name}</option>`).join('');
+            const el = document.getElementById('manualMatchRoundV17'); if(el) el.innerHTML = opts;
+        }
+        function addManualBracketMatchV17() {
+            const round = document.getElementById('manualMatchRoundV17')?.value;
+            const t1 = document.getElementById('manualMatchTeam1V17')?.value || 'يحدد لاحقاً';
+            const t2 = document.getElementById('manualMatchTeam2V17')?.value || 'يحدد لاحقاً';
+            if(!round) return alert('اختر الدور');
+            const roundMeta = bracketV17.rounds?.[round] || BRACKET_ROUNDS_V17[round] || { name: roundNameV17(round), order: roundOrderV17(round) };
+            const updates = {};
+            updates[`rounds/${round}/name`] = roundMeta.name;
+            updates[`rounds/${round}/order`] = roundMeta.order;
+            updates[`rounds/${round}/matches/${keyV17('m')}`] = { team1:t1, team2:t2, score1:'', score2:'', winner:'', order: Date.now() };
+            bracketRefV17().update(updates);
+        }
+        function updateBracketMatchV17(round, mid, patch) { bracketRefV17().child('rounds').child(round).child('matches').child(mid).update(patch); }
+        function deleteBracketMatchV17(round, mid) { bracketRefV17().child('rounds').child(round).child('matches').child(mid).remove(); }
+        function deleteBracketRoundV17(round) { if(confirm('حذف هذا الدور؟')) bracketRefV17().child('rounds').child(round).remove(); }
+        function renderBracketAdminV17() {
+            refreshBracketRoundOptionsV17(); refreshTeamSelectsV17();
+            const cont = document.getElementById('bracketAdminPreviewV17'); if(!cont) return;
+            const rounds = bracketV17?.rounds || {};
+            const keys = Object.keys(rounds).sort((a,b)=>(rounds[a].order||999)-(rounds[b].order||999));
+            if(!keys.length) { cont.innerHTML = '<div class="v17-card-row" style="text-align:center;color:var(--muted);">لا توجد شجرة بعد. ولدها تلقائياً أو أضف دور يدوي.</div>'; return; }
+            cont.innerHTML = keys.map(rk=>{
+                const r = rounds[rk] || {};
+                const matches = r.matches || {};
+                const mHtml = Object.keys(matches).sort((a,b)=>(matches[a].order||0)-(matches[b].order||0)).map(mid=>{
+                    const m = matches[mid] || {};
+                    return `<div class="v17-match-admin"><div class="flex-row"><input value="${escV17(m.team1 || '')}" onchange="updateBracketMatchV17('${rk}','${mid}',{team1:this.value})"><input value="${escV17(m.team2 || '')}" onchange="updateBracketMatchV17('${rk}','${mid}',{team2:this.value})"><input type="number" placeholder="نتيجة 1" value="${escV17(m.score1 ?? '')}" onchange="updateBracketMatchV17('${rk}','${mid}',{score1:this.value})"><input type="number" placeholder="نتيجة 2" value="${escV17(m.score2 ?? '')}" onchange="updateBracketMatchV17('${rk}','${mid}',{score2:this.value})"></div><div class="flex-row"><input placeholder="الفائز / المتأهل" value="${escV17(m.winner || '')}" onchange="updateBracketMatchV17('${rk}','${mid}',{winner:this.value})"><button class="del-btn" onclick="deleteBracketMatchV17('${rk}','${mid}')"><i class="fa-solid fa-trash"></i></button></div></div>`;
+                }).join('') || '<div style="font-size:12px;color:var(--muted);padding:8px;">لا توجد مباريات</div>';
+                return `<div><div class="v17-round-title"><b>${escV17(r.name || roundNameV17(rk))}</b><button class="del-btn" onclick="deleteBracketRoundV17('${rk}')"><i class="fa-solid fa-trash"></i> حذف الدور</button></div>${mHtml}</div>`;
+            }).join('');
+        }
+
+        function attachCompetitionListenersV17() {
+            if(window.__competitionV17Attached || !dbPath) return;
+            window.__competitionV17Attached = true;
+            db.ref(`tournaments/${dbPath}/settings/competition`).on('value', snap => applyCompetitionSettingsV17(snap.val() || {}));
+            groupsCustomRefV17().on('value', snap => { customGroupsV17 = snap.val() || {}; renderCustomGroupsAdminV17(); refreshGroupOptionsV17(); });
+            bracketRefV17().on('value', snap => { bracketV17 = snap.val() || {settings:{}, rounds:{}}; renderBracketAdminV17(); });
+            setInterval(()=>{ try { refreshTeamSelectsV17(); refreshGroupOptionsV17(); renderCustomGroupsAdminV17(); } catch(e){} }, 3000);
+        }
+        setInterval(()=>{ if(dbPath) attachCompetitionListenersV17(); }, 1000);
+
+
+</script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js">
+
+        /* ===== V17: نظام بطولة مرن + مجموعات مفتوحة + شجرة متقدمة ===== */
+        const BRACKET_ROUNDS_V17 = {
+            R64: { name: 'دور 64', order: 10, size: 64 },
+            R32: { name: 'دور 32', order: 20, size: 32 },
+            R16: { name: 'دور 16', order: 30, size: 16 },
+            QF: { name: 'ربع النهائي', order: 40, size: 8 },
+            SF: { name: 'نصف النهائي', order: 50, size: 4 },
+            FINAL: { name: 'النهائي', order: 60, size: 2 },
+            THIRD: { name: 'تحديد المركز الثالث والرابع', order: 70, size: 2 }
+        };
+        let customGroupsV17 = {};
+        let bracketV17 = { settings:{}, rounds:{} };
+
+        function escV17(v) { return String(v ?? '').replace(/[&<>"'`]/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;','`':'&#96;'}[ch])); }
+        function keyV17(prefix='id') { return prefix + '_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2,7); }
+        function getAllTeamNamesV17() { return allData && allData.teams ? Object.keys(allData.teams).sort((a,b)=>a.localeCompare(b,'ar')) : []; }
+        function competitionRefV17() { return db.ref(`tournaments/${dbPath}/settings/competition`); }
+        function groupsCustomRefV17() { return db.ref(`tournaments/${dbPath}/groups_custom`); }
+        function bracketRefV17() { return db.ref(`tournaments/${dbPath}/knockout_bracket`); }
+
+        const oldSaveTourneySystemV17 = typeof saveTourneySystem === 'function' ? saveTourneySystem : null;
+        saveTourneySystem = function() { saveCompetitionSettingsV17(); };
+
+        function saveCompetitionSettingsV17() {
+            if(!dbPath) return alert('لم يتم ربط البطولة بعد');
+            const mode = document.getElementById('competitionModeV17')?.value || document.getElementById('tourneySystemType')?.value || 'groups_knockout';
+            const leagueType = document.getElementById('leagueTypeV17')?.value || 'single';
+            const startRound = document.getElementById('bracketStartRoundV17')?.value || 'auto';
+            const thirdPlace = document.getElementById('thirdPlaceV17')?.checked !== false;
+            const legacyLabel = mode === 'league' ? 'دوري فقط' : (mode === 'knockout' ? 'إقصاء المغلوب فقط' : 'مجموعات وإقصاء المغلوب');
+            return db.ref(`tournaments/${dbPath}/settings`).update({ systemType: legacyLabel, competition: { mode, leagueType, bracketStartRound: startRound, thirdPlace, updatedAt: firebase.database.ServerValue.TIMESTAMP } })
+                .then(()=>{ showSaveIndicator('تم حفظ نظام البطولة'); setTimeout(hideSaveIndicator,1500); })
+                .catch(err=>alert('تعذر الحفظ: ' + err.message));
+        }
+
+        function applyCompetitionSettingsV17(c) {
+            c = c || {};
+            const legacy = allData?.settings?.systemType || '';
+            const mode = c.mode || (legacy.includes('دوري فقط') ? 'league' : (legacy.includes('إقصاء') && !legacy.includes('مجموعات') ? 'knockout' : 'groups_knockout'));
+            const modeEl = document.getElementById('competitionModeV17'); if(modeEl) modeEl.value = mode;
+            const leagueEl = document.getElementById('leagueTypeV17'); if(leagueEl) leagueEl.value = c.leagueType || 'single';
+            const startEl = document.getElementById('bracketStartRoundV17'); if(startEl) startEl.value = c.bracketStartRound || 'auto';
+            const thirdEl = document.getElementById('thirdPlaceV17'); if(thirdEl) thirdEl.checked = c.thirdPlace !== false;
+            const legacyEl = document.getElementById('tourneySystemType');
+            if(legacyEl) legacyEl.value = mode === 'league' ? 'دوري فقط' : (mode === 'knockout' ? 'إقصاء المغلوب فقط' : 'مجموعات وإقصاء المغلوب');
+        }
+
+        function refreshTeamSelectsV17() {
+            const teamOpts = '<option value="">اختر الفريق...</option>' + getAllTeamNamesV17().map(t=>`<option value="${escV17(t)}">${escV17(t)}</option>`).join('');
+            ['customGroupTeamSelectV17','manualMatchTeam1V17','manualMatchTeam2V17'].forEach(id=>{ const el=document.getElementById(id); if(el) el.innerHTML = teamOpts; });
+        }
+
+        function refreshGroupOptionsV17() {
+            const groups = customGroupsV17 || {};
+            const sorted = Object.keys(groups).sort((a,b)=>(groups[a].order||999)-(groups[b].order||999));
+            let opts = sorted.length ? sorted.map(k=>`<option value="${escV17(k)}">${escV17(groups[k].name || k)}</option>`).join('') : '<option value="A">مجموعة A</option><option value="B">مجموعة B</option><option value="C">مجموعة C</option><option value="D">مجموعة D</option>';
+            const withEmpty = '<option value="">(بدون مجموعة / إقصائيات)</option>' + opts;
+            ['customGroupSelectV17'].forEach(id=>{ const el=document.getElementById(id); if(el) el.innerHTML = opts; });
+            ['gLetter'].forEach(id=>{ const el=document.getElementById(id); if(el) el.innerHTML = opts; });
+            ['mGroup','sGroup','gmGroup'].forEach(id=>{ const el=document.getElementById(id); if(el) el.innerHTML = withEmpty; });
+            refreshTeamSelectsV17();
+        }
+
+        function addCustomGroupV17() {
+            const name = document.getElementById('customGroupNameV17')?.value.trim();
+            if(!name) return alert('اكتب اسم المجموعة');
+            const qualifiers = parseInt(document.getElementById('customGroupQualifiersV17')?.value || '2', 10);
+            const order = parseInt(document.getElementById('customGroupOrderV17')?.value || '1', 10);
+            const id = keyV17('g');
+            groupsCustomRefV17().child(id).set({ name, qualifiers, order, createdAt: firebase.database.ServerValue.TIMESTAMP }).then(()=>{
+                document.getElementById('customGroupNameV17').value='';
+                showSaveIndicator('تمت إضافة المجموعة'); setTimeout(hideSaveIndicator,1500);
+            }).catch(err=>alert('تعذر إضافة المجموعة: ' + err.message));
+        }
+
+        function updateCustomGroupV17(id, patch) { return groupsCustomRefV17().child(id).update(patch).catch(err=>alert('تعذر التحديث: ' + err.message)); }
+        function deleteCustomGroupV17(id) { if(!confirm('حذف هذه المجموعة؟ لن يتم حذف الفرق من قاعدة الفرق.')) return; groupsCustomRefV17().child(id).remove(); db.ref(`tournaments/${dbPath}/groups/${id}`).remove(); }
+        function removeTeamFromCustomGroupV17(gid, team) { db.ref(`tournaments/${dbPath}/groups/${gid}/${team}`).remove(); groupsCustomRefV17().child(gid).child('teams').child(team).remove(); }
+        function addTeamToCustomGroupV17() {
+            const team = document.getElementById('customGroupTeamSelectV17')?.value;
+            const gid = document.getElementById('customGroupSelectV17')?.value;
+            if(!team || !gid) return alert('اختر الفريق والمجموعة');
+            const baseStats = { name: team, played:0, gf:0, ga:0, gd:0, points:0, status:'' };
+            const updates = {};
+            updates[`tournaments/${dbPath}/groups/${gid}/${team}`] = baseStats;
+            updates[`tournaments/${dbPath}/groups_custom/${gid}/teams/${team}`] = true;
+            db.ref().update(updates).then(()=>{ showSaveIndicator('تمت إضافة الفريق للمجموعة'); setTimeout(hideSaveIndicator,1200); });
+        }
+
+        function renderCustomGroupsAdminV17() {
+            refreshGroupOptionsV17();
+            const cont = document.getElementById('customGroupsAdminListV17'); if(!cont) return;
+            const groups = customGroupsV17 || {};
+            const standings = allData?.groups || {};
+            const keys = Object.keys(groups).sort((a,b)=>(groups[a].order||999)-(groups[b].order||999));
+            if(!keys.length) { cont.innerHTML = '<div class="v17-card-row" style="text-align:center;color:var(--muted);">لا توجد مجموعات مخصصة. أضف مجموعة للبدء.</div>'; return; }
+            cont.innerHTML = keys.map(gid=>{
+                const g = groups[gid] || {};
+                const teams = Object.keys(standings[gid] || g.teams || {});
+                const teamHtml = teams.length ? teams.map(t=>`<span class="v17-badge">${escV17(t)} <button onclick="removeTeamFromCustomGroupV17('${gid}', ${JSON.stringify(t)})" style="background:transparent;border:none;color:#ef4444;cursor:pointer;"><i class="fa-solid fa-xmark"></i></button></span>`).join(' ') : '<span style="color:var(--muted);font-size:12px;">لا توجد فرق</span>';
+                return `<div class="v17-card-row"><h4><i class="fa-solid fa-layer-group"></i> ${escV17(g.name || gid)}</h4>
+                    <div class="flex-row"><div><label>الاسم</label><input value="${escV17(g.name||'')}" onchange="updateCustomGroupV17('${gid}', {name:this.value})"></div><div><label>المتأهلين</label><input type="number" min="0" value="${g.qualifiers ?? 2}" onchange="updateCustomGroupV17('${gid}', {qualifiers:parseInt(this.value)||0})"></div><div><label>الترتيب</label><input type="number" min="1" value="${g.order ?? 1}" onchange="updateCustomGroupV17('${gid}', {order:parseInt(this.value)||1})"></div></div>
+                    <div style="margin:8px 0;display:flex;gap:6px;flex-wrap:wrap;">${teamHtml}</div>
+                    <button class="del-btn" onclick="deleteCustomGroupV17('${gid}')"><i class="fa-solid fa-trash"></i> حذف المجموعة</button></div>`;
+            }).join('');
+        }
+
+        function roundNameV17(key) { return BRACKET_ROUNDS_V17[key]?.name || bracketV17?.rounds?.[key]?.name || key; }
+        function roundOrderV17(key) { return BRACKET_ROUNDS_V17[key]?.order || bracketV17?.rounds?.[key]?.order || 999; }
+        function requiredStartRoundV17(teamCount, forced) {
+            if(forced && forced !== 'auto') return forced;
+            if(teamCount > 32) return 'R64';
+            if(teamCount > 16) return 'R32';
+            if(teamCount > 8) return 'R16';
+            if(teamCount > 4) return 'QF';
+            if(teamCount > 2) return 'SF';
+            return 'FINAL';
+        }
+        function roundSequenceV17(start, includeThird=true) {
+            const order = ['R64','R32','R16','QF','SF','FINAL'];
+            let idx = order.indexOf(start); if(idx < 0) idx = 0;
+            let arr = order.slice(idx);
+            if(includeThird) arr.push('THIRD');
+            return arr;
+        }
+        function getQualifiersV17() {
+            const groups = customGroupsV17 || {};
+            const standings = allData?.groups || {};
+            const out = [];
+            Object.keys(groups).sort((a,b)=>(groups[a].order||999)-(groups[b].order||999)).forEach(gid=>{
+                const q = parseInt(groups[gid].qualifiers || 0, 10);
+                let teams = Object.keys(standings[gid] || {}).map(k=>({name:k, ...standings[gid][k]}));
+                teams.sort((a,b)=>{
+                    if(a.status === 'متأهل' && b.status !== 'متأهل') return -1;
+                    if(b.status === 'متأهل' && a.status !== 'متأهل') return 1;
+                    return (b.points||0)-(a.points||0) || (b.gd||0)-(a.gd||0) || (b.gf||0)-(a.gf||0);
+                });
+                teams.slice(0,q || teams.length).forEach(t=>out.push(t.name));
+            });
+            return [...new Set(out)].filter(Boolean);
+        }
+        function buildBracketDataV17(teams, titleSource) {
+            teams = [...new Set((teams||[]).filter(Boolean))];
+            if(teams.length < 2) { alert('تحتاج فريقين على الأقل لإنشاء الشجرة'); return null; }
+            const c = allData?.settings?.competition || {};
+            const third = document.getElementById('thirdPlaceV17')?.checked ?? (c.thirdPlace !== false);
+            const start = requiredStartRoundV17(teams.length, document.getElementById('bracketStartRoundV17')?.value || c.bracketStartRound || 'auto');
+            const rounds = {};
+            const seq = roundSequenceV17(start, third);
+            seq.forEach(key=>{ rounds[key] = { name: roundNameV17(key), order: roundOrderV17(key), matches:{} }; });
+            const startSize = BRACKET_ROUNDS_V17[start]?.size || Math.pow(2, Math.ceil(Math.log2(teams.length)));
+            const slots = teams.slice(); while(slots.length < startSize) slots.push('BYE');
+            for(let i=0; i<slots.length; i+=2) {
+                const id = keyV17('m');
+                rounds[start].matches[id] = { team1: slots[i] || 'يحدد لاحقاً', team2: slots[i+1] || 'BYE', score1:'', score2:'', winner:'', source:titleSource || 'auto', order:i/2+1 };
+            }
+            return { settings:{ startRound:start, thirdPlace: third, source:titleSource || 'manual', generatedAt: firebase.database.ServerValue.TIMESTAMP }, rounds };
+        }
+        function generateKnockoutFromAllTeamsV17() { const data = buildBracketDataV17(getAllTeamNamesV17(), 'all_teams'); if(data) bracketRefV17().set(data).then(()=>alert('تم توليد الشجرة من كل الفرق')); }
+        function generateKnockoutFromQualifiersV17() { const data = buildBracketDataV17(getQualifiersV17(), 'qualifiers'); if(data) bracketRefV17().set(data).then(()=>alert('تم توليد الشجرة من المتأهلين')); }
+        function clearKnockoutBracketV17() { if(confirm('حذف الشجرة بالكامل؟')) bracketRefV17().remove(); }
+
+        function addManualRoundV17() {
+            const name = document.getElementById('manualRoundNameV17')?.value.trim();
+            const count = parseInt(document.getElementById('manualRoundMatchesV17')?.value || '1', 10);
+            if(!name) return alert('اكتب اسم الدور');
+            const id = keyV17('CUSTOM');
+            const matches = {};
+            for(let i=0;i<count;i++) matches[keyV17('m')] = { team1:'يحدد لاحقاً', team2:'يحدد لاحقاً', score1:'', score2:'', winner:'', order:i+1 };
+            bracketRefV17().child('rounds').child(id).set({ name, order: 5 + Date.now()%1000, custom:true, matches }).then(()=>{ document.getElementById('manualRoundNameV17').value=''; });
+        }
+        function refreshBracketRoundOptionsV17() {
+            const rounds = bracketV17?.rounds || {};
+            const keys = Object.keys(rounds).sort((a,b)=>(rounds[a].order||999)-(rounds[b].order||999));
+            let opts = keys.map(k=>`<option value="${escV17(k)}">${escV17(rounds[k].name || roundNameV17(k))}</option>`).join('');
+            if(!opts) opts = Object.keys(BRACKET_ROUNDS_V17).filter(k=>k!=='THIRD').map(k=>`<option value="${k}">${BRACKET_ROUNDS_V17[k].name}</option>`).join('');
+            const el = document.getElementById('manualMatchRoundV17'); if(el) el.innerHTML = opts;
+        }
+        function addManualBracketMatchV17() {
+            const round = document.getElementById('manualMatchRoundV17')?.value;
+            const t1 = document.getElementById('manualMatchTeam1V17')?.value || 'يحدد لاحقاً';
+            const t2 = document.getElementById('manualMatchTeam2V17')?.value || 'يحدد لاحقاً';
+            if(!round) return alert('اختر الدور');
+            const roundMeta = bracketV17.rounds?.[round] || BRACKET_ROUNDS_V17[round] || { name: roundNameV17(round), order: roundOrderV17(round) };
+            const updates = {};
+            updates[`rounds/${round}/name`] = roundMeta.name;
+            updates[`rounds/${round}/order`] = roundMeta.order;
+            updates[`rounds/${round}/matches/${keyV17('m')}`] = { team1:t1, team2:t2, score1:'', score2:'', winner:'', order: Date.now() };
+            bracketRefV17().update(updates);
+        }
+        function updateBracketMatchV17(round, mid, patch) { bracketRefV17().child('rounds').child(round).child('matches').child(mid).update(patch); }
+        function deleteBracketMatchV17(round, mid) { bracketRefV17().child('rounds').child(round).child('matches').child(mid).remove(); }
+        function deleteBracketRoundV17(round) { if(confirm('حذف هذا الدور؟')) bracketRefV17().child('rounds').child(round).remove(); }
+        function renderBracketAdminV17() {
+            refreshBracketRoundOptionsV17(); refreshTeamSelectsV17();
+            const cont = document.getElementById('bracketAdminPreviewV17'); if(!cont) return;
+            const rounds = bracketV17?.rounds || {};
+            const keys = Object.keys(rounds).sort((a,b)=>(rounds[a].order||999)-(rounds[b].order||999));
+            if(!keys.length) { cont.innerHTML = '<div class="v17-card-row" style="text-align:center;color:var(--muted);">لا توجد شجرة بعد. ولدها تلقائياً أو أضف دور يدوي.</div>'; return; }
+            cont.innerHTML = keys.map(rk=>{
+                const r = rounds[rk] || {};
+                const matches = r.matches || {};
+                const mHtml = Object.keys(matches).sort((a,b)=>(matches[a].order||0)-(matches[b].order||0)).map(mid=>{
+                    const m = matches[mid] || {};
+                    return `<div class="v17-match-admin"><div class="flex-row"><input value="${escV17(m.team1 || '')}" onchange="updateBracketMatchV17('${rk}','${mid}',{team1:this.value})"><input value="${escV17(m.team2 || '')}" onchange="updateBracketMatchV17('${rk}','${mid}',{team2:this.value})"><input type="number" placeholder="نتيجة 1" value="${escV17(m.score1 ?? '')}" onchange="updateBracketMatchV17('${rk}','${mid}',{score1:this.value})"><input type="number" placeholder="نتيجة 2" value="${escV17(m.score2 ?? '')}" onchange="updateBracketMatchV17('${rk}','${mid}',{score2:this.value})"></div><div class="flex-row"><input placeholder="الفائز / المتأهل" value="${escV17(m.winner || '')}" onchange="updateBracketMatchV17('${rk}','${mid}',{winner:this.value})"><button class="del-btn" onclick="deleteBracketMatchV17('${rk}','${mid}')"><i class="fa-solid fa-trash"></i></button></div></div>`;
+                }).join('') || '<div style="font-size:12px;color:var(--muted);padding:8px;">لا توجد مباريات</div>';
+                return `<div><div class="v17-round-title"><b>${escV17(r.name || roundNameV17(rk))}</b><button class="del-btn" onclick="deleteBracketRoundV17('${rk}')"><i class="fa-solid fa-trash"></i> حذف الدور</button></div>${mHtml}</div>`;
+            }).join('');
+        }
+
+        function attachCompetitionListenersV17() {
+            if(window.__competitionV17Attached || !dbPath) return;
+            window.__competitionV17Attached = true;
+            db.ref(`tournaments/${dbPath}/settings/competition`).on('value', snap => applyCompetitionSettingsV17(snap.val() || {}));
+            groupsCustomRefV17().on('value', snap => { customGroupsV17 = snap.val() || {}; renderCustomGroupsAdminV17(); refreshGroupOptionsV17(); });
+            bracketRefV17().on('value', snap => { bracketV17 = snap.val() || {settings:{}, rounds:{}}; renderBracketAdminV17(); });
+            setInterval(()=>{ try { refreshTeamSelectsV17(); refreshGroupOptionsV17(); renderCustomGroupsAdminV17(); } catch(e){} }, 3000);
+        }
+        setInterval(()=>{ if(dbPath) attachCompetitionListenersV17(); }, 1000);
+
+
+</script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-functions.js">
+
+        /* ===== V17: نظام بطولة مرن + مجموعات مفتوحة + شجرة متقدمة ===== */
+        const BRACKET_ROUNDS_V17 = {
+            R64: { name: 'دور 64', order: 10, size: 64 },
+            R32: { name: 'دور 32', order: 20, size: 32 },
+            R16: { name: 'دور 16', order: 30, size: 16 },
+            QF: { name: 'ربع النهائي', order: 40, size: 8 },
+            SF: { name: 'نصف النهائي', order: 50, size: 4 },
+            FINAL: { name: 'النهائي', order: 60, size: 2 },
+            THIRD: { name: 'تحديد المركز الثالث والرابع', order: 70, size: 2 }
+        };
+        let customGroupsV17 = {};
+        let bracketV17 = { settings:{}, rounds:{} };
+
+        function escV17(v) { return String(v ?? '').replace(/[&<>"'`]/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;','`':'&#96;'}[ch])); }
+        function keyV17(prefix='id') { return prefix + '_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2,7); }
+        function getAllTeamNamesV17() { return allData && allData.teams ? Object.keys(allData.teams).sort((a,b)=>a.localeCompare(b,'ar')) : []; }
+        function competitionRefV17() { return db.ref(`tournaments/${dbPath}/settings/competition`); }
+        function groupsCustomRefV17() { return db.ref(`tournaments/${dbPath}/groups_custom`); }
+        function bracketRefV17() { return db.ref(`tournaments/${dbPath}/knockout_bracket`); }
+
+        const oldSaveTourneySystemV17 = typeof saveTourneySystem === 'function' ? saveTourneySystem : null;
+        saveTourneySystem = function() { saveCompetitionSettingsV17(); };
+
+        function saveCompetitionSettingsV17() {
+            if(!dbPath) return alert('لم يتم ربط البطولة بعد');
+            const mode = document.getElementById('competitionModeV17')?.value || document.getElementById('tourneySystemType')?.value || 'groups_knockout';
+            const leagueType = document.getElementById('leagueTypeV17')?.value || 'single';
+            const startRound = document.getElementById('bracketStartRoundV17')?.value || 'auto';
+            const thirdPlace = document.getElementById('thirdPlaceV17')?.checked !== false;
+            const legacyLabel = mode === 'league' ? 'دوري فقط' : (mode === 'knockout' ? 'إقصاء المغلوب فقط' : 'مجموعات وإقصاء المغلوب');
+            return db.ref(`tournaments/${dbPath}/settings`).update({ systemType: legacyLabel, competition: { mode, leagueType, bracketStartRound: startRound, thirdPlace, updatedAt: firebase.database.ServerValue.TIMESTAMP } })
+                .then(()=>{ showSaveIndicator('تم حفظ نظام البطولة'); setTimeout(hideSaveIndicator,1500); })
+                .catch(err=>alert('تعذر الحفظ: ' + err.message));
+        }
+
+        function applyCompetitionSettingsV17(c) {
+            c = c || {};
+            const legacy = allData?.settings?.systemType || '';
+            const mode = c.mode || (legacy.includes('دوري فقط') ? 'league' : (legacy.includes('إقصاء') && !legacy.includes('مجموعات') ? 'knockout' : 'groups_knockout'));
+            const modeEl = document.getElementById('competitionModeV17'); if(modeEl) modeEl.value = mode;
+            const leagueEl = document.getElementById('leagueTypeV17'); if(leagueEl) leagueEl.value = c.leagueType || 'single';
+            const startEl = document.getElementById('bracketStartRoundV17'); if(startEl) startEl.value = c.bracketStartRound || 'auto';
+            const thirdEl = document.getElementById('thirdPlaceV17'); if(thirdEl) thirdEl.checked = c.thirdPlace !== false;
+            const legacyEl = document.getElementById('tourneySystemType');
+            if(legacyEl) legacyEl.value = mode === 'league' ? 'دوري فقط' : (mode === 'knockout' ? 'إقصاء المغلوب فقط' : 'مجموعات وإقصاء المغلوب');
+        }
+
+        function refreshTeamSelectsV17() {
+            const teamOpts = '<option value="">اختر الفريق...</option>' + getAllTeamNamesV17().map(t=>`<option value="${escV17(t)}">${escV17(t)}</option>`).join('');
+            ['customGroupTeamSelectV17','manualMatchTeam1V17','manualMatchTeam2V17'].forEach(id=>{ const el=document.getElementById(id); if(el) el.innerHTML = teamOpts; });
+        }
+
+        function refreshGroupOptionsV17() {
+            const groups = customGroupsV17 || {};
+            const sorted = Object.keys(groups).sort((a,b)=>(groups[a].order||999)-(groups[b].order||999));
+            let opts = sorted.length ? sorted.map(k=>`<option value="${escV17(k)}">${escV17(groups[k].name || k)}</option>`).join('') : '<option value="A">مجموعة A</option><option value="B">مجموعة B</option><option value="C">مجموعة C</option><option value="D">مجموعة D</option>';
+            const withEmpty = '<option value="">(بدون مجموعة / إقصائيات)</option>' + opts;
+            ['customGroupSelectV17'].forEach(id=>{ const el=document.getElementById(id); if(el) el.innerHTML = opts; });
+            ['gLetter'].forEach(id=>{ const el=document.getElementById(id); if(el) el.innerHTML = opts; });
+            ['mGroup','sGroup','gmGroup'].forEach(id=>{ const el=document.getElementById(id); if(el) el.innerHTML = withEmpty; });
+            refreshTeamSelectsV17();
+        }
+
+        function addCustomGroupV17() {
+            const name = document.getElementById('customGroupNameV17')?.value.trim();
+            if(!name) return alert('اكتب اسم المجموعة');
+            const qualifiers = parseInt(document.getElementById('customGroupQualifiersV17')?.value || '2', 10);
+            const order = parseInt(document.getElementById('customGroupOrderV17')?.value || '1', 10);
+            const id = keyV17('g');
+            groupsCustomRefV17().child(id).set({ name, qualifiers, order, createdAt: firebase.database.ServerValue.TIMESTAMP }).then(()=>{
+                document.getElementById('customGroupNameV17').value='';
+                showSaveIndicator('تمت إضافة المجموعة'); setTimeout(hideSaveIndicator,1500);
+            }).catch(err=>alert('تعذر إضافة المجموعة: ' + err.message));
+        }
+
+        function updateCustomGroupV17(id, patch) { return groupsCustomRefV17().child(id).update(patch).catch(err=>alert('تعذر التحديث: ' + err.message)); }
+        function deleteCustomGroupV17(id) { if(!confirm('حذف هذه المجموعة؟ لن يتم حذف الفرق من قاعدة الفرق.')) return; groupsCustomRefV17().child(id).remove(); db.ref(`tournaments/${dbPath}/groups/${id}`).remove(); }
+        function removeTeamFromCustomGroupV17(gid, team) { db.ref(`tournaments/${dbPath}/groups/${gid}/${team}`).remove(); groupsCustomRefV17().child(gid).child('teams').child(team).remove(); }
+        function addTeamToCustomGroupV17() {
+            const team = document.getElementById('customGroupTeamSelectV17')?.value;
+            const gid = document.getElementById('customGroupSelectV17')?.value;
+            if(!team || !gid) return alert('اختر الفريق والمجموعة');
+            const baseStats = { name: team, played:0, gf:0, ga:0, gd:0, points:0, status:'' };
+            const updates = {};
+            updates[`tournaments/${dbPath}/groups/${gid}/${team}`] = baseStats;
+            updates[`tournaments/${dbPath}/groups_custom/${gid}/teams/${team}`] = true;
+            db.ref().update(updates).then(()=>{ showSaveIndicator('تمت إضافة الفريق للمجموعة'); setTimeout(hideSaveIndicator,1200); });
+        }
+
+        function renderCustomGroupsAdminV17() {
+            refreshGroupOptionsV17();
+            const cont = document.getElementById('customGroupsAdminListV17'); if(!cont) return;
+            const groups = customGroupsV17 || {};
+            const standings = allData?.groups || {};
+            const keys = Object.keys(groups).sort((a,b)=>(groups[a].order||999)-(groups[b].order||999));
+            if(!keys.length) { cont.innerHTML = '<div class="v17-card-row" style="text-align:center;color:var(--muted);">لا توجد مجموعات مخصصة. أضف مجموعة للبدء.</div>'; return; }
+            cont.innerHTML = keys.map(gid=>{
+                const g = groups[gid] || {};
+                const teams = Object.keys(standings[gid] || g.teams || {});
+                const teamHtml = teams.length ? teams.map(t=>`<span class="v17-badge">${escV17(t)} <button onclick="removeTeamFromCustomGroupV17('${gid}', ${JSON.stringify(t)})" style="background:transparent;border:none;color:#ef4444;cursor:pointer;"><i class="fa-solid fa-xmark"></i></button></span>`).join(' ') : '<span style="color:var(--muted);font-size:12px;">لا توجد فرق</span>';
+                return `<div class="v17-card-row"><h4><i class="fa-solid fa-layer-group"></i> ${escV17(g.name || gid)}</h4>
+                    <div class="flex-row"><div><label>الاسم</label><input value="${escV17(g.name||'')}" onchange="updateCustomGroupV17('${gid}', {name:this.value})"></div><div><label>المتأهلين</label><input type="number" min="0" value="${g.qualifiers ?? 2}" onchange="updateCustomGroupV17('${gid}', {qualifiers:parseInt(this.value)||0})"></div><div><label>الترتيب</label><input type="number" min="1" value="${g.order ?? 1}" onchange="updateCustomGroupV17('${gid}', {order:parseInt(this.value)||1})"></div></div>
+                    <div style="margin:8px 0;display:flex;gap:6px;flex-wrap:wrap;">${teamHtml}</div>
+                    <button class="del-btn" onclick="deleteCustomGroupV17('${gid}')"><i class="fa-solid fa-trash"></i> حذف المجموعة</button></div>`;
+            }).join('');
+        }
+
+        function roundNameV17(key) { return BRACKET_ROUNDS_V17[key]?.name || bracketV17?.rounds?.[key]?.name || key; }
+        function roundOrderV17(key) { return BRACKET_ROUNDS_V17[key]?.order || bracketV17?.rounds?.[key]?.order || 999; }
+        function requiredStartRoundV17(teamCount, forced) {
+            if(forced && forced !== 'auto') return forced;
+            if(teamCount > 32) return 'R64';
+            if(teamCount > 16) return 'R32';
+            if(teamCount > 8) return 'R16';
+            if(teamCount > 4) return 'QF';
+            if(teamCount > 2) return 'SF';
+            return 'FINAL';
+        }
+        function roundSequenceV17(start, includeThird=true) {
+            const order = ['R64','R32','R16','QF','SF','FINAL'];
+            let idx = order.indexOf(start); if(idx < 0) idx = 0;
+            let arr = order.slice(idx);
+            if(includeThird) arr.push('THIRD');
+            return arr;
+        }
+        function getQualifiersV17() {
+            const groups = customGroupsV17 || {};
+            const standings = allData?.groups || {};
+            const out = [];
+            Object.keys(groups).sort((a,b)=>(groups[a].order||999)-(groups[b].order||999)).forEach(gid=>{
+                const q = parseInt(groups[gid].qualifiers || 0, 10);
+                let teams = Object.keys(standings[gid] || {}).map(k=>({name:k, ...standings[gid][k]}));
+                teams.sort((a,b)=>{
+                    if(a.status === 'متأهل' && b.status !== 'متأهل') return -1;
+                    if(b.status === 'متأهل' && a.status !== 'متأهل') return 1;
+                    return (b.points||0)-(a.points||0) || (b.gd||0)-(a.gd||0) || (b.gf||0)-(a.gf||0);
+                });
+                teams.slice(0,q || teams.length).forEach(t=>out.push(t.name));
+            });
+            return [...new Set(out)].filter(Boolean);
+        }
+        function buildBracketDataV17(teams, titleSource) {
+            teams = [...new Set((teams||[]).filter(Boolean))];
+            if(teams.length < 2) { alert('تحتاج فريقين على الأقل لإنشاء الشجرة'); return null; }
+            const c = allData?.settings?.competition || {};
+            const third = document.getElementById('thirdPlaceV17')?.checked ?? (c.thirdPlace !== false);
+            const start = requiredStartRoundV17(teams.length, document.getElementById('bracketStartRoundV17')?.value || c.bracketStartRound || 'auto');
+            const rounds = {};
+            const seq = roundSequenceV17(start, third);
+            seq.forEach(key=>{ rounds[key] = { name: roundNameV17(key), order: roundOrderV17(key), matches:{} }; });
+            const startSize = BRACKET_ROUNDS_V17[start]?.size || Math.pow(2, Math.ceil(Math.log2(teams.length)));
+            const slots = teams.slice(); while(slots.length < startSize) slots.push('BYE');
+            for(let i=0; i<slots.length; i+=2) {
+                const id = keyV17('m');
+                rounds[start].matches[id] = { team1: slots[i] || 'يحدد لاحقاً', team2: slots[i+1] || 'BYE', score1:'', score2:'', winner:'', source:titleSource || 'auto', order:i/2+1 };
+            }
+            return { settings:{ startRound:start, thirdPlace: third, source:titleSource || 'manual', generatedAt: firebase.database.ServerValue.TIMESTAMP }, rounds };
+        }
+        function generateKnockoutFromAllTeamsV17() { const data = buildBracketDataV17(getAllTeamNamesV17(), 'all_teams'); if(data) bracketRefV17().set(data).then(()=>alert('تم توليد الشجرة من كل الفرق')); }
+        function generateKnockoutFromQualifiersV17() { const data = buildBracketDataV17(getQualifiersV17(), 'qualifiers'); if(data) bracketRefV17().set(data).then(()=>alert('تم توليد الشجرة من المتأهلين')); }
+        function clearKnockoutBracketV17() { if(confirm('حذف الشجرة بالكامل؟')) bracketRefV17().remove(); }
+
+        function addManualRoundV17() {
+            const name = document.getElementById('manualRoundNameV17')?.value.trim();
+            const count = parseInt(document.getElementById('manualRoundMatchesV17')?.value || '1', 10);
+            if(!name) return alert('اكتب اسم الدور');
+            const id = keyV17('CUSTOM');
+            const matches = {};
+            for(let i=0;i<count;i++) matches[keyV17('m')] = { team1:'يحدد لاحقاً', team2:'يحدد لاحقاً', score1:'', score2:'', winner:'', order:i+1 };
+            bracketRefV17().child('rounds').child(id).set({ name, order: 5 + Date.now()%1000, custom:true, matches }).then(()=>{ document.getElementById('manualRoundNameV17').value=''; });
+        }
+        function refreshBracketRoundOptionsV17() {
+            const rounds = bracketV17?.rounds || {};
+            const keys = Object.keys(rounds).sort((a,b)=>(rounds[a].order||999)-(rounds[b].order||999));
+            let opts = keys.map(k=>`<option value="${escV17(k)}">${escV17(rounds[k].name || roundNameV17(k))}</option>`).join('');
+            if(!opts) opts = Object.keys(BRACKET_ROUNDS_V17).filter(k=>k!=='THIRD').map(k=>`<option value="${k}">${BRACKET_ROUNDS_V17[k].name}</option>`).join('');
+            const el = document.getElementById('manualMatchRoundV17'); if(el) el.innerHTML = opts;
+        }
+        function addManualBracketMatchV17() {
+            const round = document.getElementById('manualMatchRoundV17')?.value;
+            const t1 = document.getElementById('manualMatchTeam1V17')?.value || 'يحدد لاحقاً';
+            const t2 = document.getElementById('manualMatchTeam2V17')?.value || 'يحدد لاحقاً';
+            if(!round) return alert('اختر الدور');
+            const roundMeta = bracketV17.rounds?.[round] || BRACKET_ROUNDS_V17[round] || { name: roundNameV17(round), order: roundOrderV17(round) };
+            const updates = {};
+            updates[`rounds/${round}/name`] = roundMeta.name;
+            updates[`rounds/${round}/order`] = roundMeta.order;
+            updates[`rounds/${round}/matches/${keyV17('m')}`] = { team1:t1, team2:t2, score1:'', score2:'', winner:'', order: Date.now() };
+            bracketRefV17().update(updates);
+        }
+        function updateBracketMatchV17(round, mid, patch) { bracketRefV17().child('rounds').child(round).child('matches').child(mid).update(patch); }
+        function deleteBracketMatchV17(round, mid) { bracketRefV17().child('rounds').child(round).child('matches').child(mid).remove(); }
+        function deleteBracketRoundV17(round) { if(confirm('حذف هذا الدور؟')) bracketRefV17().child('rounds').child(round).remove(); }
+        function renderBracketAdminV17() {
+            refreshBracketRoundOptionsV17(); refreshTeamSelectsV17();
+            const cont = document.getElementById('bracketAdminPreviewV17'); if(!cont) return;
+            const rounds = bracketV17?.rounds || {};
+            const keys = Object.keys(rounds).sort((a,b)=>(rounds[a].order||999)-(rounds[b].order||999));
+            if(!keys.length) { cont.innerHTML = '<div class="v17-card-row" style="text-align:center;color:var(--muted);">لا توجد شجرة بعد. ولدها تلقائياً أو أضف دور يدوي.</div>'; return; }
+            cont.innerHTML = keys.map(rk=>{
+                const r = rounds[rk] || {};
+                const matches = r.matches || {};
+                const mHtml = Object.keys(matches).sort((a,b)=>(matches[a].order||0)-(matches[b].order||0)).map(mid=>{
+                    const m = matches[mid] || {};
+                    return `<div class="v17-match-admin"><div class="flex-row"><input value="${escV17(m.team1 || '')}" onchange="updateBracketMatchV17('${rk}','${mid}',{team1:this.value})"><input value="${escV17(m.team2 || '')}" onchange="updateBracketMatchV17('${rk}','${mid}',{team2:this.value})"><input type="number" placeholder="نتيجة 1" value="${escV17(m.score1 ?? '')}" onchange="updateBracketMatchV17('${rk}','${mid}',{score1:this.value})"><input type="number" placeholder="نتيجة 2" value="${escV17(m.score2 ?? '')}" onchange="updateBracketMatchV17('${rk}','${mid}',{score2:this.value})"></div><div class="flex-row"><input placeholder="الفائز / المتأهل" value="${escV17(m.winner || '')}" onchange="updateBracketMatchV17('${rk}','${mid}',{winner:this.value})"><button class="del-btn" onclick="deleteBracketMatchV17('${rk}','${mid}')"><i class="fa-solid fa-trash"></i></button></div></div>`;
+                }).join('') || '<div style="font-size:12px;color:var(--muted);padding:8px;">لا توجد مباريات</div>';
+                return `<div><div class="v17-round-title"><b>${escV17(r.name || roundNameV17(rk))}</b><button class="del-btn" onclick="deleteBracketRoundV17('${rk}')"><i class="fa-solid fa-trash"></i> حذف الدور</button></div>${mHtml}</div>`;
+            }).join('');
+        }
+
+        function attachCompetitionListenersV17() {
+            if(window.__competitionV17Attached || !dbPath) return;
+            window.__competitionV17Attached = true;
+            db.ref(`tournaments/${dbPath}/settings/competition`).on('value', snap => applyCompetitionSettingsV17(snap.val() || {}));
+            groupsCustomRefV17().on('value', snap => { customGroupsV17 = snap.val() || {}; renderCustomGroupsAdminV17(); refreshGroupOptionsV17(); });
+            bracketRefV17().on('value', snap => { bracketV17 = snap.val() || {settings:{}, rounds:{}}; renderBracketAdminV17(); });
+            setInterval(()=>{ try { refreshTeamSelectsV17(); refreshGroupOptionsV17(); renderCustomGroupsAdminV17(); } catch(e){} }, 3000);
+        }
+        setInterval(()=>{ if(dbPath) attachCompetitionListenersV17(); }, 1000);
+
+
+</script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jsrsasign/10.9.0/jsrsasign-all-min.js">
+
+        /* ===== V17: نظام بطولة مرن + مجموعات مفتوحة + شجرة متقدمة ===== */
+        const BRACKET_ROUNDS_V17 = {
+            R64: { name: 'دور 64', order: 10, size: 64 },
+            R32: { name: 'دور 32', order: 20, size: 32 },
+            R16: { name: 'دور 16', order: 30, size: 16 },
+            QF: { name: 'ربع النهائي', order: 40, size: 8 },
+            SF: { name: 'نصف النهائي', order: 50, size: 4 },
+            FINAL: { name: 'النهائي', order: 60, size: 2 },
+            THIRD: { name: 'تحديد المركز الثالث والرابع', order: 70, size: 2 }
+        };
+        let customGroupsV17 = {};
+        let bracketV17 = { settings:{}, rounds:{} };
+
+        function escV17(v) { return String(v ?? '').replace(/[&<>"'`]/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;','`':'&#96;'}[ch])); }
+        function keyV17(prefix='id') { return prefix + '_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2,7); }
+        function getAllTeamNamesV17() { return allData && allData.teams ? Object.keys(allData.teams).sort((a,b)=>a.localeCompare(b,'ar')) : []; }
+        function competitionRefV17() { return db.ref(`tournaments/${dbPath}/settings/competition`); }
+        function groupsCustomRefV17() { return db.ref(`tournaments/${dbPath}/groups_custom`); }
+        function bracketRefV17() { return db.ref(`tournaments/${dbPath}/knockout_bracket`); }
+
+        const oldSaveTourneySystemV17 = typeof saveTourneySystem === 'function' ? saveTourneySystem : null;
+        saveTourneySystem = function() { saveCompetitionSettingsV17(); };
+
+        function saveCompetitionSettingsV17() {
+            if(!dbPath) return alert('لم يتم ربط البطولة بعد');
+            const mode = document.getElementById('competitionModeV17')?.value || document.getElementById('tourneySystemType')?.value || 'groups_knockout';
+            const leagueType = document.getElementById('leagueTypeV17')?.value || 'single';
+            const startRound = document.getElementById('bracketStartRoundV17')?.value || 'auto';
+            const thirdPlace = document.getElementById('thirdPlaceV17')?.checked !== false;
+            const legacyLabel = mode === 'league' ? 'دوري فقط' : (mode === 'knockout' ? 'إقصاء المغلوب فقط' : 'مجموعات وإقصاء المغلوب');
+            return db.ref(`tournaments/${dbPath}/settings`).update({ systemType: legacyLabel, competition: { mode, leagueType, bracketStartRound: startRound, thirdPlace, updatedAt: firebase.database.ServerValue.TIMESTAMP } })
+                .then(()=>{ showSaveIndicator('تم حفظ نظام البطولة'); setTimeout(hideSaveIndicator,1500); })
+                .catch(err=>alert('تعذر الحفظ: ' + err.message));
+        }
+
+        function applyCompetitionSettingsV17(c) {
+            c = c || {};
+            const legacy = allData?.settings?.systemType || '';
+            const mode = c.mode || (legacy.includes('دوري فقط') ? 'league' : (legacy.includes('إقصاء') && !legacy.includes('مجموعات') ? 'knockout' : 'groups_knockout'));
+            const modeEl = document.getElementById('competitionModeV17'); if(modeEl) modeEl.value = mode;
+            const leagueEl = document.getElementById('leagueTypeV17'); if(leagueEl) leagueEl.value = c.leagueType || 'single';
+            const startEl = document.getElementById('bracketStartRoundV17'); if(startEl) startEl.value = c.bracketStartRound || 'auto';
+            const thirdEl = document.getElementById('thirdPlaceV17'); if(thirdEl) thirdEl.checked = c.thirdPlace !== false;
+            const legacyEl = document.getElementById('tourneySystemType');
+            if(legacyEl) legacyEl.value = mode === 'league' ? 'دوري فقط' : (mode === 'knockout' ? 'إقصاء المغلوب فقط' : 'مجموعات وإقصاء المغلوب');
+        }
+
+        function refreshTeamSelectsV17() {
+            const teamOpts = '<option value="">اختر الفريق...</option>' + getAllTeamNamesV17().map(t=>`<option value="${escV17(t)}">${escV17(t)}</option>`).join('');
+            ['customGroupTeamSelectV17','manualMatchTeam1V17','manualMatchTeam2V17'].forEach(id=>{ const el=document.getElementById(id); if(el) el.innerHTML = teamOpts; });
+        }
+
+        function refreshGroupOptionsV17() {
+            const groups = customGroupsV17 || {};
+            const sorted = Object.keys(groups).sort((a,b)=>(groups[a].order||999)-(groups[b].order||999));
+            let opts = sorted.length ? sorted.map(k=>`<option value="${escV17(k)}">${escV17(groups[k].name || k)}</option>`).join('') : '<option value="A">مجموعة A</option><option value="B">مجموعة B</option><option value="C">مجموعة C</option><option value="D">مجموعة D</option>';
+            const withEmpty = '<option value="">(بدون مجموعة / إقصائيات)</option>' + opts;
+            ['customGroupSelectV17'].forEach(id=>{ const el=document.getElementById(id); if(el) el.innerHTML = opts; });
+            ['gLetter'].forEach(id=>{ const el=document.getElementById(id); if(el) el.innerHTML = opts; });
+            ['mGroup','sGroup','gmGroup'].forEach(id=>{ const el=document.getElementById(id); if(el) el.innerHTML = withEmpty; });
+            refreshTeamSelectsV17();
+        }
+
+        function addCustomGroupV17() {
+            const name = document.getElementById('customGroupNameV17')?.value.trim();
+            if(!name) return alert('اكتب اسم المجموعة');
+            const qualifiers = parseInt(document.getElementById('customGroupQualifiersV17')?.value || '2', 10);
+            const order = parseInt(document.getElementById('customGroupOrderV17')?.value || '1', 10);
+            const id = keyV17('g');
+            groupsCustomRefV17().child(id).set({ name, qualifiers, order, createdAt: firebase.database.ServerValue.TIMESTAMP }).then(()=>{
+                document.getElementById('customGroupNameV17').value='';
+                showSaveIndicator('تمت إضافة المجموعة'); setTimeout(hideSaveIndicator,1500);
+            }).catch(err=>alert('تعذر إضافة المجموعة: ' + err.message));
+        }
+
+        function updateCustomGroupV17(id, patch) { return groupsCustomRefV17().child(id).update(patch).catch(err=>alert('تعذر التحديث: ' + err.message)); }
+        function deleteCustomGroupV17(id) { if(!confirm('حذف هذه المجموعة؟ لن يتم حذف الفرق من قاعدة الفرق.')) return; groupsCustomRefV17().child(id).remove(); db.ref(`tournaments/${dbPath}/groups/${id}`).remove(); }
+        function removeTeamFromCustomGroupV17(gid, team) { db.ref(`tournaments/${dbPath}/groups/${gid}/${team}`).remove(); groupsCustomRefV17().child(gid).child('teams').child(team).remove(); }
+        function addTeamToCustomGroupV17() {
+            const team = document.getElementById('customGroupTeamSelectV17')?.value;
+            const gid = document.getElementById('customGroupSelectV17')?.value;
+            if(!team || !gid) return alert('اختر الفريق والمجموعة');
+            const baseStats = { name: team, played:0, gf:0, ga:0, gd:0, points:0, status:'' };
+            const updates = {};
+            updates[`tournaments/${dbPath}/groups/${gid}/${team}`] = baseStats;
+            updates[`tournaments/${dbPath}/groups_custom/${gid}/teams/${team}`] = true;
+            db.ref().update(updates).then(()=>{ showSaveIndicator('تمت إضافة الفريق للمجموعة'); setTimeout(hideSaveIndicator,1200); });
+        }
+
+        function renderCustomGroupsAdminV17() {
+            refreshGroupOptionsV17();
+            const cont = document.getElementById('customGroupsAdminListV17'); if(!cont) return;
+            const groups = customGroupsV17 || {};
+            const standings = allData?.groups || {};
+            const keys = Object.keys(groups).sort((a,b)=>(groups[a].order||999)-(groups[b].order||999));
+            if(!keys.length) { cont.innerHTML = '<div class="v17-card-row" style="text-align:center;color:var(--muted);">لا توجد مجموعات مخصصة. أضف مجموعة للبدء.</div>'; return; }
+            cont.innerHTML = keys.map(gid=>{
+                const g = groups[gid] || {};
+                const teams = Object.keys(standings[gid] || g.teams || {});
+                const teamHtml = teams.length ? teams.map(t=>`<span class="v17-badge">${escV17(t)} <button onclick="removeTeamFromCustomGroupV17('${gid}', ${JSON.stringify(t)})" style="background:transparent;border:none;color:#ef4444;cursor:pointer;"><i class="fa-solid fa-xmark"></i></button></span>`).join(' ') : '<span style="color:var(--muted);font-size:12px;">لا توجد فرق</span>';
+                return `<div class="v17-card-row"><h4><i class="fa-solid fa-layer-group"></i> ${escV17(g.name || gid)}</h4>
+                    <div class="flex-row"><div><label>الاسم</label><input value="${escV17(g.name||'')}" onchange="updateCustomGroupV17('${gid}', {name:this.value})"></div><div><label>المتأهلين</label><input type="number" min="0" value="${g.qualifiers ?? 2}" onchange="updateCustomGroupV17('${gid}', {qualifiers:parseInt(this.value)||0})"></div><div><label>الترتيب</label><input type="number" min="1" value="${g.order ?? 1}" onchange="updateCustomGroupV17('${gid}', {order:parseInt(this.value)||1})"></div></div>
+                    <div style="margin:8px 0;display:flex;gap:6px;flex-wrap:wrap;">${teamHtml}</div>
+                    <button class="del-btn" onclick="deleteCustomGroupV17('${gid}')"><i class="fa-solid fa-trash"></i> حذف المجموعة</button></div>`;
+            }).join('');
+        }
+
+        function roundNameV17(key) { return BRACKET_ROUNDS_V17[key]?.name || bracketV17?.rounds?.[key]?.name || key; }
+        function roundOrderV17(key) { return BRACKET_ROUNDS_V17[key]?.order || bracketV17?.rounds?.[key]?.order || 999; }
+        function requiredStartRoundV17(teamCount, forced) {
+            if(forced && forced !== 'auto') return forced;
+            if(teamCount > 32) return 'R64';
+            if(teamCount > 16) return 'R32';
+            if(teamCount > 8) return 'R16';
+            if(teamCount > 4) return 'QF';
+            if(teamCount > 2) return 'SF';
+            return 'FINAL';
+        }
+        function roundSequenceV17(start, includeThird=true) {
+            const order = ['R64','R32','R16','QF','SF','FINAL'];
+            let idx = order.indexOf(start); if(idx < 0) idx = 0;
+            let arr = order.slice(idx);
+            if(includeThird) arr.push('THIRD');
+            return arr;
+        }
+        function getQualifiersV17() {
+            const groups = customGroupsV17 || {};
+            const standings = allData?.groups || {};
+            const out = [];
+            Object.keys(groups).sort((a,b)=>(groups[a].order||999)-(groups[b].order||999)).forEach(gid=>{
+                const q = parseInt(groups[gid].qualifiers || 0, 10);
+                let teams = Object.keys(standings[gid] || {}).map(k=>({name:k, ...standings[gid][k]}));
+                teams.sort((a,b)=>{
+                    if(a.status === 'متأهل' && b.status !== 'متأهل') return -1;
+                    if(b.status === 'متأهل' && a.status !== 'متأهل') return 1;
+                    return (b.points||0)-(a.points||0) || (b.gd||0)-(a.gd||0) || (b.gf||0)-(a.gf||0);
+                });
+                teams.slice(0,q || teams.length).forEach(t=>out.push(t.name));
+            });
+            return [...new Set(out)].filter(Boolean);
+        }
+        function buildBracketDataV17(teams, titleSource) {
+            teams = [...new Set((teams||[]).filter(Boolean))];
+            if(teams.length < 2) { alert('تحتاج فريقين على الأقل لإنشاء الشجرة'); return null; }
+            const c = allData?.settings?.competition || {};
+            const third = document.getElementById('thirdPlaceV17')?.checked ?? (c.thirdPlace !== false);
+            const start = requiredStartRoundV17(teams.length, document.getElementById('bracketStartRoundV17')?.value || c.bracketStartRound || 'auto');
+            const rounds = {};
+            const seq = roundSequenceV17(start, third);
+            seq.forEach(key=>{ rounds[key] = { name: roundNameV17(key), order: roundOrderV17(key), matches:{} }; });
+            const startSize = BRACKET_ROUNDS_V17[start]?.size || Math.pow(2, Math.ceil(Math.log2(teams.length)));
+            const slots = teams.slice(); while(slots.length < startSize) slots.push('BYE');
+            for(let i=0; i<slots.length; i+=2) {
+                const id = keyV17('m');
+                rounds[start].matches[id] = { team1: slots[i] || 'يحدد لاحقاً', team2: slots[i+1] || 'BYE', score1:'', score2:'', winner:'', source:titleSource || 'auto', order:i/2+1 };
+            }
+            return { settings:{ startRound:start, thirdPlace: third, source:titleSource || 'manual', generatedAt: firebase.database.ServerValue.TIMESTAMP }, rounds };
+        }
+        function generateKnockoutFromAllTeamsV17() { const data = buildBracketDataV17(getAllTeamNamesV17(), 'all_teams'); if(data) bracketRefV17().set(data).then(()=>alert('تم توليد الشجرة من كل الفرق')); }
+        function generateKnockoutFromQualifiersV17() { const data = buildBracketDataV17(getQualifiersV17(), 'qualifiers'); if(data) bracketRefV17().set(data).then(()=>alert('تم توليد الشجرة من المتأهلين')); }
+        function clearKnockoutBracketV17() { if(confirm('حذف الشجرة بالكامل؟')) bracketRefV17().remove(); }
+
+        function addManualRoundV17() {
+            const name = document.getElementById('manualRoundNameV17')?.value.trim();
+            const count = parseInt(document.getElementById('manualRoundMatchesV17')?.value || '1', 10);
+            if(!name) return alert('اكتب اسم الدور');
+            const id = keyV17('CUSTOM');
+            const matches = {};
+            for(let i=0;i<count;i++) matches[keyV17('m')] = { team1:'يحدد لاحقاً', team2:'يحدد لاحقاً', score1:'', score2:'', winner:'', order:i+1 };
+            bracketRefV17().child('rounds').child(id).set({ name, order: 5 + Date.now()%1000, custom:true, matches }).then(()=>{ document.getElementById('manualRoundNameV17').value=''; });
+        }
+        function refreshBracketRoundOptionsV17() {
+            const rounds = bracketV17?.rounds || {};
+            const keys = Object.keys(rounds).sort((a,b)=>(rounds[a].order||999)-(rounds[b].order||999));
+            let opts = keys.map(k=>`<option value="${escV17(k)}">${escV17(rounds[k].name || roundNameV17(k))}</option>`).join('');
+            if(!opts) opts = Object.keys(BRACKET_ROUNDS_V17).filter(k=>k!=='THIRD').map(k=>`<option value="${k}">${BRACKET_ROUNDS_V17[k].name}</option>`).join('');
+            const el = document.getElementById('manualMatchRoundV17'); if(el) el.innerHTML = opts;
+        }
+        function addManualBracketMatchV17() {
+            const round = document.getElementById('manualMatchRoundV17')?.value;
+            const t1 = document.getElementById('manualMatchTeam1V17')?.value || 'يحدد لاحقاً';
+            const t2 = document.getElementById('manualMatchTeam2V17')?.value || 'يحدد لاحقاً';
+            if(!round) return alert('اختر الدور');
+            const roundMeta = bracketV17.rounds?.[round] || BRACKET_ROUNDS_V17[round] || { name: roundNameV17(round), order: roundOrderV17(round) };
+            const updates = {};
+            updates[`rounds/${round}/name`] = roundMeta.name;
+            updates[`rounds/${round}/order`] = roundMeta.order;
+            updates[`rounds/${round}/matches/${keyV17('m')}`] = { team1:t1, team2:t2, score1:'', score2:'', winner:'', order: Date.now() };
+            bracketRefV17().update(updates);
+        }
+        function updateBracketMatchV17(round, mid, patch) { bracketRefV17().child('rounds').child(round).child('matches').child(mid).update(patch); }
+        function deleteBracketMatchV17(round, mid) { bracketRefV17().child('rounds').child(round).child('matches').child(mid).remove(); }
+        function deleteBracketRoundV17(round) { if(confirm('حذف هذا الدور؟')) bracketRefV17().child('rounds').child(round).remove(); }
+        function renderBracketAdminV17() {
+            refreshBracketRoundOptionsV17(); refreshTeamSelectsV17();
+            const cont = document.getElementById('bracketAdminPreviewV17'); if(!cont) return;
+            const rounds = bracketV17?.rounds || {};
+            const keys = Object.keys(rounds).sort((a,b)=>(rounds[a].order||999)-(rounds[b].order||999));
+            if(!keys.length) { cont.innerHTML = '<div class="v17-card-row" style="text-align:center;color:var(--muted);">لا توجد شجرة بعد. ولدها تلقائياً أو أضف دور يدوي.</div>'; return; }
+            cont.innerHTML = keys.map(rk=>{
+                const r = rounds[rk] || {};
+                const matches = r.matches || {};
+                const mHtml = Object.keys(matches).sort((a,b)=>(matches[a].order||0)-(matches[b].order||0)).map(mid=>{
+                    const m = matches[mid] || {};
+                    return `<div class="v17-match-admin"><div class="flex-row"><input value="${escV17(m.team1 || '')}" onchange="updateBracketMatchV17('${rk}','${mid}',{team1:this.value})"><input value="${escV17(m.team2 || '')}" onchange="updateBracketMatchV17('${rk}','${mid}',{team2:this.value})"><input type="number" placeholder="نتيجة 1" value="${escV17(m.score1 ?? '')}" onchange="updateBracketMatchV17('${rk}','${mid}',{score1:this.value})"><input type="number" placeholder="نتيجة 2" value="${escV17(m.score2 ?? '')}" onchange="updateBracketMatchV17('${rk}','${mid}',{score2:this.value})"></div><div class="flex-row"><input placeholder="الفائز / المتأهل" value="${escV17(m.winner || '')}" onchange="updateBracketMatchV17('${rk}','${mid}',{winner:this.value})"><button class="del-btn" onclick="deleteBracketMatchV17('${rk}','${mid}')"><i class="fa-solid fa-trash"></i></button></div></div>`;
+                }).join('') || '<div style="font-size:12px;color:var(--muted);padding:8px;">لا توجد مباريات</div>';
+                return `<div><div class="v17-round-title"><b>${escV17(r.name || roundNameV17(rk))}</b><button class="del-btn" onclick="deleteBracketRoundV17('${rk}')"><i class="fa-solid fa-trash"></i> حذف الدور</button></div>${mHtml}</div>`;
+            }).join('');
+        }
+
+        function attachCompetitionListenersV17() {
+            if(window.__competitionV17Attached || !dbPath) return;
+            window.__competitionV17Attached = true;
+            db.ref(`tournaments/${dbPath}/settings/competition`).on('value', snap => applyCompetitionSettingsV17(snap.val() || {}));
+            groupsCustomRefV17().on('value', snap => { customGroupsV17 = snap.val() || {}; renderCustomGroupsAdminV17(); refreshGroupOptionsV17(); });
+            bracketRefV17().on('value', snap => { bracketV17 = snap.val() || {settings:{}, rounds:{}}; renderBracketAdminV17(); });
+            setInterval(()=>{ try { refreshTeamSelectsV17(); refreshGroupOptionsV17(); renderCustomGroupsAdminV17(); } catch(e){} }, 3000);
+        }
+        setInterval(()=>{ if(dbPath) attachCompetitionListenersV17(); }, 1000);
+
+
+</script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root { --bg: #000000; --card: #121212; --input-bg: #1c1c1c; --primary: #3b82f6; --text: #ffffff; --accent: #4ade80; --muted: #a1a1aa; --border: #3f3f46; }
@@ -79,6 +1194,17 @@
 
         .package-admin-badge { background: rgba(212,175,55,0.08); border:1px solid rgba(212,175,55,0.55); color:#fff; border-radius:12px; padding:12px 14px; margin-bottom:15px; font-size:12px; line-height:1.8; display:none; }
         .package-admin-badge b { color:#facc15; }
+
+    
+        /* ===== V17: نظام البطولة والمجموعات المفتوحة والشجرة المتقدمة ===== */
+        .v17-panel-note {font-size:12px;color:var(--muted);line-height:1.8;background:rgba(255,255,255,0.04);border:1px solid var(--border);padding:10px;border-radius:10px;margin:10px 0;}
+        .v17-badge {display:inline-flex;align-items:center;gap:5px;border:1px solid var(--border);border-radius:999px;padding:4px 10px;font-size:11px;font-weight:900;background:rgba(255,255,255,0.05);color:var(--text);}
+        .v17-mini-grid {display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin:10px 0;}
+        .v17-card-row {background:var(--input-bg);border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:10px;}
+        .v17-card-row h4 {margin:0 0 8px;color:var(--accent);font-size:14px;}
+        .v17-round-title {display:flex;align-items:center;justify-content:space-between;gap:10px;background:#0b1220;border:1px solid var(--border);padding:10px;border-radius:10px;margin:12px 0 8px;}
+        .v17-match-admin {background:#111827;border:1px solid #374151;border-radius:10px;padding:10px;margin:8px 0;font-size:12px;}
+        .v17-locked-pill {background:rgba(239,68,68,0.13);border:1px solid #ef4444;color:#fca5a5;border-radius:999px;padding:3px 8px;font-size:10px;font-weight:bold;}
 
     </style>
 </head>
@@ -435,7 +1561,90 @@
                 </div>
             </div>
 
-            <div class="panel">
+            
+            <div class="panel" id="competitionSystemPanel" style="border-color:#22c55e; background:rgba(34,197,94,0.05);">
+                <h2 style="color:#22c55e;"><i class="fa-solid fa-trophy"></i> نوع البطولة وطريقة اللعب</h2>
+                <div class="v17-panel-note">اختر نظام البطولة. هذا الاختيار يحدد ما يظهر للجمهور: دوري، إقصاء مغلوب، أو مجموعات + إقصاء مغلوب.</div>
+                <div class="flex-row">
+                    <div>
+                        <label>نوع البطولة:</label>
+                        <select id="competitionModeV17">
+                            <option value="league">دوري</option>
+                            <option value="knockout">إقصاء مغلوب</option>
+                            <option value="groups_knockout">مجموعات + إقصاء مغلوب</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label>نظام الدوري:</label>
+                        <select id="leagueTypeV17">
+                            <option value="single">ذهاب فقط</option>
+                            <option value="double">ذهاب وإياب</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label>أول دور في الشجرة:</label>
+                        <select id="bracketStartRoundV17">
+                            <option value="auto">تلقائي حسب العدد</option>
+                            <option value="R64">دور 64</option>
+                            <option value="R32">دور 32</option>
+                            <option value="R16">دور 16</option>
+                            <option value="QF">ربع النهائي</option>
+                            <option value="SF">نصف النهائي</option>
+                            <option value="FINAL">النهائي</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="flex-row" style="align-items:center;">
+                    <label style="display:flex;align-items:center;gap:8px;color:#fff;margin:0;background:var(--input-bg);padding:10px;border-radius:10px;border:1px solid var(--border);">
+                        <input type="checkbox" id="thirdPlaceV17" checked style="width:auto;margin:0;"> تفعيل مباراة تحديد المركز الثالث والرابع
+                    </label>
+                    <button onclick="saveCompetitionSettingsV17()" style="background:#22c55e;color:#000;border:none;margin:0;"><i class="fa-solid fa-floppy-disk"></i> حفظ نظام البطولة</button>
+                </div>
+            </div>
+
+            <div class="panel" id="customGroupsPanelV17" style="border-color:#06b6d4; background:rgba(6,182,212,0.05);">
+                <h2 style="color:#06b6d4;"><i class="fa-solid fa-layer-group"></i> إدارة المجموعات المفتوحة</h2>
+                <div class="v17-panel-note">تقدر تنشئ مجموعة واحدة أو عدد غير محدود من المجموعات وتغير أسماءها. هذه المجموعات تظهر للجمهور بنفس الاسم.</div>
+                <div class="flex-row">
+                    <div><label>اسم المجموعة:</label><input type="text" id="customGroupNameV17" placeholder="مثال: مجموعة الشمال"></div>
+                    <div><label>عدد المتأهلين من المجموعة:</label><input type="number" id="customGroupQualifiersV17" value="2" min="0" max="16"></div>
+                    <div><label>ترتيب الظهور:</label><input type="number" id="customGroupOrderV17" value="1" min="1"></div>
+                </div>
+                <button onclick="addCustomGroupV17()" style="background:#06b6d4;color:#000;border:none;"><i class="fa-solid fa-plus"></i> إضافة مجموعة جديدة</button>
+                <div class="flex-row" style="margin-top:15px;">
+                    <div><label>إضافة فريق إلى مجموعة:</label><select id="customGroupTeamSelectV17"></select></div>
+                    <div><label>المجموعة:</label><select id="customGroupSelectV17"></select></div>
+                    <button onclick="addTeamToCustomGroupV17()" style="align-self:end;background:#0ea5e9;color:#fff;border:none;margin-bottom:10px;"><i class="fa-solid fa-user-plus"></i> إضافة</button>
+                </div>
+                <div id="customGroupsAdminListV17" class="preview-box" style="border:none;padding:0;"></div>
+            </div>
+
+            <div class="panel" id="knockoutBuilderPanelV17" style="border-color:#f97316; background:rgba(249,115,22,0.05);">
+                <h2 style="color:#f97316;"><i class="fa-solid fa-sitemap"></i> شجرة الإقصاء المتقدمة</h2>
+                <div class="v17-panel-note">الشجرة تدعم دور 64 و32 و16 وربع النهائي ونصف النهائي والنهائي وتحديد الثالث، وتدعم إضافة دور يدوي بأي اسم.</div>
+                <div class="v17-mini-grid">
+                    <button onclick="generateKnockoutFromAllTeamsV17()" style="background:#f97316;color:#000;border:none;"><i class="fa-solid fa-wand-magic-sparkles"></i> توليد الشجرة من كل الفرق</button>
+                    <button onclick="generateKnockoutFromQualifiersV17()" style="background:#22c55e;color:#000;border:none;"><i class="fa-solid fa-medal"></i> توليد من المتأهلين</button>
+                    <button onclick="clearKnockoutBracketV17()" style="background:transparent;color:#ef4444;border:1px solid #ef4444;"><i class="fa-solid fa-trash"></i> حذف الشجرة</button>
+                </div>
+                <div class="flex-row">
+                    <div><label>اسم دور يدوي:</label><input id="manualRoundNameV17" placeholder="مثال: دور تمهيدي"></div>
+                    <div><label>عدد المباريات:</label><input type="number" id="manualRoundMatchesV17" value="1" min="1" max="64"></div>
+                    <button onclick="addManualRoundV17()" style="align-self:end;background:#8b5cf6;color:#fff;border:none;margin-bottom:10px;"><i class="fa-solid fa-plus"></i> إضافة دور يدوي</button>
+                </div>
+                <div class="v17-card-row">
+                    <h4><i class="fa-solid fa-pen-to-square"></i> إضافة مباراة يدوية إلى الشجرة</h4>
+                    <div class="flex-row">
+                        <div><label>الدور:</label><select id="manualMatchRoundV17"></select></div>
+                        <div><label>الفريق الأول:</label><select id="manualMatchTeam1V17"></select></div>
+                        <div><label>الفريق الثاني:</label><select id="manualMatchTeam2V17"></select></div>
+                    </div>
+                    <button onclick="addManualBracketMatchV17()" style="background:#f97316;color:#000;border:none;margin:0;"><i class="fa-solid fa-plus"></i> إضافة مباراة</button>
+                </div>
+                <div id="bracketAdminPreviewV17" class="preview-box" style="border:none;padding:0;"></div>
+            </div>
+
+<div class="panel">
                 <h2>جدولة مباراة (بوقت وتاريخ)</h2>
                 <div class="flex-row">
                     <select id="sGroup" onchange="filterTeamsByGroup('sGroup', 'sTeam1', 'sTeam2')"><option value="">(بدون مجموعة)</option><option value="A">مجموعة A</option><option value="B">مجموعة B</option><option value="C">مجموعة C</option><option value="D">مجموعة D</option></select>
@@ -2825,6 +4034,229 @@ function attachAdminTransfersListener() {
         }
 
 
-    </script>
+    
+
+        /* ===== V17: نظام بطولة مرن + مجموعات مفتوحة + شجرة متقدمة ===== */
+        const BRACKET_ROUNDS_V17 = {
+            R64: { name: 'دور 64', order: 10, size: 64 },
+            R32: { name: 'دور 32', order: 20, size: 32 },
+            R16: { name: 'دور 16', order: 30, size: 16 },
+            QF: { name: 'ربع النهائي', order: 40, size: 8 },
+            SF: { name: 'نصف النهائي', order: 50, size: 4 },
+            FINAL: { name: 'النهائي', order: 60, size: 2 },
+            THIRD: { name: 'تحديد المركز الثالث والرابع', order: 70, size: 2 }
+        };
+        let customGroupsV17 = {};
+        let bracketV17 = { settings:{}, rounds:{} };
+
+        function escV17(v) { return String(v ?? '').replace(/[&<>"'`]/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;','`':'&#96;'}[ch])); }
+        function keyV17(prefix='id') { return prefix + '_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2,7); }
+        function getAllTeamNamesV17() { return allData && allData.teams ? Object.keys(allData.teams).sort((a,b)=>a.localeCompare(b,'ar')) : []; }
+        function competitionRefV17() { return db.ref(`tournaments/${dbPath}/settings/competition`); }
+        function groupsCustomRefV17() { return db.ref(`tournaments/${dbPath}/groups_custom`); }
+        function bracketRefV17() { return db.ref(`tournaments/${dbPath}/knockout_bracket`); }
+
+        const oldSaveTourneySystemV17 = typeof saveTourneySystem === 'function' ? saveTourneySystem : null;
+        saveTourneySystem = function() { saveCompetitionSettingsV17(); };
+
+        function saveCompetitionSettingsV17() {
+            if(!dbPath) return alert('لم يتم ربط البطولة بعد');
+            const mode = document.getElementById('competitionModeV17')?.value || document.getElementById('tourneySystemType')?.value || 'groups_knockout';
+            const leagueType = document.getElementById('leagueTypeV17')?.value || 'single';
+            const startRound = document.getElementById('bracketStartRoundV17')?.value || 'auto';
+            const thirdPlace = document.getElementById('thirdPlaceV17')?.checked !== false;
+            const legacyLabel = mode === 'league' ? 'دوري فقط' : (mode === 'knockout' ? 'إقصاء المغلوب فقط' : 'مجموعات وإقصاء المغلوب');
+            return db.ref(`tournaments/${dbPath}/settings`).update({ systemType: legacyLabel, competition: { mode, leagueType, bracketStartRound: startRound, thirdPlace, updatedAt: firebase.database.ServerValue.TIMESTAMP } })
+                .then(()=>{ showSaveIndicator('تم حفظ نظام البطولة'); setTimeout(hideSaveIndicator,1500); })
+                .catch(err=>alert('تعذر الحفظ: ' + err.message));
+        }
+
+        function applyCompetitionSettingsV17(c) {
+            c = c || {};
+            const legacy = allData?.settings?.systemType || '';
+            const mode = c.mode || (legacy.includes('دوري فقط') ? 'league' : (legacy.includes('إقصاء') && !legacy.includes('مجموعات') ? 'knockout' : 'groups_knockout'));
+            const modeEl = document.getElementById('competitionModeV17'); if(modeEl) modeEl.value = mode;
+            const leagueEl = document.getElementById('leagueTypeV17'); if(leagueEl) leagueEl.value = c.leagueType || 'single';
+            const startEl = document.getElementById('bracketStartRoundV17'); if(startEl) startEl.value = c.bracketStartRound || 'auto';
+            const thirdEl = document.getElementById('thirdPlaceV17'); if(thirdEl) thirdEl.checked = c.thirdPlace !== false;
+            const legacyEl = document.getElementById('tourneySystemType');
+            if(legacyEl) legacyEl.value = mode === 'league' ? 'دوري فقط' : (mode === 'knockout' ? 'إقصاء المغلوب فقط' : 'مجموعات وإقصاء المغلوب');
+        }
+
+        function refreshTeamSelectsV17() {
+            const teamOpts = '<option value="">اختر الفريق...</option>' + getAllTeamNamesV17().map(t=>`<option value="${escV17(t)}">${escV17(t)}</option>`).join('');
+            ['customGroupTeamSelectV17','manualMatchTeam1V17','manualMatchTeam2V17'].forEach(id=>{ const el=document.getElementById(id); if(el) el.innerHTML = teamOpts; });
+        }
+
+        function refreshGroupOptionsV17() {
+            const groups = customGroupsV17 || {};
+            const sorted = Object.keys(groups).sort((a,b)=>(groups[a].order||999)-(groups[b].order||999));
+            let opts = sorted.length ? sorted.map(k=>`<option value="${escV17(k)}">${escV17(groups[k].name || k)}</option>`).join('') : '<option value="A">مجموعة A</option><option value="B">مجموعة B</option><option value="C">مجموعة C</option><option value="D">مجموعة D</option>';
+            const withEmpty = '<option value="">(بدون مجموعة / إقصائيات)</option>' + opts;
+            ['customGroupSelectV17'].forEach(id=>{ const el=document.getElementById(id); if(el) el.innerHTML = opts; });
+            ['gLetter'].forEach(id=>{ const el=document.getElementById(id); if(el) el.innerHTML = opts; });
+            ['mGroup','sGroup','gmGroup'].forEach(id=>{ const el=document.getElementById(id); if(el) el.innerHTML = withEmpty; });
+            refreshTeamSelectsV17();
+        }
+
+        function addCustomGroupV17() {
+            const name = document.getElementById('customGroupNameV17')?.value.trim();
+            if(!name) return alert('اكتب اسم المجموعة');
+            const qualifiers = parseInt(document.getElementById('customGroupQualifiersV17')?.value || '2', 10);
+            const order = parseInt(document.getElementById('customGroupOrderV17')?.value || '1', 10);
+            const id = keyV17('g');
+            groupsCustomRefV17().child(id).set({ name, qualifiers, order, createdAt: firebase.database.ServerValue.TIMESTAMP }).then(()=>{
+                document.getElementById('customGroupNameV17').value='';
+                showSaveIndicator('تمت إضافة المجموعة'); setTimeout(hideSaveIndicator,1500);
+            }).catch(err=>alert('تعذر إضافة المجموعة: ' + err.message));
+        }
+
+        function updateCustomGroupV17(id, patch) { return groupsCustomRefV17().child(id).update(patch).catch(err=>alert('تعذر التحديث: ' + err.message)); }
+        function deleteCustomGroupV17(id) { if(!confirm('حذف هذه المجموعة؟ لن يتم حذف الفرق من قاعدة الفرق.')) return; groupsCustomRefV17().child(id).remove(); db.ref(`tournaments/${dbPath}/groups/${id}`).remove(); }
+        function removeTeamFromCustomGroupV17(gid, team) { db.ref(`tournaments/${dbPath}/groups/${gid}/${team}`).remove(); groupsCustomRefV17().child(gid).child('teams').child(team).remove(); }
+        function addTeamToCustomGroupV17() {
+            const team = document.getElementById('customGroupTeamSelectV17')?.value;
+            const gid = document.getElementById('customGroupSelectV17')?.value;
+            if(!team || !gid) return alert('اختر الفريق والمجموعة');
+            const baseStats = { name: team, played:0, gf:0, ga:0, gd:0, points:0, status:'' };
+            const updates = {};
+            updates[`tournaments/${dbPath}/groups/${gid}/${team}`] = baseStats;
+            updates[`tournaments/${dbPath}/groups_custom/${gid}/teams/${team}`] = true;
+            db.ref().update(updates).then(()=>{ showSaveIndicator('تمت إضافة الفريق للمجموعة'); setTimeout(hideSaveIndicator,1200); });
+        }
+
+        function renderCustomGroupsAdminV17() {
+            refreshGroupOptionsV17();
+            const cont = document.getElementById('customGroupsAdminListV17'); if(!cont) return;
+            const groups = customGroupsV17 || {};
+            const standings = allData?.groups || {};
+            const keys = Object.keys(groups).sort((a,b)=>(groups[a].order||999)-(groups[b].order||999));
+            if(!keys.length) { cont.innerHTML = '<div class="v17-card-row" style="text-align:center;color:var(--muted);">لا توجد مجموعات مخصصة. أضف مجموعة للبدء.</div>'; return; }
+            cont.innerHTML = keys.map(gid=>{
+                const g = groups[gid] || {};
+                const teams = Object.keys(standings[gid] || g.teams || {});
+                const teamHtml = teams.length ? teams.map(t=>`<span class="v17-badge">${escV17(t)} <button onclick="removeTeamFromCustomGroupV17('${gid}', ${JSON.stringify(t)})" style="background:transparent;border:none;color:#ef4444;cursor:pointer;"><i class="fa-solid fa-xmark"></i></button></span>`).join(' ') : '<span style="color:var(--muted);font-size:12px;">لا توجد فرق</span>';
+                return `<div class="v17-card-row"><h4><i class="fa-solid fa-layer-group"></i> ${escV17(g.name || gid)}</h4>
+                    <div class="flex-row"><div><label>الاسم</label><input value="${escV17(g.name||'')}" onchange="updateCustomGroupV17('${gid}', {name:this.value})"></div><div><label>المتأهلين</label><input type="number" min="0" value="${g.qualifiers ?? 2}" onchange="updateCustomGroupV17('${gid}', {qualifiers:parseInt(this.value)||0})"></div><div><label>الترتيب</label><input type="number" min="1" value="${g.order ?? 1}" onchange="updateCustomGroupV17('${gid}', {order:parseInt(this.value)||1})"></div></div>
+                    <div style="margin:8px 0;display:flex;gap:6px;flex-wrap:wrap;">${teamHtml}</div>
+                    <button class="del-btn" onclick="deleteCustomGroupV17('${gid}')"><i class="fa-solid fa-trash"></i> حذف المجموعة</button></div>`;
+            }).join('');
+        }
+
+        function roundNameV17(key) { return BRACKET_ROUNDS_V17[key]?.name || bracketV17?.rounds?.[key]?.name || key; }
+        function roundOrderV17(key) { return BRACKET_ROUNDS_V17[key]?.order || bracketV17?.rounds?.[key]?.order || 999; }
+        function requiredStartRoundV17(teamCount, forced) {
+            if(forced && forced !== 'auto') return forced;
+            if(teamCount > 32) return 'R64';
+            if(teamCount > 16) return 'R32';
+            if(teamCount > 8) return 'R16';
+            if(teamCount > 4) return 'QF';
+            if(teamCount > 2) return 'SF';
+            return 'FINAL';
+        }
+        function roundSequenceV17(start, includeThird=true) {
+            const order = ['R64','R32','R16','QF','SF','FINAL'];
+            let idx = order.indexOf(start); if(idx < 0) idx = 0;
+            let arr = order.slice(idx);
+            if(includeThird) arr.push('THIRD');
+            return arr;
+        }
+        function getQualifiersV17() {
+            const groups = customGroupsV17 || {};
+            const standings = allData?.groups || {};
+            const out = [];
+            Object.keys(groups).sort((a,b)=>(groups[a].order||999)-(groups[b].order||999)).forEach(gid=>{
+                const q = parseInt(groups[gid].qualifiers || 0, 10);
+                let teams = Object.keys(standings[gid] || {}).map(k=>({name:k, ...standings[gid][k]}));
+                teams.sort((a,b)=>{
+                    if(a.status === 'متأهل' && b.status !== 'متأهل') return -1;
+                    if(b.status === 'متأهل' && a.status !== 'متأهل') return 1;
+                    return (b.points||0)-(a.points||0) || (b.gd||0)-(a.gd||0) || (b.gf||0)-(a.gf||0);
+                });
+                teams.slice(0,q || teams.length).forEach(t=>out.push(t.name));
+            });
+            return [...new Set(out)].filter(Boolean);
+        }
+        function buildBracketDataV17(teams, titleSource) {
+            teams = [...new Set((teams||[]).filter(Boolean))];
+            if(teams.length < 2) { alert('تحتاج فريقين على الأقل لإنشاء الشجرة'); return null; }
+            const c = allData?.settings?.competition || {};
+            const third = document.getElementById('thirdPlaceV17')?.checked ?? (c.thirdPlace !== false);
+            const start = requiredStartRoundV17(teams.length, document.getElementById('bracketStartRoundV17')?.value || c.bracketStartRound || 'auto');
+            const rounds = {};
+            const seq = roundSequenceV17(start, third);
+            seq.forEach(key=>{ rounds[key] = { name: roundNameV17(key), order: roundOrderV17(key), matches:{} }; });
+            const startSize = BRACKET_ROUNDS_V17[start]?.size || Math.pow(2, Math.ceil(Math.log2(teams.length)));
+            const slots = teams.slice(); while(slots.length < startSize) slots.push('BYE');
+            for(let i=0; i<slots.length; i+=2) {
+                const id = keyV17('m');
+                rounds[start].matches[id] = { team1: slots[i] || 'يحدد لاحقاً', team2: slots[i+1] || 'BYE', score1:'', score2:'', winner:'', source:titleSource || 'auto', order:i/2+1 };
+            }
+            return { settings:{ startRound:start, thirdPlace: third, source:titleSource || 'manual', generatedAt: firebase.database.ServerValue.TIMESTAMP }, rounds };
+        }
+        function generateKnockoutFromAllTeamsV17() { const data = buildBracketDataV17(getAllTeamNamesV17(), 'all_teams'); if(data) bracketRefV17().set(data).then(()=>alert('تم توليد الشجرة من كل الفرق')); }
+        function generateKnockoutFromQualifiersV17() { const data = buildBracketDataV17(getQualifiersV17(), 'qualifiers'); if(data) bracketRefV17().set(data).then(()=>alert('تم توليد الشجرة من المتأهلين')); }
+        function clearKnockoutBracketV17() { if(confirm('حذف الشجرة بالكامل؟')) bracketRefV17().remove(); }
+
+        function addManualRoundV17() {
+            const name = document.getElementById('manualRoundNameV17')?.value.trim();
+            const count = parseInt(document.getElementById('manualRoundMatchesV17')?.value || '1', 10);
+            if(!name) return alert('اكتب اسم الدور');
+            const id = keyV17('CUSTOM');
+            const matches = {};
+            for(let i=0;i<count;i++) matches[keyV17('m')] = { team1:'يحدد لاحقاً', team2:'يحدد لاحقاً', score1:'', score2:'', winner:'', order:i+1 };
+            bracketRefV17().child('rounds').child(id).set({ name, order: 5 + Date.now()%1000, custom:true, matches }).then(()=>{ document.getElementById('manualRoundNameV17').value=''; });
+        }
+        function refreshBracketRoundOptionsV17() {
+            const rounds = bracketV17?.rounds || {};
+            const keys = Object.keys(rounds).sort((a,b)=>(rounds[a].order||999)-(rounds[b].order||999));
+            let opts = keys.map(k=>`<option value="${escV17(k)}">${escV17(rounds[k].name || roundNameV17(k))}</option>`).join('');
+            if(!opts) opts = Object.keys(BRACKET_ROUNDS_V17).filter(k=>k!=='THIRD').map(k=>`<option value="${k}">${BRACKET_ROUNDS_V17[k].name}</option>`).join('');
+            const el = document.getElementById('manualMatchRoundV17'); if(el) el.innerHTML = opts;
+        }
+        function addManualBracketMatchV17() {
+            const round = document.getElementById('manualMatchRoundV17')?.value;
+            const t1 = document.getElementById('manualMatchTeam1V17')?.value || 'يحدد لاحقاً';
+            const t2 = document.getElementById('manualMatchTeam2V17')?.value || 'يحدد لاحقاً';
+            if(!round) return alert('اختر الدور');
+            const roundMeta = bracketV17.rounds?.[round] || BRACKET_ROUNDS_V17[round] || { name: roundNameV17(round), order: roundOrderV17(round) };
+            const updates = {};
+            updates[`rounds/${round}/name`] = roundMeta.name;
+            updates[`rounds/${round}/order`] = roundMeta.order;
+            updates[`rounds/${round}/matches/${keyV17('m')}`] = { team1:t1, team2:t2, score1:'', score2:'', winner:'', order: Date.now() };
+            bracketRefV17().update(updates);
+        }
+        function updateBracketMatchV17(round, mid, patch) { bracketRefV17().child('rounds').child(round).child('matches').child(mid).update(patch); }
+        function deleteBracketMatchV17(round, mid) { bracketRefV17().child('rounds').child(round).child('matches').child(mid).remove(); }
+        function deleteBracketRoundV17(round) { if(confirm('حذف هذا الدور؟')) bracketRefV17().child('rounds').child(round).remove(); }
+        function renderBracketAdminV17() {
+            refreshBracketRoundOptionsV17(); refreshTeamSelectsV17();
+            const cont = document.getElementById('bracketAdminPreviewV17'); if(!cont) return;
+            const rounds = bracketV17?.rounds || {};
+            const keys = Object.keys(rounds).sort((a,b)=>(rounds[a].order||999)-(rounds[b].order||999));
+            if(!keys.length) { cont.innerHTML = '<div class="v17-card-row" style="text-align:center;color:var(--muted);">لا توجد شجرة بعد. ولدها تلقائياً أو أضف دور يدوي.</div>'; return; }
+            cont.innerHTML = keys.map(rk=>{
+                const r = rounds[rk] || {};
+                const matches = r.matches || {};
+                const mHtml = Object.keys(matches).sort((a,b)=>(matches[a].order||0)-(matches[b].order||0)).map(mid=>{
+                    const m = matches[mid] || {};
+                    return `<div class="v17-match-admin"><div class="flex-row"><input value="${escV17(m.team1 || '')}" onchange="updateBracketMatchV17('${rk}','${mid}',{team1:this.value})"><input value="${escV17(m.team2 || '')}" onchange="updateBracketMatchV17('${rk}','${mid}',{team2:this.value})"><input type="number" placeholder="نتيجة 1" value="${escV17(m.score1 ?? '')}" onchange="updateBracketMatchV17('${rk}','${mid}',{score1:this.value})"><input type="number" placeholder="نتيجة 2" value="${escV17(m.score2 ?? '')}" onchange="updateBracketMatchV17('${rk}','${mid}',{score2:this.value})"></div><div class="flex-row"><input placeholder="الفائز / المتأهل" value="${escV17(m.winner || '')}" onchange="updateBracketMatchV17('${rk}','${mid}',{winner:this.value})"><button class="del-btn" onclick="deleteBracketMatchV17('${rk}','${mid}')"><i class="fa-solid fa-trash"></i></button></div></div>`;
+                }).join('') || '<div style="font-size:12px;color:var(--muted);padding:8px;">لا توجد مباريات</div>';
+                return `<div><div class="v17-round-title"><b>${escV17(r.name || roundNameV17(rk))}</b><button class="del-btn" onclick="deleteBracketRoundV17('${rk}')"><i class="fa-solid fa-trash"></i> حذف الدور</button></div>${mHtml}</div>`;
+            }).join('');
+        }
+
+        function attachCompetitionListenersV17() {
+            if(window.__competitionV17Attached || !dbPath) return;
+            window.__competitionV17Attached = true;
+            db.ref(`tournaments/${dbPath}/settings/competition`).on('value', snap => applyCompetitionSettingsV17(snap.val() || {}));
+            groupsCustomRefV17().on('value', snap => { customGroupsV17 = snap.val() || {}; renderCustomGroupsAdminV17(); refreshGroupOptionsV17(); });
+            bracketRefV17().on('value', snap => { bracketV17 = snap.val() || {settings:{}, rounds:{}}; renderBracketAdminV17(); });
+            setInterval(()=>{ try { refreshTeamSelectsV17(); refreshGroupOptionsV17(); renderCustomGroupsAdminV17(); } catch(e){} }, 3000);
+        }
+        setInterval(()=>{ if(dbPath) attachCompetitionListenersV17(); }, 1000);
+
+
+</script>
 </body>
 </html>
