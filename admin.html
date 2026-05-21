@@ -894,7 +894,7 @@ generatePlayersGrid();
 
             db.ref(`tournaments/${dbPath}/settings`).update({
                 visualName: newName,
-                updatedAt: Date.now()
+                updatedAt: firebase.database.ServerValue.TIMESTAMP
             }).then(() => {
                 localStorage.setItem('visualName', newName);
                 const title = document.getElementById('tourneyTitle');
@@ -960,7 +960,7 @@ generatePlayersGrid();
                 type: type,
                 text: text,
                 link: link,
-                timestamp: Date.now(),
+                timestamp: firebase.database.ServerValue.TIMESTAMP,
                 isPaused: false
             }).then(() => {
                 document.getElementById('multiNewsText').value = '';
@@ -973,45 +973,7 @@ generatePlayersGrid();
             });
         }
 
-       db.ref(`tournaments/${dbPath}/breaking_news`).on('value', snap => {
-            let cont = document.getElementById('breakingNewsList');
-            if(!cont) return;
-            cont.innerHTML = '';
-            let data = snap.val();
-            if(data) {
-                let items = [];
-                for(let k in data) items.push({key: k, ...data[k]});
-                items.sort((a,b) => b.timestamp - a.timestamp);
-
-                items.forEach(item => {
-                    let badge = item.type === 'news' ? '<strong style="color:#ffffff;"><i class="fa-solid fa-newspaper"></i> خبر عادي:</strong>' : '<strong style="color:#ef4444;"><i class="fa-solid fa-bolt"></i> عاجل:</strong>';
-                    let isPaused = item.isPaused || false;
-                    let pauseIcon = isPaused ? 'fa-play' : 'fa-pause';
-                    let pauseColor = isPaused ? '#10b981' : '#f59e0b';
-                    let opacityStyle = isPaused ? 'opacity: 0.5;' : 'opacity: 1;';
-                    let pausedBadge = isPaused ? '<span style="background:#ef4444; color:#fff; font-size:10px; padding:2px 6px; border-radius:4px; margin-right:5px; display:inline-block; font-weight:bold;">متوقف مؤقتاً</span>' : '';
-
-                    cont.innerHTML += `
-                    <div class="preview-item" style="border:1px solid #3f3f46; border-radius:5px; padding:10px; margin-bottom:5px; background:#18181b; ${opacityStyle} transition: 0.2s;">
-                        <div class="preview-item-header">
-                            <div style="flex:1; padding-left:10px;">
-                                ${badge} 
-                                <span style="font-size:12px; color:#fff;">${item.text}</span>
-                                ${pausedBadge}
-                                ${item.link ? `<br><a href="${item.link}" target="_blank" style="color:var(--primary); font-size:11px;"><i class="fa-solid fa-link"></i> رابط الخبر</a>` : ''}
-                            </div>
-                            <div style="display:flex; gap:6px; align-items:center; flex-shrink:0;">
-                                <button class="edit-btn" style="color:${pauseColor}; border-color:${pauseColor}; padding:5px 10px; font-size:12px; margin:0;" onclick="toggleNewsPause('${item.key}', ${isPaused})"><i class="fa-solid ${pauseIcon}"></i></button>
-                                <button class="edit-btn" style="color:#fff; border-color:#3f3f46; padding:5px 10px; font-size:12px; margin:0;" onclick="toggleNewsType('${item.key}', '${item.type}')"><i class="fa-solid fa-sync"></i></button>
-                                <button class="del-btn" onclick="deleteItem('breaking_news/${item.key}')"><i class="fa-solid fa-trash"></i></button>
-                            </div>
-                        </div>
-                    </div>`;
-                });
-            } else {
-                cont.innerHTML = '<div style="font-size:11px; color:var(--muted); text-align:center; padding:10px;">لا توجد أخبار حالياً.</div>';
-            }
-        });
+        // مستمع الأخبار القديم تم تعطيله؛ يتم التفعيل بعد dbPath عبر attachAdminBreakingNewsListener.
 
         function addHighlightVideo() {
             let title = document.getElementById('vidTitle').value.trim();
@@ -1021,14 +983,17 @@ generatePlayersGrid();
             db.ref(`tournaments/${dbPath}/highlights`).push({
                 title: title,
                 embedCode: embed,
-                timestamp: Date.now()
+                timestamp: firebase.database.ServerValue.TIMESTAMP
             }).then(() => {
                 document.getElementById('vidTitle').value = '';
                 document.getElementById('vidEmbed').value = '';
                 alert("تم إضافة الفيديو");
             });
         }
-        db.ref(`tournaments/${dbPath}/highlights`).on('value', snap => {
+        function attachAdminHighlightsListener() {
+            if(window.__adminHighlightsListenerAttached || !dbPath) return;
+            window.__adminHighlightsListenerAttached = true;
+            db.ref(`tournaments/${dbPath}/highlights`).on('value', snap => {
             let cont = document.getElementById('highlightsList'); if(!cont) return; cont.innerHTML = '';
             let d = snap.val();
             if(d) {
@@ -1039,65 +1004,60 @@ generatePlayersGrid();
                 });
             } else { cont.innerHTML = `<div style="text-align:center; color:var(--muted); font-size:11px; padding:10px;">لا يوجد ملخصات</div>`; }
         });
+        }
 
         async function publishMedia(publishMode) {
             showSaveIndicator("جاري النشر...");
-            let post = { time: Date.now() };
+            let post = { time: firebase.database.ServerValue.TIMESTAMP };
 
-            if(publishMode === 'advanced') {
-                let type = document.getElementById('mediaPostType').value;
-                let file = document.getElementById('mediaImgInput').files[0];
-                let text = document.getElementById('mediaTextInput').value.trim();
-                if(!file && !text) { hideSaveIndicator(); return alert("أدخل صورة أو نص للإرسال"); }
-                post.type = type; 
-                if(file) post.image = await compressImage(file);
-                post.text = text;
-            } else if (publishMode === 'fb') {
-                let embed = document.getElementById('mediaFbInput').value.trim();
-                if(!embed) { hideSaveIndicator(); return alert("أدخل رابط المنشور أو كود التضمين"); }
-                
-                if(embed.includes('<iframe') || embed.includes('fb-post')) {
-                    post.embedCode = embed;
-                } else if(embed.startsWith('http')) {
-                    try {
-                        let urlObj = new URL(embed);
-                        if (urlObj.hostname === 'm.facebook.com' || urlObj.hostname === 'l.facebook.com') { urlObj.hostname = 'www.facebook.com'; }
-                        urlObj.searchParams.delete('mibextid'); urlObj.searchParams.delete('share_id'); urlObj.searchParams.delete('refid');
-                        let cleanUrl = urlObj.toString();
-                        let pluginType = (cleanUrl.includes('/videos/') || cleanUrl.includes('fb.watch') || cleanUrl.includes('/share/v/')) ? 'video.php' : 'post.php';
-                        post.embedCode = `<iframe src="https://www.facebook.com/plugins/${pluginType}?href=${encodeURIComponent(cleanUrl)}&show_text=true&width=500" width="100%" height="400" style="border:none;overflow:hidden" scrolling="no" frameborder="0" allowfullscreen="true" allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"></iframe>`;
-                    } catch (error) {
-                        post.embedCode = `<iframe src="https://www.facebook.com/plugins/post.php?href=${encodeURIComponent(embed)}&show_text=true&width=500" width="100%" height="400" style="border:none;overflow:hidden" scrolling="no" frameborder="0" allowfullscreen="true" allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"></iframe>`;
-                    }
-                } else {
-                    hideSaveIndicator(); return alert("الرابط غير صحيح");
+            try {
+                if(publishMode === 'advanced') {
+                    let type = document.getElementById('mediaPostType').value;
+                    let file = document.getElementById('mediaImgInput').files[0];
+                    let text = document.getElementById('mediaTextInput').value.trim();
+                    if(!file && !text) { hideSaveIndicator(); return alert("أدخل صورة أو نص للإرسال"); }
+                    post.type = type;
+                    if(file) post.image = await compressImage(file);
+                    post.text = text.slice(0, 1200);
+                } else if (publishMode === 'fb') {
+                    let embed = document.getElementById('mediaFbInput').value.trim();
+                    if(!embed) { hideSaveIndicator(); return alert("أدخل رابط منشور فيسبوك"); }
+                    post.type = 'fb';
+                    post.embedCode = buildSafeFacebookEmbed(embed);
                 }
-                post.type = 'fb';
-            }
 
-            db.ref(`tournaments/${dbPath}/media_posts`).push(post).then(() => {
+                await db.ref(`tournaments/${dbPath}/media_posts`).push(post);
                 if(document.getElementById('mediaImgInput')) document.getElementById('mediaImgInput').value = '';
                 if(document.getElementById('mediaTextInput')) document.getElementById('mediaTextInput').value = '';
                 if(document.getElementById('mediaFbInput')) document.getElementById('mediaFbInput').value = '';
                 hideSaveIndicator();
                 alert("تم النشر بنجاح");
-            });
+            } catch(err) {
+                hideSaveIndicator();
+                alert(err && err.message ? err.message : "تعذر النشر");
+            }
         }
         
-        db.ref(`tournaments/${dbPath}/media_posts`).on('value', snap => {
+function attachAdminMediaPostsListener() {
+            if(window.__adminMediaPostsListenerAttached || !dbPath) return;
+            window.__adminMediaPostsListenerAttached = true;
+                    db.ref(`tournaments/${dbPath}/media_posts`).on('value', snap => {
             let cont = document.getElementById('mediaGallery'); if(!cont) return; cont.innerHTML = '';
             let d = snap.val();
             if(d) {
                 Object.keys(d).reverse().forEach(k => {
                     let post = d[k]; let previewHtml = '';
                     if (post.type === 'fb') { previewHtml = `<div style="font-size:11px; color:#3b82f6;"><i class="fab fa-facebook"></i> منشور فيسبوك مدمج</div>`; } 
-                    else if (post.type === 'statement') { previewHtml = `<div class="statement-preview">${post.image ? `<img src="${post.image}">` : ''}<div class="statement-text-box"><i class="fa-solid fa-quote-right" style="color:var(--muted); font-size:10px; margin-left:5px;"></i>${post.text || 'بدون نص'}<i class="fa-solid fa-quote-left" style="color:var(--muted); font-size:10px; margin-right:5px;"></i></div></div>`; } 
-                    else { previewHtml = `<div style="display:flex; gap:10px;"><img src="${post.image||''}" style="width:40px;height:40px;object-fit:cover;border-radius:4px;"> <div style="font-size:11px; overflow:hidden;">${post.text||'صورة فقط'}</div></div>`; }
+                    else if (post.type === 'statement') { previewHtml = `<div class="statement-preview">${safeImageSrc(post.image) ? `<img src="${safeImageSrc(post.image)}">` : ''}<div class="statement-text-box"><i class="fa-solid fa-quote-right" style="color:var(--muted); font-size:10px; margin-left:5px;"></i>${safeText(post.text || 'بدون نص')}<i class="fa-solid fa-quote-left" style="color:var(--muted); font-size:10px; margin-right:5px;"></i></div></div>`; } 
+                    else { previewHtml = `<div style="display:flex; gap:10px;"><img src="${safeImageSrc(post.image||'')}" style="width:40px;height:40px;object-fit:cover;border-radius:4px;"> <div style="font-size:11px; overflow:hidden;">${safeText(post.text||'صورة فقط')}</div></div>`; }
                     let label = post.type === 'statement' ? '<span class="media-tag" style="background:#8b5cf6; padding:2px 4px; border-radius:4px; font-size:10px;">تصريح</span>' : (post.type === 'fb' ? '<span class="media-tag" style="background:#3b82f6; padding:2px 4px; border-radius:4px; font-size:10px;">مدمج</span>' : '<span class="media-tag" style="background:var(--muted); padding:2px 4px; border-radius:4px; font-size:10px; color:#000;">خبر عادي</span>');
                     cont.innerHTML += `<div class="preview-item" style="border:1px solid #3f3f46; padding:12px; margin-bottom:8px; border-radius:8px; background:var(--input-bg);"><div class="preview-item-header" style="align-items:flex-start;"><div style="flex:1;">${label}<div style="margin-top:8px;">${previewHtml}</div></div><button class="del-btn" onclick="deleteItem('media_posts/${k}')"><i class="fa-solid fa-trash"></i></button></div></div>`;
                 });
             } else { cont.innerHTML = '<div style="font-size:11px; color:var(--muted); text-align:center;">لا توجد منشورات إعلامية.</div>'; }
         });
+        }
+
+
 
         async function addSponsor() {
             let name = document.getElementById('spName').value.trim();
@@ -1109,7 +1069,10 @@ generatePlayersGrid();
                 document.getElementById('spName').value = ''; document.getElementById('spLink').value = ''; document.getElementById('spLogo').value = ''; alert('تمت إضافة الراعي');
             });
         }
-        db.ref(`tournaments/${dbPath}/sponsors`).on('value', snap => {
+function attachAdminSponsorsListener() {
+            if(window.__adminSponsorsListenerAttached || !dbPath) return;
+            window.__adminSponsorsListenerAttached = true;
+                    db.ref(`tournaments/${dbPath}/sponsors`).on('value', snap => {
             let cont = document.getElementById('sponsorsList'); if(!cont) return; cont.innerHTML = ''; let d = snap.val();
             if(d) {
                 for(let k in d) {
@@ -1117,6 +1080,9 @@ generatePlayersGrid();
                 }
             } else { cont.innerHTML = `<div style="font-size:11px; color:var(--muted); text-align:center; padding:10px;">لا يوجد رعاة</div>`; }
         });
+        }
+
+
 
         async function addHallOfFame() {
             let year = document.getElementById('hofYear').value.trim();
@@ -1129,7 +1095,10 @@ generatePlayersGrid();
                 document.getElementById('hofYear').value = ''; document.getElementById('hofChamp').value = ''; document.getElementById('hofRunner').value = ''; document.getElementById('hofLogo').value = ''; alert("تم الإضافة لسجل الأبطال");
             });
         }
-        db.ref(`tournaments/${dbPath}/hall_of_fame`).on('value', snap => {
+function attachAdminHallOfFameListener() {
+            if(window.__adminHallOfFameListenerAttached || !dbPath) return;
+            window.__adminHallOfFameListenerAttached = true;
+                    db.ref(`tournaments/${dbPath}/hall_of_fame`).on('value', snap => {
             let cont = document.getElementById('hofList'); if(!cont) return; cont.innerHTML = ''; let d = snap.val();
             if(d) {
                 let items = []; for(let k in d) items.push({key:k, ...d[k]});
@@ -1140,6 +1109,9 @@ generatePlayersGrid();
                 });
             } else { cont.innerHTML = `<div style="font-size:11px; color:var(--muted); text-align:center; padding:10px;">السجل فارغ</div>`; }
         });
+        }
+
+
 
         async function startNewSeason() {
             let y = document.getElementById('seasonYear').value.trim();
@@ -1260,17 +1232,8 @@ generatePlayersGrid();
         }
         function hideComparison() { db.ref(`tournaments/${dbPath}/settings/activeComparison`).remove().then(()=>alert("تم إخفاء المقارنة")); }
 
-        db.ref(`tournaments/${dbPath}/settings`).on('value', snap => {
-            let s = snap.val() || {}; testModeActive = s.testMode === true; let tmEl = document.getElementById('testModeSelect'); if(tmEl) tmEl.value = testModeActive ? 'true' : 'false';
-            document.getElementById('testModeBanner').style.display = testModeActive ? 'block' : 'none'; if(s.systemType && document.getElementById('tourneySystemType')) document.getElementById('tourneySystemType').value = s.systemType;
-            window.currentActiveLiveBg = s.active_liveBg; window.currentActiveAdBg = s.active_adBg;
-            if(document.getElementById('adText')) document.getElementById('adText').value = s.adText || ''; if(document.getElementById('adLink')) document.getElementById('adLink').value = s.adLink || '';
-            
-            if(s.groupCriteria) {
-                let crit = s.groupCriteria;
-                for(let i=1; i<=5; i++) { if(crit[i-1] && document.getElementById('crit'+i)) document.getElementById('crit'+i).value = crit[i-1]; }
-            }
-        });
+        // تم نقل مستمع الإعدادات إلى attachAdminSettingsListener لضمان عدم تكرار القراءة.
+
 
         async function sendManualPush(title, message) {
             if(typeof testModeActive !== 'undefined' && testModeActive) { alert(`[تجربة]
@@ -1388,6 +1351,31 @@ ${message}`); return; }
             return String(v ?? '').replace(/[&<>'"]/g, ch => ({
                 '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
             }[ch]));
+        }
+        function safeUrl(value) {
+            try {
+                const u = new URL(String(value || '').trim(), window.location.origin);
+                if(!['http:', 'https:'].includes(u.protocol)) return '';
+                return u.href.replace(/"/g, '&quot;');
+            } catch(e) { return ''; }
+        }
+        function safeImageSrc(src) {
+            const v = String(src || '').trim();
+            if(!v) return '';
+            if(/^(data:image\/|https?:\/\/|\.\/|\/)/i.test(v)) return v.replace(/"/g, '&quot;');
+            return '';
+        }
+        function buildSafeFacebookEmbed(input) {
+            const raw = String(input || '').trim();
+            if(!raw || raw.includes('<') || raw.includes('>')) throw new Error('أدخل رابط فيسبوك فقط، وليس كود iframe');
+            const urlObj = new URL(raw, window.location.origin);
+            const allowedHosts = ['facebook.com', 'www.facebook.com', 'm.facebook.com', 'fb.watch'];
+            if(!allowedHosts.includes(urlObj.hostname)) throw new Error('مسموح فقط روابط Facebook');
+            if(urlObj.hostname === 'm.facebook.com') urlObj.hostname = 'www.facebook.com';
+            ['mibextid','share_id','refid','__cft__','__tn__'].forEach(p => urlObj.searchParams.delete(p));
+            const cleanUrl = urlObj.toString();
+            const pluginType = (cleanUrl.includes('/videos/') || cleanUrl.includes('fb.watch') || cleanUrl.includes('/share/v/')) ? 'video.php' : 'post.php';
+            return `<iframe sandbox="allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox" src="https://www.facebook.com/plugins/${pluginType}?href=${encodeURIComponent(cleanUrl)}&show_text=true&width=500" width="100%" height="400" style="border:none;overflow:hidden" scrolling="no" frameborder="0" allowfullscreen="true"></iframe>`;
         }
 
         function attachAdminSettingsListener() {
@@ -1511,7 +1499,7 @@ ${message}`); return; }
             db.ref(`tournaments/${dbPath}/breaking_news/${key}`).update({
                 text: cleanText,
                 link: newLink.trim(),
-                updatedAt: Date.now()
+                updatedAt: firebase.database.ServerValue.TIMESTAMP
             }).then(() => {
                 showSaveIndicator('تم تعديل الخبر بنجاح');
                 setTimeout(hideSaveIndicator, 1500);
@@ -1576,6 +1564,11 @@ ${message}`); return; }
             // مستمعات تحتاج dbPath جاهز: الإعدادات + الأخبار العاجلة
             attachAdminSettingsListener();
             attachAdminBreakingNewsListener();
+            attachAdminHighlightsListener();
+            attachAdminMediaPostsListener();
+            attachAdminSponsorsListener();
+            attachAdminHallOfFameListener();
+            attachAdminTransfersListener();
 
             db.ref('analytics/visits').on('value', snap => { const vc = document.getElementById('visitCount'); if(vc) vc.innerText = snap.numChildren(); });
         }
@@ -1678,7 +1671,31 @@ ${message}`); return; }
             alert("تم الإنهاء والحفظ بنجاح"); 
         }
 
-        function compressImage(file) { return new Promise((resolve) => { const reader = new FileReader(); reader.readAsDataURL(file); reader.onload = (e) => { const img = new Image(); img.src = e.target.result; img.onload = () => { const canvas = document.createElement('canvas'); let w = img.width; let h = img.height; const max_w = 400; const max_h = 400; if (w > h) { if (w > max_w) { h = Math.round(h * max_w / w); w = max_w; } } else { if (h > max_h) { w = Math.round(w * max_h / h); h = max_h; } } canvas.width = w; canvas.height = h; const ctx = canvas.getContext('2d'); ctx.drawImage(img, 0, 0, w, h); resolve(canvas.toDataURL('image/webp', 0.5)); }; }; }); }
+        function compressImage(file) {
+            return new Promise((resolve, reject) => {
+                if(!file || !file.type || !file.type.startsWith('image/')) return reject(new Error('الملف ليس صورة صالحة'));
+                if(file.size > 3 * 1024 * 1024) return reject(new Error('حجم الصورة أكبر من 3MB'));
+                const reader = new FileReader();
+                reader.onerror = () => reject(new Error('فشل قراءة الصورة'));
+                reader.onload = (e) => {
+                    const img = new Image();
+                    img.onerror = () => reject(new Error('فشل تحميل الصورة'));
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        let w = img.width, h = img.height;
+                        const max = 700;
+                        if(w > h && w > max) { h = Math.round(h * max / w); w = max; }
+                        else if(h > max) { w = Math.round(w * max / h); h = max; }
+                        canvas.width = w; canvas.height = h;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, w, h);
+                        resolve(canvas.toDataURL('image/webp', 0.68));
+                    };
+                    img.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            });
+        }
         
         async function saveFullTeam() { 
             const tName = document.getElementById('dbTeamName').value.trim(); if (!tName) return alert("اكتب اسم الفريق"); showSaveIndicator("جاري الحفظ...");
@@ -2307,7 +2324,7 @@ ${message}`); return; }
                 toTeam: toTeam, 
                 type: type, 
                 image: b64 || playerData.photo || '', 
-                time: Date.now()
+                time: firebase.database.ServerValue.TIMESTAMP
             });
 
             if(isNew) document.getElementById('transPlayerInput').value = '';
@@ -2316,7 +2333,10 @@ ${message}`); return; }
             alert(type === 'official' ? "تم نقل اللاعب برمجياً بنجاح وإشعار الجمهور!" : "تم تسجيل الإشاعة بنجاح للجمهور!");
         };
 
-        db.ref(`tournaments/${dbPath}/transfers`).on('value', snap => {
+function attachAdminTransfersListener() {
+            if(window.__adminTransfersListenerAttached || !dbPath) return;
+            window.__adminTransfersListenerAttached = true;
+                    db.ref(`tournaments/${dbPath}/transfers`).on('value', snap => {
             let list = document.getElementById('transfersAdminList');
             if(!list) return; list.innerHTML = '';
             let d = snap.val();
@@ -2327,12 +2347,15 @@ ${message}`); return; }
                 
                 items.forEach(t => {
                     let icon = t.type === 'official' ? '<span style="color:#10b981;">🤝 صفقة تمت</span>' : '<span style="color:#f59e0b;">🗣️ إشاعة</span>';
-                    list.innerHTML += `<div class="preview-item"><div class="preview-item-header"><div><b style="color:#fff;">${t.player}</b><br><span style="font-size:11px; color:var(--muted)">من ${t.fromTeam} إلى ${t.toTeam} | ${icon}</span></div><button class="del-btn" onclick="deleteItem('transfers/${t.key}')"><i class="fa-solid fa-trash"></i></button></div></div>`;
+                    list.innerHTML += `<div class="preview-item"><div class="preview-item-header"><div><b style="color:#fff;">${safeText(t.player)}</b><br><span style="font-size:11px; color:var(--muted)">من ${safeText(t.fromTeam)} إلى ${safeText(t.toTeam)} | ${icon}</span></div><button class="del-btn" onclick="deleteItem('transfers/${t.key}')"><i class="fa-solid fa-trash"></i></button></div></div>`;
                 });
             } else { 
                 list.innerHTML = '<div style="font-size:11px; color:var(--muted); text-align:center; padding:10px;">لا توجد انتقالات</div>'; 
             }
         });
+        }
+
+
     </script>
 </body>
 </html>
