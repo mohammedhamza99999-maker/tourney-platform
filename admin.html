@@ -1442,6 +1442,49 @@
             .tab-btn { flex-basis: 100% !important; }
         }
 
+    
+        /* V25 - إصلاح نهائي لفتح أقسام الأدمن على iPhone/Safari */
+        .tab-btn {
+            width: auto !important;
+            -webkit-user-select: none !important;
+            user-select: none !important;
+            cursor: pointer !important;
+        }
+        .tab-content {
+            display: none !important;
+            visibility: hidden !important;
+            opacity: 0 !important;
+        }
+        .tab-content.active,
+        .tab-content.force-visible {
+            display: block !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+            min-height: 120px !important;
+        }
+        .tab-nav {
+            position: relative !important;
+            z-index: 20 !important;
+        }
+        @media (max-width: 700px) {
+            .tab-nav {
+                display: grid !important;
+                grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+                gap: 10px !important;
+                overflow: visible !important;
+            }
+            .tab-btn {
+                min-width: 0 !important;
+                width: 100% !important;
+                flex: none !important;
+                min-height: 56px !important;
+                padding: 12px 8px !important;
+                font-size: 13px !important;
+                white-space: normal !important;
+                line-height: 1.5 !important;
+            }
+        }
+
     </style>
 </head>
 <body>
@@ -1468,14 +1511,14 @@
         </div>
         
         <div class="tab-nav">
-            <button class="tab-btn active" data-tab-btn="tab-public-app" onclick="openTab('tab-public-app', this)"><i class="fa-brands fa-android"></i> تطبيق الجمهور</button>
-            <button class="tab-btn" data-tab-btn="tab-live" onclick="openTab('tab-live', this)"><i class="fa-solid fa-futbol"></i> المباشر</button>
-            <button class="tab-btn" data-tab-btn="tab-schedule" onclick="openTab('tab-schedule', this)"><i class="fa-solid fa-calendar-days"></i> الجدول</button>
-            <button class="tab-btn" data-tab-btn="tab-groups" onclick="openTab('tab-groups', this)"><i class="fa-solid fa-sitemap"></i> المجموعات</button>
-            <button class="tab-btn" data-tab-btn="tab-teams" onclick="openTab('tab-teams', this)"><i class="fa-solid fa-users-gear"></i> الفرق وH2H</button>
-            <button class="tab-btn" data-tab-btn="tab-media" onclick="openTab('tab-media', this)"><i class="fa-solid fa-bullhorn"></i> الإعلام</button>
-            <button class="tab-btn" data-tab-btn="tab-finance" onclick="openTab('tab-finance', this)"><i class="fa-solid fa-wallet"></i> المالية</button>
-            <button class="tab-btn" data-tab-btn="tab-settings" onclick="openTab('tab-settings', this)"><i class="fa-solid fa-gear"></i> الإعدادات</button>
+            <button class="tab-btn active" data-tab-btn="tab-public-app"  data-tab="tab-public-app" onclick="openTab('tab-public-app', this)"><i class="fa-brands fa-android"></i> تطبيق الجمهور</button>
+            <button class="tab-btn" data-tab-btn="tab-live"  data-tab="tab-live" onclick="openTab('tab-live', this)"><i class="fa-solid fa-futbol"></i> المباشر</button>
+            <button class="tab-btn" data-tab-btn="tab-schedule"  data-tab="tab-schedule" onclick="openTab('tab-schedule', this)"><i class="fa-solid fa-calendar-days"></i> الجدول</button>
+            <button class="tab-btn" data-tab-btn="tab-groups"  data-tab="tab-groups" onclick="openTab('tab-groups', this)"><i class="fa-solid fa-sitemap"></i> المجموعات</button>
+            <button class="tab-btn" data-tab-btn="tab-teams"  data-tab="tab-teams" onclick="openTab('tab-teams', this)"><i class="fa-solid fa-users-gear"></i> الفرق وH2H</button>
+            <button class="tab-btn" data-tab-btn="tab-media"  data-tab="tab-media" onclick="openTab('tab-media', this)"><i class="fa-solid fa-bullhorn"></i> الإعلام</button>
+            <button class="tab-btn" data-tab-btn="tab-finance"  data-tab="tab-finance" onclick="openTab('tab-finance', this)"><i class="fa-solid fa-wallet"></i> المالية</button>
+            <button class="tab-btn" data-tab-btn="tab-settings"  data-tab="tab-settings" onclick="openTab('tab-settings', this)"><i class="fa-solid fa-gear"></i> الإعدادات</button>
         </div>
 
         <div id="tab-public-app" class="tab-content active">
@@ -4681,6 +4724,104 @@ ${directUrl}`;
     if(preferred && !document.querySelector('.tab-content.active')) window.openTab(preferred.getAttribute('data-tab'), preferred);
   }
   if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', bindTabs); else bindTabs();
+})();
+</script>
+
+
+<script>
+/* V25 - iPhone/Safari robust tab switcher */
+(function(){
+  function qsa(sel){ try { return Array.prototype.slice.call(document.querySelectorAll(sel)); } catch(e){ return []; } }
+  function getTabId(btn){
+    if(!btn) return '';
+    var id = btn.getAttribute('data-tab') || btn.getAttribute('data-tab-btn') || '';
+    if(id) return id;
+    var on = btn.getAttribute('onclick') || '';
+    var m = on.match(/openTab\(['"]([^'"]+)['"]/);
+    return m ? m[1] : '';
+  }
+  function allowed(tabId){
+    try {
+      var featureMap = {'tab-media':'media','tab-finance':'finance'};
+      var f = featureMap[tabId];
+      if(f && typeof window.requireFeature === 'function') return !!window.requireFeature(f);
+    } catch(e) {}
+    return true;
+  }
+  function setActiveTab(tabId, btn, shouldScroll){
+    if(!tabId) return false;
+    if(!allowed(tabId)) return false;
+
+    qsa('.tab-content').forEach(function(tab){
+      tab.classList.remove('active');
+      tab.classList.remove('force-visible');
+      tab.style.display = 'none';
+      tab.style.visibility = 'hidden';
+      tab.style.opacity = '0';
+    });
+
+    qsa('.tab-btn').forEach(function(b){ b.classList.remove('active'); });
+
+    var tab = document.getElementById(tabId);
+    if(tab){
+      tab.classList.add('active');
+      tab.classList.add('force-visible');
+      tab.style.display = 'block';
+      tab.style.visibility = 'visible';
+      tab.style.opacity = '1';
+    }
+
+    var activeBtn = btn || document.querySelector('.tab-btn[data-tab="'+tabId+'"]') || document.querySelector('.tab-btn[data-tab-btn="'+tabId+'"]');
+    if(activeBtn) activeBtn.classList.add('active');
+
+    if(tab && shouldScroll){
+      setTimeout(function(){
+        try {
+          var y = tab.getBoundingClientRect().top + window.pageYOffset - 12;
+          window.scrollTo({top:y, behavior:'smooth'});
+        } catch(e) {
+          try { tab.scrollIntoView(true); } catch(_) {}
+        }
+      }, 80);
+    }
+    return false;
+  }
+
+  window.openTab = function(tabId, btn){ return setActiveTab(tabId, btn, true); };
+
+  function bind(){
+    qsa('.tab-btn').forEach(function(btn){
+      var id = getTabId(btn);
+      if(id) btn.setAttribute('data-tab', id);
+      btn.style.touchAction = 'manipulation';
+
+      ['click','touchend','pointerup'].forEach(function(evtName){
+        btn.addEventListener(evtName, function(ev){
+          var tabId = getTabId(btn);
+          if(tabId){
+            ev.preventDefault();
+            ev.stopPropagation();
+            setActiveTab(tabId, btn, true);
+          }
+        }, false);
+      });
+    });
+
+    var current = document.querySelector('.tab-content.active');
+    var id = current ? current.id : '';
+    if(!id) {
+      var first = document.querySelector('.tab-btn[data-tab="tab-public-app"]') || document.querySelector('.tab-btn');
+      id = getTabId(first);
+      setActiveTab(id, first, false);
+    } else {
+      setActiveTab(id, document.querySelector('.tab-btn[data-tab="'+id+'"]') || document.querySelector('.tab-btn[data-tab-btn="'+id+'"]'), false);
+    }
+  }
+
+  if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', bind);
+  else bind();
+
+  setTimeout(bind, 800);
 })();
 </script>
 
