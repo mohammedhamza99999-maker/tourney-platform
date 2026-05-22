@@ -1309,101 +1309,6 @@
             resize: vertical;
         }
 
-    
-        /* V22 - ترتيب التبويبات ومنع تداخل أسماء الأقسام */
-        .tab-nav {
-            display: grid !important;
-            grid-template-columns: repeat(auto-fit, minmax(128px, 1fr)) !important;
-            gap: 8px !important;
-            margin-bottom: 20px !important;
-            overflow: visible !important;
-            background: var(--card) !important;
-            padding: 10px !important;
-            border-radius: 14px !important;
-            border: 1px solid var(--border) !important;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.5) !important;
-        }
-        .tab-btn {
-            flex: none !important;
-            min-width: 0 !important;
-            width: 100% !important;
-            min-height: 46px !important;
-            padding: 10px 8px !important;
-            display: flex !important;
-            align-items: center !important;
-            justify-content: center !important;
-            gap: 6px !important;
-            white-space: normal !important;
-            line-height: 1.35 !important;
-            text-align: center !important;
-            overflow: hidden !important;
-            word-break: keep-all !important;
-        }
-        .tab-btn i { flex-shrink: 0; }
-        @media (max-width: 560px) {
-            .tab-nav {
-                grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-                gap: 7px !important;
-                padding: 8px !important;
-            }
-            .tab-btn {
-                font-size: 12px !important;
-                min-height: 44px !important;
-            }
-        }
-        @media (max-width: 340px) {
-            .tab-nav { grid-template-columns: 1fr !important; }
-        }
-
-    
-        /* V23 - إظهار رابط تحميل تطبيق Android بشكل واضح */
-        .android-download-highlight {
-            background: linear-gradient(135deg, rgba(34,197,94,0.18), rgba(59,130,246,0.10));
-            border: 1px solid rgba(34,197,94,0.55);
-            border-radius: 16px;
-            padding: 16px;
-            margin: 14px 0;
-            box-shadow: 0 8px 22px rgba(0,0,0,0.28);
-        }
-        .android-download-highlight h3 {
-            margin: 0 0 8px;
-            color: #4ade80;
-            font-size: 17px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .android-download-highlight p {
-            margin: 4px 0 12px;
-            color: #d1d5db;
-            font-size: 12px;
-            line-height: 1.8;
-        }
-        .android-download-highlight input {
-            background: #020617 !important;
-            border: 1px dashed #4ade80 !important;
-            color: #bbf7d0 !important;
-            font-family: monospace !important;
-            direction: ltr !important;
-            text-align: left !important;
-            font-size: 12px !important;
-            margin-bottom: 10px !important;
-        }
-        .android-download-actions {
-            display: grid;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-            gap: 8px;
-        }
-        .android-download-actions button {
-            margin: 0 !important;
-            padding: 11px !important;
-            border-radius: 10px !important;
-            font-size: 12px !important;
-        }
-        @media(max-width: 520px) {
-            .android-download-actions { grid-template-columns: 1fr; }
-        }
-
     </style>
 </head>
 <body>
@@ -1430,74 +1335,17 @@
         </div>
         
         <div class="tab-nav">
-            <button class="tab-btn active" data-tab-btn="tab-public-app" onclick="openTab('tab-public-app', this)"><i class="fa-brands fa-android"></i> تطبيق الجمهور</button>
-            <button class="tab-btn" data-tab-btn="tab-live" onclick="openTab('tab-live', this)"><i class="fa-solid fa-futbol"></i> المباشر</button>
-            <button class="tab-btn" data-tab-btn="tab-schedule" onclick="openTab('tab-schedule', this)"><i class="fa-solid fa-calendar-days"></i> الجدول</button>
-            <button class="tab-btn" data-tab-btn="tab-groups" onclick="openTab('tab-groups', this)"><i class="fa-solid fa-sitemap"></i> المجموعات</button>
-            <button class="tab-btn" data-tab-btn="tab-teams" onclick="openTab('tab-teams', this)"><i class="fa-solid fa-users-gear"></i> الفرق وH2H</button>
-            <button class="tab-btn" data-tab-btn="tab-media" onclick="openTab('tab-media', this)"><i class="fa-solid fa-bullhorn"></i> الإعلام</button>
-            <button class="tab-btn" data-tab-btn="tab-finance" onclick="openTab('tab-finance', this)"><i class="fa-solid fa-wallet"></i> المالية</button>
-            <button class="tab-btn" data-tab-btn="tab-settings" onclick="openTab('tab-settings', this)"><i class="fa-solid fa-gear"></i> الإعدادات</button>
+            <button class="tab-btn active" onclick="openTab('tab-live', this)"><i class="fa-solid fa-futbol"></i> المباشر</button>
+            <button class="tab-btn" onclick="openTab('tab-teams', this)"><i class="fa-solid fa-users-gear"></i> الفرق وH2H</button>
+            <button class="tab-btn" onclick="openTab('tab-groups', this)"><i class="fa-solid fa-sitemap"></i> المجموعات</button>
+            <button class="tab-btn" onclick="openTab('tab-schedule', this)"><i class="fa-solid fa-calendar-days"></i> الجدول</button>
+            <button class="tab-btn" onclick="openTab('tab-public-app', this)"><i class="fa-brands fa-android"></i> تطبيق الجمهور</button>
+            <button class="tab-btn" onclick="openTab('tab-media', this)"><i class="fa-solid fa-bullhorn"></i> الإعلام</button>
+            <button class="tab-btn" onclick="openTab('tab-finance', this)"><i class="fa-solid fa-wallet"></i> المالية</button>
+            <button class="tab-btn" onclick="openTab('tab-settings', this)"><i class="fa-solid fa-gear"></i> الإعدادات</button>
         </div>
 
-        <div id="tab-public-app" class="tab-content active">
-            <div class="panel">
-                <h2><i class="fa-brands fa-android"></i> تطبيق الجمهور</h2>
-
-                <div class="audience-app-layout">
-                    <div class="audience-help-card">
-                        <b>طريقة الاستخدام:</b><br>
-                        <span class="pill"><i class="fa-brands fa-android"></i> Android</span>
-                        أرسل رابط تحميل التطبيق ومعرف البطولة للجمهور.
-                        <br>
-                        <span class="pill"><i class="fa-brands fa-apple"></i> iPhone</span>
-                        أرسل الرابط المباشر، يفتح من Safari بدون تثبيت.
-                        <br>
-                        <span class="pill"><i class="fa-solid fa-link"></i> رابط مباشر</span>
-                        الرابط المباشر يفتح نفس بطولة هذا الحساب تلقائياً.
-                    </div>
-
-                    <div class="android-download-highlight">
-                        <h3><i class="fa-brands fa-android"></i> رابط تحميل تطبيق Android</h3>
-                        <p>هذا هو رابط ميديافاير الذي ترسله لجمهور Android حتى يحملون التطبيق، وبعدها يدخلون معرف البطولة الموجود أدناه.</p>
-                        <input type="text" id="shareAndroidAppUrlTop" readonly value="https://www.mediafire.com/file/bxp4f0jynohyyl8/app-debug.apk/file">
-                        <div class="android-download-actions">
-                            <button onclick="copyAdminShareTextValue('https://www.mediafire.com/file/bxp4f0jynohyyl8/app-debug.apk/file')" style="background:#22c55e; color:#000; border:none;">
-                                <i class="fa-solid fa-copy"></i> نسخ رابط التحميل
-                            </button>
-                            <button onclick="window.open('https://www.mediafire.com/file/bxp4f0jynohyyl8/app-debug.apk/file', '_blank')" style="background:#0f172a; color:#fff; border:1px solid #4ade80;">
-                                <i class="fa-solid fa-up-right-from-square"></i> فتح رابط التحميل
-                            </button>
-                        </div>
-                    </div>
-
-
-                    <div class="public-link-box">
-            <h3 style="margin-top:0; color:var(--accent); font-size:15px;"><i class="fa-solid fa-share-nodes"></i> رابط تطبيق الجمهور لبطولتك</h3>
-            <p style="font-size: 12px; color: var(--muted); margin: 0;">انسخ هذا الرابط وانشره للمتابعين لمشاهدة البطولة وتحديثاتها حياً:</p>
-            <input type="text" id="publicAppUrl" readonly>
-            <button onclick="copyPublicAppUrl()" style="background:var(--accent); color:#000; border:none; margin:0;"><i class="fa-solid fa-copy"></i> نسخ الرابط</button>
-        </div>
-
-                    <div class="public-app-share-box" id="publicAppShareBox">
-            <h3><i class="fa-brands fa-android"></i> مشاركة تطبيق الجمهور</h3>
-            <p>
-                من هنا تكدر ترسل للجمهور رابط تحميل تطبيق Android، أو ترسل لهم الرابط المباشر للبطولة.
-                مستخدمو Android يقدرون يحملون التطبيق ويدخلون معرف البطولة، ومستخدمو iPhone يفتحون الرابط المباشر من Safari.
-            </p>
-
-            <div class="public-app-grid">
-                <div class="public-app-row">
-                    <label>معرف البطولة الحالي:</label>
-                    <input type="text" id="shareTournamentId" readonly>
-                </div>
-
-                
-                </div>
-            </div>
-        </div>
-
-        <div id="tab-live" class="tab-content">
+        <div id="tab-live" class="tab-content active">
             <div class="panel">
                 <button onclick="sendManualPush('انطلاق المباراة', 'بدأت الآن مباراة ' + document.getElementById('t1Name').value + ' ضد ' + document.getElementById('t2Name').value)" style="background: var(--primary); color:#fff; border:none; font-size: 15px;"><i class="fa-solid fa-bell"></i> تنبيه بدأ المباراة للجمهور</button>
                 <button onclick="clearLiveMatch()" style="background: transparent; color:#ef4444; border:1px solid #ef4444; margin-top:5px;"><i class="fa-solid fa-trash-can"></i> إفراغ وحذف المباراة المباشرة تماماً</button>
@@ -1911,7 +1759,47 @@
         </div>
 
 
+        <div id="tab-public-app" class="tab-content">
+            <div class="panel">
+                <h2><i class="fa-brands fa-android"></i> تطبيق الجمهور والروابط</h2>
 
+                <div class="audience-app-layout">
+                    <div class="audience-help-card">
+                        <b>طريقة الاستخدام:</b><br>
+                        <span class="pill"><i class="fa-brands fa-android"></i> Android</span>
+                        أرسل رابط تحميل التطبيق ومعرف البطولة للجمهور.
+                        <br>
+                        <span class="pill"><i class="fa-brands fa-apple"></i> iPhone</span>
+                        أرسل الرابط المباشر، يفتح من Safari بدون تثبيت.
+                        <br>
+                        <span class="pill"><i class="fa-solid fa-link"></i> رابط مباشر</span>
+                        الرابط المباشر يفتح نفس بطولة هذا الحساب تلقائياً.
+                    </div>
+
+                    <div class="public-link-box">
+            <h3 style="margin-top:0; color:var(--accent); font-size:15px;"><i class="fa-solid fa-share-nodes"></i> رابط تطبيق الجمهور لبطولتك</h3>
+            <p style="font-size: 12px; color: var(--muted); margin: 0;">انسخ هذا الرابط وانشره للمتابعين لمشاهدة البطولة وتحديثاتها حياً:</p>
+            <input type="text" id="publicAppUrl" readonly>
+            <button onclick="copyPublicAppUrl()" style="background:var(--accent); color:#000; border:none; margin:0;"><i class="fa-solid fa-copy"></i> نسخ الرابط</button>
+        </div>
+
+                    <div class="public-app-share-box" id="publicAppShareBox">
+            <h3><i class="fa-brands fa-android"></i> مشاركة تطبيق الجمهور</h3>
+            <p>
+                من هنا تكدر ترسل للجمهور رابط تحميل تطبيق Android، أو ترسل لهم الرابط المباشر للبطولة.
+                مستخدمو Android يقدرون يحملون التطبيق ويدخلون معرف البطولة، ومستخدمو iPhone يفتحون الرابط المباشر من Safari.
+            </p>
+
+            <div class="public-app-grid">
+                <div class="public-app-row">
+                    <label>معرف البطولة الحالي:</label>
+                    <input type="text" id="shareTournamentId" readonly>
+                </div>
+
+                
+                </div>
+            </div>
+        </div>
 
         <div id="tab-media" class="tab-content">
             <div class="panel" style="border-color:#ef4444; background:rgba(239, 68, 68, 0.05);">
@@ -2729,11 +2617,6 @@ generatePlayersGrid();
         function triggerSignOut() { if(confirm("هل أنت متأكد من تسجيل الخروج؟")) { triggerForceLogout(); } }
         function copyPublicAppUrl() { let input = document.getElementById('publicAppUrl'); input.select(); input.setSelectionRange(0, 99999); document.execCommand("copy"); alert("تم نسخ رابط تطبيق الجمهور الخاص بك بنجاح!"); }
         // -----------------------------------------------------------------
-
-
-        function getAdminTabButton(tabId) {
-            return document.querySelector(`.tab-btn[data-tab-btn="${tabId}"]`) || document.querySelector(`.tab-btn[onclick*="${tabId}"]`);
-        }
 
         function openTab(tabId, btn) { const featureMap = {'tab-media':'media','tab-finance':'finance'}; if(featureMap[tabId] && !requireFeature(featureMap[tabId])) return; document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active')); document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active')); const tab=document.getElementById(tabId); if(tab) tab.classList.add('active'); if(btn) btn.classList.add('active'); }
         
@@ -3637,7 +3520,7 @@ ${message}`); return; }
 
         function clearTeamForm() { document.getElementById('dbTeamName').value=''; document.getElementById('dbNickname').value=''; document.getElementById('dbStadium').value=''; document.getElementById('dbCoach').value=''; document.getElementById('dbAsst').value=''; document.getElementById('dbLogo').value=''; document.getElementById('dbCoachPhoto').value=''; document.getElementById('dbAsstPhoto').value=''; document.getElementById('dbJerseyColor').value='#ffffff'; document.getElementById('dbJerseyImg').value=''; document.getElementById('dbJerseyImg2').value=''; for(let i=1; i<=getMaxPlayersPerTeam(); i++) { document.getElementById('p'+i).value=''; document.getElementById('pImg'+i).value=''; document.getElementById('pIcon'+i).className = 'fa-solid fa-camera'; document.getElementById('pIcon'+i).style.color = 'var(--muted)'; if(document.getElementById('pPos'+i)) document.getElementById('pPos'+i).value=''; } }
 
-        window.loadTeamForEdit = function(tName) { const tData = allData.teams[tName]; if(!tData) return; clearTeamForm(); document.getElementById('dbTeamName').value = tName; document.getElementById('dbNickname').value = tData.nickname || ''; document.getElementById('dbStadium').value = tData.stadium || ''; document.getElementById('dbCoach').value = tData.coach || ''; document.getElementById('dbAsst').value = tData.assistant || ''; document.getElementById('dbJerseyColor').value = tData.jerseyColor || '#ffffff'; if(tData.players) { let i = 1; for(let pName in tData.players) { if(i > getMaxPlayersPerTeam()) break; document.getElementById('p'+i).value = pName; if(tData.players[pName].photo) { document.getElementById('pIcon'+i).className = 'fa-solid fa-check-double'; document.getElementById('pIcon'+i).style.color = '#3b82f6'; } if(tData.players[pName].position && document.getElementById('pPos'+i)) { document.getElementById('pPos'+i).value = tData.players[pName].position; } i++; } } openTab('tab-teams', getAdminTabButton('tab-teams')); };
+        window.loadTeamForEdit = function(tName) { const tData = allData.teams[tName]; if(!tData) return; clearTeamForm(); document.getElementById('dbTeamName').value = tName; document.getElementById('dbNickname').value = tData.nickname || ''; document.getElementById('dbStadium').value = tData.stadium || ''; document.getElementById('dbCoach').value = tData.coach || ''; document.getElementById('dbAsst').value = tData.assistant || ''; document.getElementById('dbJerseyColor').value = tData.jerseyColor || '#ffffff'; if(tData.players) { let i = 1; for(let pName in tData.players) { if(i > getMaxPlayersPerTeam()) break; document.getElementById('p'+i).value = pName; if(tData.players[pName].photo) { document.getElementById('pIcon'+i).className = 'fa-solid fa-check-double'; document.getElementById('pIcon'+i).style.color = '#3b82f6'; } if(tData.players[pName].position && document.getElementById('pPos'+i)) { document.getElementById('pPos'+i).value = tData.players[pName].position; } i++; } } openTab('tab-teams', document.querySelectorAll('.tab-btn')[1]); };
 
         window.setGroupStatus = function(g, t, status) {
             db.ref(`tournaments/${dbPath}/groups/${g}/${t}`).update({ status: status });
@@ -3962,7 +3845,7 @@ ${message}`); return; }
             
             isInternalUpdate = false; 
             alert("عادت المباراة للبث المباشر"); 
-            openTab('tab-live', getAdminTabButton('tab-live'));
+            openTab('tab-live', document.querySelectorAll('.tab-btn')[0]);
         }
 
         function filterTeamsByGroup(groupId, t1Id, t2Id) { const groupVal = document.getElementById(groupId).value; const t1El = document.getElementById(t1Id); const t2El = document.getElementById(t2Id); const currentVal1 = t1El.value; const currentVal2 = t2El.value; let opts = '<option value="">اختر الفريق...</option>'; if (groupVal && allData.groups && allData.groups[groupVal]) { for (let t in allData.groups[groupVal]) opts += `<option value="${t}">${t}</option>`; } else { if (allData.teams) { for (let t in allData.teams) opts += `<option value="${t}">${t}</option>`; } } t1El.innerHTML = opts; t2El.innerHTML = opts; if(Array.from(t1El.options).some(opt => opt.value === currentVal1)) t1El.value = currentVal1; if(Array.from(t2El.options).some(opt => opt.value === currentVal2)) t2El.value = currentVal2; }
@@ -4001,8 +3884,8 @@ ${message}`); return; }
 
         function updateGroup() { const grp = document.getElementById('gLetter').value, t = document.getElementById('gTeam').value; if(!t) return alert("اختر الفريق"); const p = parseInt(document.getElementById('gP').value) || 0; const gf = parseInt(document.getElementById('gGF').value) || 0; const ga = parseInt(document.getElementById('gGA').value) || 0; const gd = parseInt(document.getElementById('gGD').value) || (gf - ga); const pts = parseInt(document.getElementById('gPts').value) || 0; const status = document.getElementById('gStatus').value || ''; db.ref(`tournaments/${dbPath}/groups/${grp}/${t}`).set({ name: t, played: p, gf: gf, ga: ga, gd: gd, points: pts, status: status }).then(() => { alert("تم التحديث بنجاح! إذا ضغطت على زر الحساب التلقائي سيتم إعادة كتابة هذه الأرقام بناءً على الأرشيف"); }); }
         
-        function loadScheduledToLive(id) { const match = allData.schedule[id]; if(!match) return; if(confirm(`بدء المباراة ونقلها للمباشر؟ (ستُحذف من الجدول)`)) { isInternalUpdate = true; db.ref(`tournaments/${dbPath}/live_match`).update({ team1: match.team1, team2: match.team2, round: match.round || '', leg: match.leg || '', groupInfo: match.group || '', status: 'الشوط الأول', score1: 0, score2: 0, events: '', referee1: match.referee1 || '', referee2: match.referee2 || '', referee3: match.referee3 || '', referee4: match.referee4 || '', timer: { isRunning: false, savedSeconds: 0, startTime: 0 }, stats: {posSec1:0, posSec2:0, possession1: 50, possession2: 50, shots1: 0, shots2: 0, corners1: 0, corners2: 0, fouls1: 0, fouls2: 0, sot1:0, sot2:0, saves1:0, saves2:0, passes1:0, passes2:0, attacks1:0, attacks2:0, offsides1:0, offsides2:0, subs1:0, subs2:0, stoppage1:0, stoppage2:0} }).then(() => { db.ref(`tournaments/${dbPath}/schedule/${id}`).remove(); alert("بدأت المباراة"); openTab('tab-live', getAdminTabButton('tab-live')); isInternalUpdate = false; }).catch(e => { alert("حدث خطأ"); isInternalUpdate = false; }); } }
-        function loadGroupMatchupToLive(id) { const match = allData.group_matchups[id]; if(!match) return; if(confirm(`بدء المباراة ونقلها للمباشر؟`)) { isInternalUpdate = true; db.ref(`tournaments/${dbPath}/live_match`).update({ team1: match.team1, team2: match.team2, round: match.round || '', leg: match.leg || '', groupInfo: match.group || '', status: 'الشوط الأول', score1: 0, score2: 0, events: '', referee1: '', referee2: '', referee3: '', referee4: '', timer: { isRunning: false, savedSeconds: 0, startTime: 0 }, stats: {posSec1:0, posSec2:0, possession1: 50, possession2: 50, shots1: 0, shots2: 0, corners1: 0, corners2: 0, fouls1: 0, fouls2: 0, sot1:0, sot2:0, saves1:0, saves2:0, passes1:0, passes2:0, attacks1:0, attacks2:0, offsides1:0, offsides2:0, subs1:0, subs2:0, stoppage1:0, stoppage2:0} }).then(() => { alert("بدأت المباراة"); openTab('tab-live', getAdminTabButton('tab-live')); isInternalUpdate = false; }); } }
+        function loadScheduledToLive(id) { const match = allData.schedule[id]; if(!match) return; if(confirm(`بدء المباراة ونقلها للمباشر؟ (ستُحذف من الجدول)`)) { isInternalUpdate = true; db.ref(`tournaments/${dbPath}/live_match`).update({ team1: match.team1, team2: match.team2, round: match.round || '', leg: match.leg || '', groupInfo: match.group || '', status: 'الشوط الأول', score1: 0, score2: 0, events: '', referee1: match.referee1 || '', referee2: match.referee2 || '', referee3: match.referee3 || '', referee4: match.referee4 || '', timer: { isRunning: false, savedSeconds: 0, startTime: 0 }, stats: {posSec1:0, posSec2:0, possession1: 50, possession2: 50, shots1: 0, shots2: 0, corners1: 0, corners2: 0, fouls1: 0, fouls2: 0, sot1:0, sot2:0, saves1:0, saves2:0, passes1:0, passes2:0, attacks1:0, attacks2:0, offsides1:0, offsides2:0, subs1:0, subs2:0, stoppage1:0, stoppage2:0} }).then(() => { db.ref(`tournaments/${dbPath}/schedule/${id}`).remove(); alert("بدأت المباراة"); openTab('tab-live', document.querySelectorAll('.tab-btn')[0]); isInternalUpdate = false; }).catch(e => { alert("حدث خطأ"); isInternalUpdate = false; }); } }
+        function loadGroupMatchupToLive(id) { const match = allData.group_matchups[id]; if(!match) return; if(confirm(`بدء المباراة ونقلها للمباشر؟`)) { isInternalUpdate = true; db.ref(`tournaments/${dbPath}/live_match`).update({ team1: match.team1, team2: match.team2, round: match.round || '', leg: match.leg || '', groupInfo: match.group || '', status: 'الشوط الأول', score1: 0, score2: 0, events: '', referee1: '', referee2: '', referee3: '', referee4: '', timer: { isRunning: false, savedSeconds: 0, startTime: 0 }, stats: {posSec1:0, posSec2:0, possession1: 50, possession2: 50, shots1: 0, shots2: 0, corners1: 0, corners2: 0, fouls1: 0, fouls2: 0, sot1:0, sot2:0, saves1:0, saves2:0, passes1:0, passes2:0, attacks1:0, attacks2:0, offsides1:0, offsides2:0, subs1:0, subs2:0, stoppage1:0, stoppage2:0} }).then(() => { alert("بدأت المباراة"); openTab('tab-live', document.querySelectorAll('.tab-btn')[0]); isInternalUpdate = false; }); } }
 
         async function recalculateMatchesPlayed(silent = false) {
             if(!silent && !confirm("إعادة حساب الإحصائيات (أهداف، صناعة، بطاقات) بناءً على الأرشيف الحالي؟")) return;
@@ -4576,16 +4459,6 @@ ${directUrl}`;
         }
 
         setInterval(updateAdminPublicAppShareBox, 1500);
-
-
-        function copyAdminShareTextValue(text) {
-            if (!String(text || '').trim()) return alert('لا يوجد رابط للنسخ.');
-            if (navigator.clipboard && navigator.clipboard.writeText) {
-                navigator.clipboard.writeText(text).then(() => alert('تم نسخ رابط التحميل ✅')).catch(() => fallbackCopyAdminShareText(text));
-            } else {
-                fallbackCopyAdminShareText(text);
-            }
-        }
 
 </script>
 
