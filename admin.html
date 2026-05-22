@@ -1404,6 +1404,44 @@
             .android-download-actions { grid-template-columns: 1fr; }
         }
 
+    
+        /* V24 - إصلاح تبويبات الأدمن على iPhone ومنع تداخل الأقسام */
+        .tab-nav {
+            display: flex !important;
+            flex-wrap: wrap !important;
+            gap: 8px !important;
+            overflow: visible !important;
+            align-items: stretch !important;
+            -webkit-overflow-scrolling: touch;
+        }
+        .tab-btn {
+            flex: 1 1 135px !important;
+            min-width: 118px !important;
+            white-space: normal !important;
+            line-height: 1.45 !important;
+            min-height: 48px !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            gap: 6px !important;
+            touch-action: manipulation !important;
+            -webkit-tap-highlight-color: transparent !important;
+            position: relative !important;
+            z-index: 2 !important;
+        }
+        @media (max-width: 520px) {
+            .tab-nav { gap: 6px !important; padding: 8px !important; }
+            .tab-btn {
+                flex: 1 1 calc(50% - 8px) !important;
+                min-width: 0 !important;
+                font-size: 12px !important;
+                padding: 10px 6px !important;
+            }
+        }
+        @media (max-width: 360px) {
+            .tab-btn { flex-basis: 100% !important; }
+        }
+
     </style>
 </head>
 <body>
@@ -4587,6 +4625,63 @@ ${directUrl}`;
             }
         }
 
+</script>
+
+
+<script>
+/* V24 - iPhone/Safari tab compatibility layer */
+(function(){
+  function hasClass(el, cls){ return el && (' ' + el.className + ' ').indexOf(' ' + cls + ' ') > -1; }
+  function removeClass(el, cls){ if(!el) return; el.className = (' ' + el.className + ' ').replace(' ' + cls + ' ', ' ').replace(/^\s+|\s+$/g, ''); }
+  function addClass(el, cls){ if(el && !hasClass(el, cls)) el.className += (el.className ? ' ' : '') + cls; }
+  function getFeatureAllowed(tabId){
+    try {
+      var featureMap = {'tab-media':'media','tab-finance':'finance'};
+      var f = featureMap[tabId];
+      if(f && typeof window.requireFeature === 'function') return window.requireFeature(f);
+    } catch(e) { return true; }
+    return true;
+  }
+  window.openTab = function(tabId, btn){
+    if(!tabId) return false;
+    if(!getFeatureAllowed(tabId)) return false;
+    var tabs = document.querySelectorAll ? document.querySelectorAll('.tab-content') : [];
+    for(var i=0;i<tabs.length;i++) removeClass(tabs[i], 'active');
+    var buttons = document.querySelectorAll ? document.querySelectorAll('.tab-btn') : [];
+    for(var j=0;j<buttons.length;j++) removeClass(buttons[j], 'active');
+    var tab = document.getElementById(tabId);
+    if(tab) addClass(tab, 'active');
+    if(btn) addClass(btn, 'active');
+    try { window.scrollTo(0, 0); } catch(e) {}
+    return false;
+  };
+  function parseTabFromButton(btn){
+    if(!btn) return '';
+    var attr = btn.getAttribute('onclick') || '';
+    var m = attr.match(/openTab\(['\"]([^'\"]+)['\"]/);
+    return m ? m[1] : (btn.getAttribute('data-tab') || '');
+  }
+  function bindTabs(){
+    var buttons = document.querySelectorAll ? document.querySelectorAll('.tab-btn') : [];
+    for(var i=0;i<buttons.length;i++){
+      (function(btn){
+        var tabId = parseTabFromButton(btn);
+        if(tabId) btn.setAttribute('data-tab', tabId);
+        btn.addEventListener('click', function(ev){
+          var id = btn.getAttribute('data-tab') || parseTabFromButton(btn);
+          if(id){ ev.preventDefault(); ev.stopPropagation(); window.openTab(id, btn); }
+        }, true);
+        btn.addEventListener('touchend', function(ev){
+          var id = btn.getAttribute('data-tab') || parseTabFromButton(btn);
+          if(id){ ev.preventDefault(); ev.stopPropagation(); window.openTab(id, btn); }
+        }, true);
+      })(buttons[i]);
+    }
+    var preferred = document.querySelector('.tab-btn[data-tab="tab-public-app"]') || document.querySelector('.tab-btn');
+    if(preferred && !document.querySelector('.tab-content.active')) window.openTab(preferred.getAttribute('data-tab'), preferred);
+  }
+  if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', bindTabs); else bindTabs();
+})();
 </script>
 
 </body>
