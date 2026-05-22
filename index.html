@@ -1,5 +1,4 @@
 
-
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
@@ -593,6 +592,87 @@
             color: #94a3b8;
             font-size: 11px;
             margin-top: 12px;
+        }
+
+
+        /* V25 - حفظ معرفات البطولات وقائمة البطولات المحفوظة */
+        .saved-tournaments-box {
+            margin: 14px 0 16px;
+            text-align: right;
+        }
+        .saved-tournaments-title {
+            color: #93c5fd;
+            font-size: 12px;
+            font-weight: 900;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+        .saved-tournament-item {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 8px;
+            align-items: center;
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(147,197,253,0.22);
+            border-radius: 14px;
+            padding: 9px;
+            margin-bottom: 8px;
+        }
+        .saved-tournament-main {
+            background: transparent !important;
+            border: none !important;
+            color: #fff !important;
+            text-align: right !important;
+            padding: 6px !important;
+            font-size: 13px !important;
+            cursor: pointer;
+            font-family: 'Cairo' !important;
+            font-weight: 900 !important;
+        }
+        .saved-tournament-main small {
+            display: block;
+            color: #94a3b8;
+            font-family: monospace;
+            direction: ltr;
+            text-align: right;
+            font-size: 11px;
+            margin-top: 2px;
+        }
+        .saved-tournament-remove {
+            width: 36px !important;
+            height: 36px !important;
+            padding: 0 !important;
+            border-radius: 10px !important;
+            background: rgba(239,68,68,0.12) !important;
+            color: #fca5a5 !important;
+            border: 1px solid rgba(239,68,68,0.35) !important;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .entry-divider {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #64748b;
+            font-size: 11px;
+            margin: 14px 0;
+        }
+        .entry-divider::before,
+        .entry-divider::after {
+            content: "";
+            height: 1px;
+            flex: 1;
+            background: rgba(148,163,184,0.24);
+        }
+        .entry-secondary-btn {
+            margin-top: 8px;
+            background: rgba(15,23,42,0.9) !important;
+            border: 1px solid rgba(147,197,253,0.35) !important;
+            color: #bfdbfe !important;
         }
 
     </style>
@@ -1243,25 +1323,88 @@
         };
         const urlParams = new URLSearchParams(window.location.search);
         const requestedTournamentParam = urlParams.get('db') || urlParams.get('t') || '';
+        const SAVED_TOURNEYS_KEY = 'audienceSavedTournamentIdsV25';
+        const LAST_TOURNEY_KEY = 'audienceDbPath';
         let dbPath = cleanTournamentId(requestedTournamentParam || '');
+
+        function getSavedTournamentIds() {
+            try {
+                const raw = JSON.parse(localStorage.getItem(SAVED_TOURNEYS_KEY) || '[]');
+                if (!Array.isArray(raw)) return [];
+                return raw.map(cleanTournamentId).filter(Boolean).filter((id, idx, arr) => arr.indexOf(id) === idx).slice(0, 20);
+            } catch(e) {
+                return [];
+            }
+        }
+
+        function saveTournamentIdForAudience(id) {
+            const clean = cleanTournamentId(id || '');
+            if (!clean) return;
+            let list = getSavedTournamentIds().filter(x => x !== clean);
+            list.unshift(clean);
+            list = list.slice(0, 20);
+            localStorage.setItem(SAVED_TOURNEYS_KEY, JSON.stringify(list));
+            localStorage.setItem(LAST_TOURNEY_KEY, clean);
+        }
+
+        function removeSavedTournamentId(id) {
+            const clean = cleanTournamentId(id || '');
+            const list = getSavedTournamentIds().filter(x => x !== clean);
+            localStorage.setItem(SAVED_TOURNEYS_KEY, JSON.stringify(list));
+            if (localStorage.getItem(LAST_TOURNEY_KEY) === clean) {
+                localStorage.setItem(LAST_TOURNEY_KEY, list[0] || '');
+            }
+            showTournamentEntryGate();
+        }
+
+        function openTournamentById(id) {
+            const val = cleanTournamentId(id || '');
+            if(!val) { alert('معرف البطولة غير صالح.'); return; }
+            saveTournamentIdForAudience(val);
+            window.location.href = window.location.pathname + '?db=' + encodeURIComponent(val);
+        }
 
         function submitTournamentIdFromGate() {
             const input = document.getElementById('tourneyEntryInput');
             const val = cleanTournamentId(input ? input.value : '');
             if(!val) { alert('أدخل معرف بطولة صحيح.'); return; }
-            localStorage.setItem('audienceDbPath', val);
-            window.location.href = window.location.pathname + '?db=' + encodeURIComponent(val);
+            openTournamentById(val);
+        }
+
+        function renderSavedTournamentList() {
+            const saved = getSavedTournamentIds();
+            if (!saved.length) return '';
+            return `
+                <div class="saved-tournaments-box">
+                    <div class="saved-tournaments-title"><i class="fa-solid fa-bookmark"></i> بطولات محفوظة على هذا الجهاز</div>
+                    ${saved.map((id, index) => `
+                        <div class="saved-tournament-item">
+                            <button type="button" class="saved-tournament-main" onclick="openTournamentById('${id.replace(/'/g, "\\'")}')">
+                                ${index === 0 ? 'آخر بطولة محفوظة' : 'بطولة محفوظة'}
+                                <small>${id}</small>
+                            </button>
+                            <button type="button" class="saved-tournament-remove" onclick="removeSavedTournamentId('${id.replace(/'/g, "\\'")}')" title="حذف من القائمة">
+                                <i class="fa-solid fa-xmark"></i>
+                            </button>
+                        </div>
+                    `).join('')}
+                </div>
+                <div class="entry-divider">أو أدخل معرف جديد</div>
+            `;
         }
 
         function showTournamentEntryGate() {
+            const savedListHtml = renderSavedTournamentList();
             document.body.innerHTML = `
                 <div class="tourney-entry-gate" dir="rtl">
                     <div class="tourney-entry-card">
                         <h1><i class="fa-solid fa-trophy"></i> Tourney</h1>
-                        <p>أدخل معرف بطولتك حتى تفتح صفحة الجمهور الخاصة بها. إذا ما عندك المعرف، اطلبه من منظم البطولة.</p>
+                        <p>اختر بطولة محفوظة على هذا الجهاز، أو أدخل معرف بطولة جديد مرة واحدة وسيتم حفظه تلقائياً.</p>
+                        ${savedListHtml}
                         <input id="tourneyEntryInput" placeholder="مثال: tourney_2772" autocomplete="off">
-                        <button id="tourneyEntryBtn"><i class="fa-solid fa-right-to-bracket"></i> دخول البطولة</button>
-                        <div class="hint">الرابط المباشر يكون بهذا الشكل:<br>index.html?db=معرف_البطولة</div>
+                        <button id="tourneyEntryBtn"><i class="fa-solid fa-right-to-bracket"></i> دخول وحفظ البطولة</button>
+                        ${getSavedTournamentIds().length ? `<button class="entry-secondary-btn" onclick="localStorage.removeItem('${SAVED_TOURNEYS_KEY}'); localStorage.removeItem('${LAST_TOURNEY_KEY}'); showTournamentEntryGate();"><i class="fa-solid fa-trash"></i> حذف كل البطولات المحفوظة</button>` : ''}
+                        <div class="hint">الرابط المباشر يفتح مباشرة بهذا الشكل:<br>index.html?db=معرف_البطولة</div>
                     </div>
                 </div>`;
             const inp = document.getElementById('tourneyEntryInput');
@@ -1278,7 +1421,7 @@
             else showTournamentEntryGate();
             throw new Error('TOURNEY_WAITING_FOR_TOURNAMENT_ID');
         }
-        localStorage.setItem('audienceDbPath', dbPath);
+        saveTournamentIdForAudience(dbPath);
 
         // -------------------------------------------------------------
         // نظام الباقات: يقرأ settings/license ويخفي/يعرض الميزات تلقائياً
@@ -1334,7 +1477,19 @@
             if(active && active.id && !licensePageEnabled(active.id.replace('page-', ''))) { nav('live'); }
         }
 
-        window.changeAudienceDB = function() { let newDb = prompt("أدخل معرف البطولة:", ""); if(newDb && newDb.trim() !== "") { let cleanDb = cleanTournamentId(newDb); if(!cleanDb) return alert('معرف البطولة غير صالح'); localStorage.setItem('audienceDbPath', cleanDb); window.location.href = window.location.pathname + "?db=" + encodeURIComponent(cleanDb); } };
+        window.changeAudienceDB = function() {
+            const saved = getSavedTournamentIds();
+            let msg = "أدخل معرف البطولة:";
+            if (saved.length) msg += "\n\nالبطولات المحفوظة:\n" + saved.map((id, i) => (i+1) + ". " + id).join("\n") + "\n\nاكتب رقم من القائمة أو معرف جديد:";
+            let newDb = prompt(msg, saved[0] || "");
+            if(newDb && newDb.trim() !== "") {
+                let chosen = newDb.trim();
+                if(/^\d+$/.test(chosen) && saved[parseInt(chosen, 10)-1]) chosen = saved[parseInt(chosen, 10)-1];
+                let cleanDb = cleanTournamentId(chosen);
+                if(!cleanDb) return alert('معرف البطولة غير صالح');
+                openTournamentById(cleanDb);
+            }
+        };
         let visualName = localStorage.getItem('visualName') || "بطولة دوائر خانقين"; updateAudienceTournamentTitle(visualName);
         window.openImageViewer = function(src) { if(!src) return; document.getElementById('fullSizeImg').src = src; document.getElementById('imageViewerModal').style.display = 'flex'; try{ history.pushState({ modal: 'imageViewerModal' }, "", "#image"); }catch(e){} }; window.closeImageViewer = function() { document.getElementById('imageViewerModal').style.display = 'none'; };
         
