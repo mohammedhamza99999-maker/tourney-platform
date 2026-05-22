@@ -527,6 +527,74 @@
         html[data-mode="light"] .bracket-container.v17 .bracket-match { background:#fff; border-color:#dbeafe; }
         .competition-mode-pill { display:inline-flex; align-items:center; gap:6px; font-size:11px; padding:5px 10px; border-radius:999px; background:rgba(59,130,246,0.12); color:var(--primary); border:1px solid rgba(59,130,246,0.25); }
 
+    
+        /* V24 - صفحة إدخال معرف البطولة عند فتح الرابط العام */
+        .tourney-entry-gate {
+            min-height: 100vh;
+            background: radial-gradient(circle at top, #1e293b 0%, #020617 55%, #000 100%);
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            box-sizing: border-box;
+            font-family: 'Cairo', Arial, sans-serif;
+        }
+        .tourney-entry-card {
+            width: 100%;
+            max-width: 430px;
+            background: rgba(15,23,42,0.92);
+            border: 1px solid rgba(59,130,246,0.35);
+            border-radius: 24px;
+            padding: 24px 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.55);
+            text-align: center;
+        }
+        .tourney-entry-card h1 {
+            margin: 0 0 8px;
+            color: #60a5fa;
+            font-size: 24px;
+            font-weight: 900;
+        }
+        .tourney-entry-card p {
+            color: #cbd5e1;
+            font-size: 13px;
+            line-height: 1.8;
+            margin: 8px 0 18px;
+        }
+        .tourney-entry-card input {
+            width: 100%;
+            box-sizing: border-box;
+            background: #020617;
+            color: #fff;
+            border: 1px dashed #60a5fa;
+            border-radius: 14px;
+            padding: 14px;
+            font-size: 15px;
+            font-weight: 800;
+            text-align: center;
+            direction: ltr;
+            outline: none;
+            margin-bottom: 12px;
+        }
+        .tourney-entry-card button {
+            width: 100%;
+            background: #3b82f6;
+            color: #fff;
+            border: none;
+            border-radius: 14px;
+            padding: 14px;
+            font-family: 'Cairo';
+            font-size: 15px;
+            font-weight: 900;
+            cursor: pointer;
+        }
+        .tourney-entry-card .hint {
+            color: #94a3b8;
+            font-size: 11px;
+            margin-top: 12px;
+        }
+
     </style>
     <script>
         let currentLang = 'ar';
@@ -1173,7 +1241,44 @@
                 alert("حدث خطأ: " + (err && err.message ? err.message : err));
             });
         };
-        const urlParams = new URLSearchParams(window.location.search); let dbPath = cleanTournamentId(urlParams.get('db') || localStorage.getItem('audienceDbPath') || "Khanaqin_Tournament_Official"); if (urlParams.get('db')) { localStorage.setItem('audienceDbPath', dbPath); }
+        const urlParams = new URLSearchParams(window.location.search);
+        const requestedTournamentParam = urlParams.get('db') || urlParams.get('t') || '';
+        let dbPath = cleanTournamentId(requestedTournamentParam || '');
+
+        function submitTournamentIdFromGate() {
+            const input = document.getElementById('tourneyEntryInput');
+            const val = cleanTournamentId(input ? input.value : '');
+            if(!val) { alert('أدخل معرف بطولة صحيح.'); return; }
+            localStorage.setItem('audienceDbPath', val);
+            window.location.href = window.location.pathname + '?db=' + encodeURIComponent(val);
+        }
+
+        function showTournamentEntryGate() {
+            document.body.innerHTML = `
+                <div class="tourney-entry-gate" dir="rtl">
+                    <div class="tourney-entry-card">
+                        <h1><i class="fa-solid fa-trophy"></i> Tourney</h1>
+                        <p>أدخل معرف بطولتك حتى تفتح صفحة الجمهور الخاصة بها. إذا ما عندك المعرف، اطلبه من منظم البطولة.</p>
+                        <input id="tourneyEntryInput" placeholder="مثال: tourney_2772" autocomplete="off">
+                        <button id="tourneyEntryBtn"><i class="fa-solid fa-right-to-bracket"></i> دخول البطولة</button>
+                        <div class="hint">الرابط المباشر يكون بهذا الشكل:<br>index.html?db=معرف_البطولة</div>
+                    </div>
+                </div>`;
+            const inp = document.getElementById('tourneyEntryInput');
+            const btn = document.getElementById('tourneyEntryBtn');
+            if(btn) btn.onclick = submitTournamentIdFromGate;
+            if(inp) {
+                inp.focus();
+                inp.addEventListener('keydown', function(e){ if(e.key === 'Enter') submitTournamentIdFromGate(); });
+            }
+        }
+
+        if(!dbPath) {
+            if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', showTournamentEntryGate);
+            else showTournamentEntryGate();
+            throw new Error('TOURNEY_WAITING_FOR_TOURNAMENT_ID');
+        }
+        localStorage.setItem('audienceDbPath', dbPath);
 
         // -------------------------------------------------------------
         // نظام الباقات: يقرأ settings/license ويخفي/يعرض الميزات تلقائياً
@@ -1229,7 +1334,7 @@
             if(active && active.id && !licensePageEnabled(active.id.replace('page-', ''))) { nav('live'); }
         }
 
-        window.changeAudienceDB = function() { let newDb = prompt("أدخل معرف البطولة:", dbPath); if(newDb && newDb.trim() !== "") { let cleanDb = cleanTournamentId(newDb); if(!cleanDb) return alert('معرف البطولة غير صالح'); localStorage.setItem('audienceDbPath', cleanDb); window.location.href = window.location.pathname + "?db=" + encodeURIComponent(cleanDb); } };
+        window.changeAudienceDB = function() { let newDb = prompt("أدخل معرف البطولة:", ""); if(newDb && newDb.trim() !== "") { let cleanDb = cleanTournamentId(newDb); if(!cleanDb) return alert('معرف البطولة غير صالح'); localStorage.setItem('audienceDbPath', cleanDb); window.location.href = window.location.pathname + "?db=" + encodeURIComponent(cleanDb); } };
         let visualName = localStorage.getItem('visualName') || "بطولة دوائر خانقين"; updateAudienceTournamentTitle(visualName);
         window.openImageViewer = function(src) { if(!src) return; document.getElementById('fullSizeImg').src = src; document.getElementById('imageViewerModal').style.display = 'flex'; try{ history.pushState({ modal: 'imageViewerModal' }, "", "#image"); }catch(e){} }; window.closeImageViewer = function() { document.getElementById('imageViewerModal').style.display = 'none'; };
         
